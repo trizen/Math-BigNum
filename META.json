@@ -1,7 +1,7 @@
 {
    "abstract" : "Arbitrary size precision for integer, complex and floating-point numbers",
    "author" : [
-      "Daniel Èuteu <trizenx@gmail.com>"
+      "Daniel Șuteu <trizenx@gmail.com>"
    ],
    "dynamic_config" : 1,
    "generated_by" : "Module::Build version 0.4214",
