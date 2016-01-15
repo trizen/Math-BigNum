@@ -49,7 +49,6 @@ use overload
   abs  => sub { $_[0]->abs },
   sqrt => sub { $_[0]->sqrt };
 
-
 use constant {
               NAN  => Math::BigNum::NAN,
               INF  => Math::BigNum::INF,
@@ -325,6 +324,238 @@ sub sqrt {
     my ($x) = @_;
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_sqrt($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## Trigonometric
+#
+
+sub sin {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_sin($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub asin {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_asin($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub sinh {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_sinh($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub asinh {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_asinh($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub cos {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_cos($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub acos {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_acos($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub cosh {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_cosh($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub acosh {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_acosh($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub tan {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_tan($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub atan {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_atan($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub tanh {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_tanh($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+sub atanh {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_atanh($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## csc(x) = 1/sin(x)
+#
+sub csc {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_sin($r, $$x, $ROUND);
+    Math::MPC::Rmpc_div($r, $one, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## acsc(x) = asin(1/x)
+#
+sub acsc {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div($r, $one, $$x, $ROUND);
+    Math::MPC::Rmpc_asin($r, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## csch(x) = 1/sinh(x)
+#
+sub csch {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_sinh($r, $$x, $ROUND);
+    Math::MPC::Rmpc_div($r, $one, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## acsch(x) = asinh(1/x)
+#
+sub acsch {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div($r, $one, $$x, $ROUND);
+    Math::MPC::Rmpc_asinh($r, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## sec(x) = 1/cos(x)
+#
+sub sec {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_cos($r, $$x, $ROUND);
+    Math::MPC::Rmpc_div($r, $one, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## asec(x) = acos(1/x)
+#
+sub asec {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div($r, $one, $$x, $ROUND);
+    Math::MPC::Rmpc_acos($r, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## sech(x) = 1/cosh(x)
+#
+sub sech {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_cosh($r, $$x, $ROUND);
+    Math::MPC::Rmpc_div($r, $one, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## asech(x) = acosh(1/x)
+#
+sub asech {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div($r, $one, $$x, $ROUND);
+    Math::MPC::Rmpc_acosh($r, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## cot(x) = 1/tan(x)
+#
+sub cot {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_tan($r, $$x, $ROUND);
+    Math::MPC::Rmpc_div($r, $one, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## acot(x) = atan(1/x)
+#
+sub acot {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div($r, $one, $$x, $ROUND);
+    Math::MPC::Rmpc_atan($r, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## coth(x) = 1/tanh(x)
+#
+sub coth {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_tanh($r, $$x, $ROUND);
+    Math::MPC::Rmpc_div($r, $one, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+#
+## acoth(x) = atanh(1/x)
+#
+sub acoth {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div($r, $one, $$x, $ROUND);
+    Math::MPC::Rmpc_atanh($r, $r, $ROUND);
     bless(\$r, __PACKAGE__);
 }
 
