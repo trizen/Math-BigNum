@@ -177,7 +177,7 @@ sub imag {
 =head2 add
 
     $x->add(Complex)        # Complex
-    $x->add(BigNum)         # BigNum
+    $x->add(BigNum)         # Complex
 
 Adds $x to $y and returns the result.
 
@@ -204,7 +204,7 @@ multimethod add => qw(Math::BigNum::Complex Math::BigNum) => sub {
 =head2 sub
 
     $x->sub(Complex)        # Complex
-    $x->sub(BigNum)         # BigNum
+    $x->sub(BigNum)         # Complex
 
 Subtracts $y from $x and returns the result.
 
@@ -231,7 +231,7 @@ multimethod sub => qw(Math::BigNum::Complex Math::BigNum) => sub {
 =head2 mul
 
     $x->mul(Complex)        # Complex
-    $x->mul(BigNum)         # BigNum
+    $x->mul(BigNum)         # Complex
 
 Multiplies $x by $y and returns the result.
 
@@ -254,5 +254,47 @@ multimethod mul => qw(Math::BigNum::Complex Math::BigNum) => sub {
 
     bless \$r, __PACKAGE__;
 };
+
+=head2 div
+
+    $x->div(Complex)        # Complex
+    $x->div(BigNum)         # Complex
+
+Divides $x by $y and returns the result.
+
+=cut
+
+multimethod div => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div($r, $$x, $$y, $ROUND);
+
+    bless \$r, __PACKAGE__;
+};
+
+multimethod div => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div_fr($r, $$x, $y->_as_float(), $ROUND);
+
+    bless \$r, __PACKAGE__;
+};
+
+=head2 sqrt
+
+    $x->sqrt        # Complex
+
+Square root of $x.
+
+=cut
+
+sub sqrt {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_sqrt($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
 
 1;

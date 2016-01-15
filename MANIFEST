@@ -13,8 +13,7 @@ META.json
 META.yml
 README.md
 t/00-load.t
+t/01-bignum.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
-test.pl
-xt/boilerplate.t

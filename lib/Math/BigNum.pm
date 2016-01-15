@@ -57,26 +57,25 @@ use constant {
              };
 
 use Math::BigNum::Complex qw();
-
-use constant {i => Math::BigNum::Complex->new(0, 1),};
+use constant {i => Math::BigNum::Complex->new(0, 1)};
 
 use overload
-  '""'  => \&stringify,
-  '0+'  => \&numify,
-  bool  => \&boolify,
-  neg   => sub { $_[0]->neg },
-  '+'   => sub { $_[0]->add($_[1]) },
-  '*'   => sub { $_[0]->mul($_[1]) },
-  '-'   => sub { $_[2] ? Math::BigNum->new($_[1])->sub($_[0]) : $_[0]->sub($_[1]) },
-  '/'   => sub { $_[2] ? Math::BigNum->new($_[1])->div($_[0]) : $_[0]->div($_[1]) },
+  '""' => \&stringify,
+  '0+' => \&numify,
+  bool => \&boolify,
+  neg  => sub { $_[0]->neg },
+  '+'  => sub { $_[0]->add($_[1]) },
+  '*'  => sub { $_[0]->mul($_[1]) },
+  '**' => sub { $_[2] ? Math::BigNum->new($_[1])->pow($_[0]) : $_[0]->pow($_[1]) },
+  '-'  => sub { $_[2] ? Math::BigNum->new($_[1])->sub($_[0]) : $_[0]->sub($_[1]) },
+  '/'  => sub { $_[2] ? Math::BigNum->new($_[1])->div($_[0]) : $_[0]->div($_[1]) },
+  '=='  => sub { $_[0]->eq($_[1]) },
   atan2 => sub { $_[2] ? Math::BigNum->new($_[1])->atan2($_[0]) : $_[0]->atan2($_[1]) },
-  abs  => sub { $_[0]->abs },
-  sqrt => sub { $_[0]->sqrt };
+  abs   => sub { $_[0]->abs },
+  sqrt  => sub { $_[0]->sqrt };
 
 sub import {
     shift;
-
-    my $callback = caller(0);
 
     foreach my $name (@_) {
         if ($name eq ':constant') {
@@ -86,7 +85,10 @@ sub import {
         }
         elsif ($name eq 'i') {
             no strict 'refs';
-            *{$callback . '::' . 'i'} = \&i;
+            *{caller(0) . '::' . 'i'} = \&i;
+        }
+        else {
+            die "unknown import: $name";
         }
     }
     return;
@@ -401,8 +403,8 @@ multimethod sub => qw(Math::BigNum Math::BigNum::Ninf) => sub {
     $x->mul(BigNum)       # => BigNum
     $x->mul(SCALAR)       # => BigNum
     $x->mul(Complex)      # => Complex
-    $x->mul(Inf)          # => BigNum or Nan
-    $x->mul(Ninf)         # => BigNum or Nan
+    $x->mul(Inf)          # => Ninf | Inf | Nan
+    $x->mul(Ninf)         # => Ninf | Inf | Nan
 
 Multiplies $x by $y and returns the result.
 
@@ -438,11 +440,11 @@ multimethod mul => qw(Math::BigNum Math::BigNum::Ninf) => sub {
 
 =head2 div
 
-    $x->div(BigNum)       # => BigNum
     $x->div(SCALAR)       # => BigNum
     $x->div(Complex)      # => Complex
-    $x->div(Inf)          # => BigNum
-    $x->div(Ninf)         # => BigNum
+    $x->div(Inf)          # => BigNum(0)
+    $x->div(Ninf)         # => BigNum(0)
+    $x->div(BigNum)       # => BigNum | Nan | Inf | Ninf
 
 Divides $x by $y and returns the result.
 
@@ -481,7 +483,7 @@ multimethod div => qw(Math::BigNum Math::BigNum::Ninf) => sub {
 
     $x->neg
 
-Return the negative value of a number.
+Negative value of $x. Returns abs($x) when $x is negative, and -$x when $x is positive.
 
 =cut
 
@@ -496,7 +498,7 @@ sub neg {
 
     $x->fac     # => BigNum
 
-Factorial of $x. (1*2*3*...*$x)
+Factorial of $x. Returns Nan when $x is negative. (1*2*3*...*$x)
 
 =cut
 
@@ -512,7 +514,7 @@ sub fac {
 
     $x->abs     # => BigNum
 
-Absolute value of $x
+Absolute value of $x. Returns -$x when $x is negative and $x otherwise.
 
 =cut
 
@@ -535,6 +537,21 @@ sub inv {
     my ($x) = @_;
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_inv($r, $$x);
+    bless \$r, __PACKAGE__;
+}
+
+=head2 sqr
+
+    $x->sqr    # => BigNum
+
+Raise $x to the power of 2 and return the result. ($x**2)
+
+=cut
+
+sub sqr {
+    my ($x) = @_;
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_mul($r, $$x, $$x);
     bless \$r, __PACKAGE__;
 }
 
@@ -561,7 +578,7 @@ sub sqrt {
 
 =head2 cbrt
 
-    $x->cbrt    # => BigNum or Complex
+    $x->cbrt    # => BigNum | Complex
 
 Cube root of $x. Returns a Complex number when $x is negative.
 
@@ -582,10 +599,10 @@ sub cbrt {
 
 =head2 root
 
-    $x->root(Inf)         # => BigNum
-    $x->root(Ninf)        # => BigNum
-    $x->root(BigNum)      # => BigNum or Complex
+    $x->root(BigNum)      # => BigNum | Complex
     $x->root(Complex)     # => Complex
+    $x->root(Inf)         # => BigNum(1)
+    $x->root(Ninf)        # => BigNum(1)
 
 Nth root of $x. Returns a Complex number when is $x is negative.
 
@@ -596,7 +613,11 @@ multimethod root => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 multimethod root => qw(Math::BigNum Math::BigNum::Complex) => sub {
-    Math::BigNum::Complex->new($_[0])->root($_[1]);
+    Math::BigNum::Complex->new($_[0])->pow($_[1]->inv);
+};
+
+multimethod root => qw(Math::BigNum #) => sub {
+    $_[0]->root(Math::BigNum->new($_[1]));
 };
 
 multimethod root => qw(Math::BigNum Math::BigNum::Inf) => sub {
@@ -607,8 +628,74 @@ multimethod root => qw(Math::BigNum Math::BigNum::Ninf) => sub {
     ONE;
 };
 
-multimethod root => qw(Math::BigNum NAN) => sub {
+multimethod root => qw(Math::BigNum Math::BigNum::Nan) => sub {
     NAN;
+};
+
+=head2 pow
+
+    $x->pow(BigNum)     # => BigNum | Complex
+    $x->pow(Complex)    # => Complex
+    $x->pow(Inf)        # => Inf
+    $x->pow(Ninf)       # => BigNum(0)
+
+Raise $x to power $y.
+
+=cut
+
+multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$y) >= 0 and Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
+        my $z = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_set_q($z, $$x);
+        Math::GMPz::Rmpz_pow_ui($z, $z, Math::GMPq::Rmpq_get_d($$y));
+        return _mpz2rat($z);
+    }
+
+    if (Math::GMPq::Rmpq_sgn($$x) < 0 and CORE::not Math::GMPq::Rmpq_integer_p($$y)) {
+        return Sidef::Types::Number::Complex->new($x)->pow($y);
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_pow($r, _as_float($x), _as_float($y), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod pow => qw(Math::BigNum #) => sub {
+    $_[0]->pow(Math::BigNum->new($_[1]));
+};
+
+## more to add...
+
+#
+## Comparisons
+#
+
+multimethod eq => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    Math::GMPq::Rmpq_equal($$x, $$y);
+};
+
+multimethod eq => qw(Math::BigNum #) => sub {
+    $_[0]->eq(Math::BigNum->new($_[1]));
+};
+
+multimethod eq => qw(Math::BigNum Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    $y->imag->is_zero && Math::GMPq::Rmpq_equal($$x, ${$y->real});
+};
+
+multimethod eq => qw(Math::BigNum Math::BigNum::Inf) => sub {
+
+};
+
+multimethod eq => qw(Math::BigNum Math::BigNum::Ninf) => sub {
+
+};
+
+multimethod eq => qw(Math::BigNum Math::BigNum::Nan) => sub {
+
 };
 
 =head1 AUTHOR
