@@ -17,7 +17,38 @@ our $ROUND = Math::MPC::MPC_RNDNN();
 our ($PREC);
 *PREC = \$Math::BigNum::PREC;
 
-use overload q{""} => \&stringify;
+use overload
+  '""' => \&stringify,
+  '0+' => \&numify,
+  bool => \&boolify,
+
+  neg  => sub { $_[0]->neg },
+  '+'  => sub { $_[0]->add($_[1]) },
+  '*'  => sub { $_[0]->mul($_[1]) },
+  '==' => sub { $_[0]->eq($_[1]) },
+  '!=' => sub { $_[0]->ne($_[1]) },
+  '&'  => sub { $_[0]->and($_[1]) },
+  '|'  => sub { $_[0]->or($_[1]) },
+  '^'  => sub { $_[0]->xor($_[1]) },
+
+  '>'  => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->gt($_[0]) : $_[0]->gt($_[1]) },
+  '>=' => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->ge($_[0]) : $_[0]->ge($_[1]) },
+  '<'  => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->lt($_[0]) : $_[0]->lt($_[1]) },
+  '<=' => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->le($_[0]) : $_[0]->le($_[1]) },
+
+  '**'  => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->pow($_[0])   : $_[0]->pow($_[1]) },
+  '-'   => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->sub($_[0])   : $_[0]->sub($_[1]) },
+  '/'   => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->div($_[0])   : $_[0]->div($_[1]) },
+  atan2 => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->atan2($_[0]) : $_[0]->atan2($_[1]) },
+
+  sin  => sub { $_[0]->sin },
+  cos  => sub { $_[0]->cos },
+  exp  => sub { $_[0]->exp },
+  log  => sub { $_[0]->log },
+  int  => sub { $_[0]->int },
+  abs  => sub { $_[0]->abs },
+  sqrt => sub { $_[0]->sqrt };
+
 
 use constant {
               NAN  => Math::BigNum::NAN,
@@ -223,7 +254,7 @@ multimethod sub => qw(Math::BigNum::Complex Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_sub_fr($r, $$x, $y->_as_float(), $ROUND);
+    Math::MPC::Rmpc_add_fr($r, $$x, -$y->_as_float(), $ROUND);
 
     bless \$r, __PACKAGE__;
 };
