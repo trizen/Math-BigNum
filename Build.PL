@@ -27,6 +27,7 @@ my $builder = Module::Build->new(
                                               'Math::MPC'      => 0,
                                               'Math::GMPq'     => 0.39,
                                               'Math::GMPz'     => 0,
+                                              'Class::Multimethods' => 0,
                                              },
                                  add_to_cleanup     => ['Math-BigNum-*'],
                                  create_makefile_pl => 'traditional',

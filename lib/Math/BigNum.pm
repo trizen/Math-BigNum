@@ -9,7 +9,7 @@ no warnings qw(qw);
 use Math::GMPq qw();
 use Math::GMPz qw();
 use Math::MPFR qw();
-use Math::BigRat qw();
+use Math::BigRat qw(try GMP);
 
 use Class::Multimethods qw(multimethod);
 

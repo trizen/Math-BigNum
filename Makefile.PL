@@ -6,6 +6,7 @@ WriteMakefile
   'NAME' => 'Math::BigNum',
   'VERSION_FROM' => 'lib/Math/BigNum.pm',
   'PREREQ_PM' => {
+                   'Class::Multimethods' => 0,
                    'Math::BigFloat' => 0,
                    'Math::BigInt' => 0,
                    'Math::BigRat' => 0,
