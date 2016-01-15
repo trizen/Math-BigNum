@@ -1,0 +1,40 @@
+---
+abstract: 'Arbitrary size precision for integer, complex and floating-point numbers'
+author:
+  - "Daniel È\x98uteu <trizenx@gmail.com>"
+build_requires:
+  Test::More: '0'
+configure_requires:
+  Module::Build: '0'
+dynamic_config: 1
+generated_by: 'Module::Build version 0.4214, CPAN::Meta::Converter version 2.150005'
+license: artistic_2
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: '1.4'
+name: Math-BigNum
+provides:
+  Math::BigNum:
+    file: lib/Math/BigNum.pm
+    version: '0.01'
+  Math::BigNum::Complex:
+    file: lib/Math/BigNum/Complex.pm
+  Math::BigNum::Inf:
+    file: lib/Math/BigNum/Inf.pm
+  Math::BigNum::Nan:
+    file: lib/Math/BigNum/Nan.pm
+  Math::BigNum::Ninf:
+    file: lib/Math/BigNum/Ninf.pm
+requires:
+  Math::BigFloat: '0'
+  Math::BigInt: '0'
+  Math::BigRat: '0'
+  Math::GMPq: '0.39'
+  Math::GMPz: '0'
+  Math::MPC: '0'
+  Math::MPFR: '3.29'
+  perl: v5.10.0
+resources:
+  license: http://www.perlfoundation.org/artistic_license_2_0
+version: '0.01'
+x_serialization_backend: 'CPAN::Meta::YAML version 0.018'
