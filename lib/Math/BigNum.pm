@@ -63,16 +63,33 @@ use overload
   '""' => \&stringify,
   '0+' => \&numify,
   bool => \&boolify,
+
   neg  => sub { $_[0]->neg },
   '+'  => sub { $_[0]->add($_[1]) },
   '*'  => sub { $_[0]->mul($_[1]) },
-  '**' => sub { $_[2] ? Math::BigNum->new($_[1])->pow($_[0]) : $_[0]->pow($_[1]) },
-  '-'  => sub { $_[2] ? Math::BigNum->new($_[1])->sub($_[0]) : $_[0]->sub($_[1]) },
-  '/'  => sub { $_[2] ? Math::BigNum->new($_[1])->div($_[0]) : $_[0]->div($_[1]) },
-  '=='  => sub { $_[0]->eq($_[1]) },
+  '==' => sub { $_[0]->eq($_[1]) },
+  '!=' => sub { $_[0]->ne($_[1]) },
+  '&'  => sub { $_[0]->and($_[1]) },
+  '|'  => sub { $_[0]->or($_[1]) },
+  '^'  => sub { $_[0]->xor($_[1]) },
+
+  '>'  => sub { $_[2] ? Math::BigNum->new($_[1])->gt($_[0]) : $_[0]->gt($_[1]) },
+  '>=' => sub { $_[2] ? Math::BigNum->new($_[1])->ge($_[0]) : $_[0]->ge($_[1]) },
+  '<'  => sub { $_[2] ? Math::BigNum->new($_[1])->lt($_[0]) : $_[0]->lt($_[1]) },
+  '<=' => sub { $_[2] ? Math::BigNum->new($_[1])->le($_[0]) : $_[0]->le($_[1]) },
+
+  '**'  => sub { $_[2] ? Math::BigNum->new($_[1])->pow($_[0])   : $_[0]->pow($_[1]) },
+  '-'   => sub { $_[2] ? Math::BigNum->new($_[1])->sub($_[0])   : $_[0]->sub($_[1]) },
+  '/'   => sub { $_[2] ? Math::BigNum->new($_[1])->div($_[0])   : $_[0]->div($_[1]) },
   atan2 => sub { $_[2] ? Math::BigNum->new($_[1])->atan2($_[0]) : $_[0]->atan2($_[1]) },
-  abs   => sub { $_[0]->abs },
-  sqrt  => sub { $_[0]->sqrt };
+
+  sin  => sub { $_[0]->sin },
+  cos  => sub { $_[0]->cos },
+  exp  => sub { $_[0]->exp },
+  log  => sub { $_[0]->log },
+  int  => sub { $_[0]->int },
+  abs  => sub { $_[0]->abs },
+  sqrt => sub { $_[0]->sqrt };
 
 sub import {
     shift;
@@ -242,8 +259,6 @@ sub numify {
     Math::GMPq::Rmpq_get_d(${$_[0]});
 }
 
-*as_float = \&numify;
-
 sub boolify {
     !!Math::GMPq::Rmpq_get_d(${$_[0]});
 }
@@ -252,20 +267,19 @@ sub as_frac {
     Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
 }
 
-sub in_base {
+multimethod in_base => qw(Math::BigNum #) => sub {
     my ($x, $y) = @_;
 
-    $y = 0 + $y if ref($y);
-
-    state $min = Math::GMPq->new(2);
-    state $max = Math::GMPq->new(36);
-
-    if (Math::GMPq::Rmpq_cmp($y, $min) < 0 or Math::GMPq::Rmpq_cmp($y, $max) > 0) {
+    if ($y < 2 or $y > 36) {
         die "base must be between 2 and 36, got $y";
     }
 
     Math::GMPq::Rmpq_get_str(${$_[0]}, $y);
-}
+};
+
+multimethod in_base => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->in_base(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
+};
 
 #
 ## Constants
@@ -672,13 +686,21 @@ multimethod pow => qw(Math::BigNum #) => sub {
 ## Comparisons
 #
 
+=head2 eq
+
+    $x->eq($y)
+
+Equality check: returns true when $x and $y are equal.
+
+=cut
+
 multimethod eq => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    Math::GMPq::Rmpq_equal($$x, $$y);
+    Math::GMPq::Rmpq_equal(${$_[0]}, ${$_[1]});
 };
 
 multimethod eq => qw(Math::BigNum #) => sub {
-    $_[0]->eq(Math::BigNum->new($_[1]));
+    my $y = Math::BigNum->new($_[1]);
+    Math::GMPq::Rmpq_equal(${$_[0]}, $$y);
 };
 
 multimethod eq => qw(Math::BigNum Math::BigNum::Complex) => sub {
@@ -686,16 +708,82 @@ multimethod eq => qw(Math::BigNum Math::BigNum::Complex) => sub {
     $y->imag->is_zero && Math::GMPq::Rmpq_equal($$x, ${$y->real});
 };
 
-multimethod eq => qw(Math::BigNum Math::BigNum::Inf) => sub {
+multimethod eq => qw(Math::BigNum Math::BigNum::Inf)  => sub { !1 };
+multimethod eq => qw(Math::BigNum Math::BigNum::Ninf) => sub { !1 };
+multimethod eq => qw(Math::BigNum Math::BigNum::Nan)  => sub { !1 };
 
+=head2 ne
+
+    $x->ne($y)
+
+Inequality check: returns true when $x and $y are not equal.
+
+=cut
+
+multimethod ne => qw(Math::BigNum Math::BigNum) => sub {
+    !Math::GMPq::Rmpq_equal(${$_[0]}, ${$_[1]});
 };
 
-multimethod eq => qw(Math::BigNum Math::BigNum::Ninf) => sub {
-
+multimethod ne => qw(Math::BigNum #) => sub {
+    my $y = Math::BigNum->new($_[1]);
+    !Math::GMPq::Rmpq_equal(${$_[0]}, $$y);
 };
 
-multimethod eq => qw(Math::BigNum Math::BigNum::Nan) => sub {
+multimethod ne => qw(Math::BigNum Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    !($y->imag->is_zero && Math::GMPq::Rmpq_equal($$x, ${$y->real}));
+};
 
+multimethod ne => qw(Math::BigNum Math::BigNum::Inf)  => sub { !1 };
+multimethod ne => qw(Math::BigNum Math::BigNum::Ninf) => sub { !1 };
+multimethod ne => qw(Math::BigNum Math::BigNum::Nan)  => sub { !1 };
+
+=head2 gt
+
+    $x->gt($y)
+
+Returns true when $x is greater than $y.
+
+=cut
+
+multimethod gt => qw(Math::BigNum Math::BigNum) => sub {
+    Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]}) > 0;
+};
+
+=head2 ge
+
+    $x->ge($y)
+
+Returns true when $x is equal or greater than $y.
+
+=cut
+
+multimethod ge => qw(Math::BigNum Math::BigNum) => sub {
+    Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]}) >= 0;
+};
+
+=head2 lt
+
+    $x->lt($y)
+
+Returns true when $x is less than $y.
+
+=cut
+
+multimethod lt => qw(Math::BigNum Math::BigNum) => sub {
+    Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]}) < 0;
+};
+
+=head2 le
+
+    $x->le($y)
+
+Returns true when $x is equal or less than $y.
+
+=cut
+
+multimethod le => qw(Math::BigNum Math::BigNum) => sub {
+    Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]}) <= 0;
 };
 
 =head1 AUTHOR
