@@ -10,12 +10,20 @@ use Math::MPC qw();
 use Math::MPFR qw();
 use Math::BigNum qw();
 
+use Class::Multimethods qw(multimethod);
+
 our $ROUND = Math::MPC::MPC_RNDNN();
 
 our ($PREC);
 *PREC = \$Math::BigNum::PREC;
 
 use overload q{""} => \&stringify;
+
+use constant {
+              NAN  => Math::BigNum::NAN,
+              INF  => Math::BigNum::INF,
+              NINF => Math::BigNum::NINF,
+             };
 
 sub new {
     my (undef, $x, $y) = @_;
@@ -161,5 +169,90 @@ sub imag {
     Math::MPC::RMPC_IM($mpfr, ${$_[0]});
     Math::BigNum::_mpfr2rat($mpfr);
 }
+
+#
+## Arithmetic
+#
+
+=head2 add
+
+    $x->add(Complex)        # Complex
+    $x->add(BigNum)         # BigNum
+
+Adds $x to $y and returns the result.
+
+=cut
+
+multimethod add => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_add($r, $$x, $$y, $ROUND);
+
+    bless \$r, __PACKAGE__;
+};
+
+multimethod add => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_add_fr($r, $$x, $y->_as_float(), $ROUND);
+
+    bless \$r, __PACKAGE__;
+};
+
+=head2 sub
+
+    $x->sub(Complex)        # Complex
+    $x->sub(BigNum)         # BigNum
+
+Subtracts $y from $x and returns the result.
+
+=cut
+
+multimethod sub => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_sub($r, $$x, $$y, $ROUND);
+
+    bless \$r, __PACKAGE__;
+};
+
+multimethod sub => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_sub_fr($r, $$x, $y->_as_float(), $ROUND);
+
+    bless \$r, __PACKAGE__;
+};
+
+=head2 mul
+
+    $x->mul(Complex)        # Complex
+    $x->mul(BigNum)         # BigNum
+
+Multiplies $x by $y and returns the result.
+
+=cut
+
+multimethod mul => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_mul($r, $$x, $$y, $ROUND);
+
+    bless \$r, __PACKAGE__;
+};
+
+multimethod mul => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_mul_fr($r, $$x, $y->_as_float(), $ROUND);
+
+    bless \$r, __PACKAGE__;
+};
 
 1;

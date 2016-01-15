@@ -43,20 +43,22 @@ BEGIN {
     $PREC  = 128;
 }
 
-use Math::BigNum::Complex qw();
 use Math::BigNum::Inf qw();
 use Math::BigNum::Ninf qw();
 use Math::BigNum::Nan qw();
 
 use constant {
-              ONE  => bless(\Math::GMPq->new('1'),  __PACKAGE__),
-              ZERO => bless(\Math::GMPq->new('0'),  __PACKAGE__),
-              MONE => bless(\Math::GMPq->new('-1'), __PACKAGE__),
+              NAN  => Math::BigNum::Nan->new,
               INF  => Math::BigNum::Inf->new,
               NINF => Math::BigNum::Ninf->new,
-              NAN  => Math::BigNum::Nan->new,
-              i    => Math::BigNum::Complex->new(0, 1),
+              ONE  => bless(\Math::GMPq->new('1'), __PACKAGE__),
+              ZERO => bless(\Math::GMPq->new('0'), __PACKAGE__),
+              MONE => bless(\Math::GMPq->new('-1'), __PACKAGE__),
              };
+
+use Math::BigNum::Complex qw();
+
+use constant {i => Math::BigNum::Complex->new(0, 1),};
 
 use overload
   '""'  => \&stringify,
@@ -181,21 +183,33 @@ sub _str2rat {
     }
 }
 
+sub _as_float {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_set_q($r, ${$_[0]}, $ROUND);
+    $r;
+}
+
+sub _as_int {
+    my $i = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_set_q($i, ${$_[0]});
+    $i;
+}
+
 sub _mpfr2rat {
 
     $PREC = $PREC->get_value if ref($PREC);
 
     if (Math::MPFR::Rmpfr_inf_p($_[0])) {
         if (Math::MPFR::Rmpfr_sgn($_[0]) > 0) {
-            return state $x = inf();
+            return INF;
         }
         else {
-            return state $x = ninf();
+            return NINF;
         }
     }
 
     if (Math::MPFR::Rmpfr_nan_p($_[0])) {
-        return state $x = nan();
+        return NAN;
     }
 
     my $r = Math::GMPq::Rmpq_init();
@@ -251,6 +265,65 @@ sub in_base {
     Math::GMPq::Rmpq_get_str(${$_[0]}, $y);
 }
 
+#
+## Constants
+#
+
+sub pi {
+    my $pi = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_const_pi($pi, $ROUND);
+    _mpfr2rat($pi);
+}
+
+sub tau {
+    my $tau = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_const_pi($tau, $ROUND);
+    Math::MPFR::Rmpfr_mul_ui($tau, $tau, 2, $ROUND);
+    _mpfr2rat($tau);
+}
+
+sub ln2 {
+    my $ln2 = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_const_log2($ln2, $ROUND);
+    _mpfr2rat($ln2);
+}
+
+sub Y {
+    my $euler = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_const_euler($euler, $ROUND);
+    _mpfr2rat($euler);
+}
+
+sub G {
+    my $catalan = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_const_catalan($catalan, $ROUND);
+    _mpfr2rat($catalan);
+}
+
+sub e {
+    state $one_f = (Math::MPFR::Rmpfr_init_set_ui(1, $ROUND))[0];
+    my $e = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_exp($e, $one_f, $ROUND);
+    _mpfr2rat($e);
+}
+
+sub phi {
+    state $one_f  = (Math::MPFR::Rmpfr_init_set_ui(1, $ROUND))[0];
+    state $two_f  = (Math::MPFR::Rmpfr_init_set_ui(2, $ROUND))[0];
+    state $five_f = (Math::MPFR::Rmpfr_init_set_ui(5, $ROUND))[0];
+
+    my $phi = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_sqrt($phi, $five_f, $ROUND);
+    Math::MPFR::Rmpfr_add($phi, $phi, $one_f, $ROUND);
+    Math::MPFR::Rmpfr_div($phi, $phi, $two_f, $ROUND);
+
+    _mpfr2rat($phi);
+}
+
+#
+## Arithmetic
+#
+
 =head2 add
 
     $x->add(BigNum)       # => BigNum
@@ -259,7 +332,7 @@ sub in_base {
     $x->add(Inf)          # => Inf
     $x->add(Ninf)         # => Ninf
 
-Multiplies $x by $y and returns the result.
+Adds $x to $y and returns the result.
 
 =cut
 
@@ -295,7 +368,7 @@ multimethod add => qw(Math::BigNum Math::BigNum::Ninf) => sub {
     $x->sub(Inf)          # => Ninf
     $x->sub(Ninf)         # => Inf
 
-Multiplies $x by $y and returns the result.
+Subtracts $y from $x and returns the result.
 
 =cut
 
@@ -429,11 +502,114 @@ Factorial of $x. (1*2*3*...*$x)
 
 sub fac {
     my ($x) = @_;
-    return nan() if Math::GMPq::Rmpq_sgn($$x) < 0;
+    return NAN if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_fac_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
     _mpz2rat($r);
 }
+
+=head2 abs
+
+    $x->abs     # => BigNum
+
+Absolute value of $x
+
+=cut
+
+sub abs {
+    my ($x) = @_;
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_abs($r, $$x);
+    bless \$r, __PACKAGE__;
+}
+
+=head2 inv
+
+    $x->inv     # => BigNum
+
+Inverse value of $x. (1/$x)
+
+=cut
+
+sub inv {
+    my ($x) = @_;
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_inv($r, $$x);
+    bless \$r, __PACKAGE__;
+}
+
+=head2 sqrt
+
+    $x->sqrt    # => BigNum or Complex
+
+Square root of $x. Returns a Complex number when $x is negative.
+
+=cut
+
+sub sqrt {
+    my ($x) = @_;
+
+    # Return a complex number for x < 0
+    if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+        return Math::BigNum::Complex->new($x)->sqrt;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_sqrt($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+=head2 cbrt
+
+    $x->cbrt    # => BigNum or Complex
+
+Cube root of $x. Returns a Complex number when $x is negative.
+
+=cut
+
+sub cbrt {
+    my ($x) = @_;
+
+    # Return a complex number for x < 0
+    if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+        return Math::BigNum::Complex->new($x)->cbrt;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_cbrt($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+=head2 root
+
+    $x->root(Inf)         # => BigNum
+    $x->root(Ninf)        # => BigNum
+    $x->root(BigNum)      # => BigNum or Complex
+    $x->root(Complex)     # => Complex
+
+Nth root of $x. Returns a Complex number when is $x is negative.
+
+=cut
+
+multimethod root => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->pow($_[1]->inv);
+};
+
+multimethod root => qw(Math::BigNum Math::BigNum::Complex) => sub {
+    Math::BigNum::Complex->new($_[0])->root($_[1]);
+};
+
+multimethod root => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    ONE;
+};
+
+multimethod root => qw(Math::BigNum Math::BigNum::Ninf) => sub {
+    ONE;
+};
+
+multimethod root => qw(Math::BigNum NAN) => sub {
+    NAN;
+};
 
 =head1 AUTHOR
 
