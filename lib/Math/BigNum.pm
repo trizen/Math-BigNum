@@ -79,8 +79,8 @@ sub import {
     foreach my $name (@_) {
         if ($name eq ':constant') {
             overload::constant
-              integer => sub { _new_int(shift) },
-              float   => sub { _str2rat(shift) };
+              integer => sub { _new_uint(shift) },
+              float   => sub { Math::BigNum->new(shift, 10) };
         }
         elsif ($name eq 'i') {
             no strict 'refs';
@@ -88,10 +88,6 @@ sub import {
         }
     }
     return;
-}
-
-sub _new {
-    bless(\$_[0], __PACKAGE__);
 }
 
 sub _new_int {
@@ -112,6 +108,14 @@ multimethod new => qw($ Math::BigNum) => sub {
 
 multimethod new => qw($ #) => sub {
     bless(\Math::GMPq->new(_str2rat($_[1]), 10), $_[0]);
+};
+
+multimethod new => qw($ $) => sub {
+    bless(\Math::GMPq->new(_str2rat($_[1]), 10), $_[0]);
+};
+
+multimethod new => qw($ $ #) => sub {
+    bless(\Math::GMPq->new($_[2] == 10 ? _str2rat($_[1]) : $_[1], $_[2]), $_[0]);
 };
 
 multimethod new => qw($ # #) => sub {
@@ -241,7 +245,7 @@ sub in_base {
     state $max = Math::GMPq->new(36);
 
     if (Math::GMPq::Rmpq_cmp($y, $min) < 0 or Math::GMPq::Rmpq_cmp($y, $max) > 0) {
-        die "[ERROR] base must be between 2 and 36, got $y\n";
+        die "base must be between 2 and 36, got $y";
     }
 
     Math::GMPq::Rmpq_get_str(${$_[0]}, $y);
@@ -335,7 +339,7 @@ multimethod mul => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_div($r, $$x, $$y);
+    Math::GMPq::Rmpq_mul($r, $$x, $$y);
     bless \$r, __PACKAGE__;
 };
 
