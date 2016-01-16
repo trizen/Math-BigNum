@@ -202,6 +202,13 @@ sub _str2rat {
     }
 }
 
+sub _str2mpfr {
+    my ($str) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_set_str($r, $str, 10, $ROUND);
+    $r;
+}
+
 sub _as_float {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_set_q($r, ${$_[0]}, $ROUND);
@@ -1511,6 +1518,164 @@ multimethod binomial => qw(Math::BigNum #) => sub {
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_bin_si($r, _as_int($x), CORE::int($y));
     _mpz2rat($r);
+};
+
+#
+## Special methods
+#
+
+=head2 agm
+
+    $x->agm(BigNum)                 # => BigNum
+    $x->agm(Scalar)                 # => BigNum
+    BigNum::agm(Scalar, Scalar)     # => BigNum
+
+Arithmetic-geometric mean of $x and $y.
+
+=cut
+
+multimethod agm => qw(Math::BigNum Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_agm($r, _as_float($_[0]), _as_float($_[1]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod agm => qw(Math::BigNum #) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_agm($r, _as_float($_[0]), _str2mpfr($_[1]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod agm => qw(# #) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_agm($r, _str2mpfr($_[0]), _str2mpfr($_[1]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod hypot => qw(Math::BigNum Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_hypot($r, _as_float($_[0]), _as_float($_[1]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod hypot => qw(Math::BigNum #) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_hypot($r, _as_float($_[0]), _str2mpfr($_[1]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod hypot => qw(# #) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_hypot($r, _str2mpfr($_[0]), _str2mpfr($_[1]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod gamma => qw(Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_gamma($r, _as_float($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod gamma => qw(#) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_gamma($r, _str2mpfr($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod lngamma => qw(Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_lngamma($r, _as_float($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod lngamma => qw(#) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_lngamma($r, _str2mpfr($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod lgamma => qw(Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_lgamma($r, _as_float($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod lgamma => qw(#) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_lgamma($r, _str2mpfr($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod digamma => qw(Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_digamma($r, _as_float($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod digamma => qw(#) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_digamma($r, _str2mpfr($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod zeta => qw(Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_zeta($r, _as_float($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod zeta => qw(#) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_zeta($r, _str2mpfr($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod erf => qw(Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_erf($r, _as_float($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod erf => qw(#) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_erf($r, _str2mpfr($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod erfc => qw(Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_erfc($r, _as_float($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod erfc => qw(#) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_erfc($r, _mpfr2rat($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod eint => qw(Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_eint($r, _as_float($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod eint => qw(Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_eint($r, _str2mpfr($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod li2 => qw(Math::BigNum) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_li2($r, _as_float($_[0]), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod li2 => qw(#) => sub {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_li2($r, _str2mpfr($_[0]), $ROUND);
+    _mpfr2rat($r);
 };
 
 =head1 AUTHOR
