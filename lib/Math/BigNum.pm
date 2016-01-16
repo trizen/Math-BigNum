@@ -666,6 +666,380 @@ multimethod pow => qw(Math::BigNum #) => sub {
 
 ## more to add...
 
+=head2 ln
+
+    $x->ln          # => BigNum | Complex
+
+Logarithm of $x in base e. Returns a Complex number when $x is negative.
+
+=cut
+
+sub ln {
+    my ($x) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+        return Math::BigNum::Complex->new($x)->ln;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+=head2 log2
+
+    $x->log2        # => BigNum | Complex
+
+Logarithm of $x in base 2. Returns a Complex number when $x is negative.
+
+=cut
+
+sub log2 {
+    my ($x) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+        return Math::BigNum::Complex->new($x)->log2;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_log2($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+=head2 log10
+
+    $x->log10       # => BigNum | Complex
+
+Logarithm of $x in base 10. Returns a Complex number when $x is negative.
+
+=cut
+
+sub log10 {
+    my ($x) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+        return Math::BigNum::Complex->new($x)->log10;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_log10($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+=head2 exp
+
+    $x->exp         # => BigNum
+
+Exponential of $x in base e. (e**$x)
+
+=cut
+
+sub exp {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_exp($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+=head2 exp2
+
+    $x->exp2        # => BigNum
+
+Exponential of $x in base 2. (2**$x)
+
+=cut
+
+sub exp2 {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_exp2($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+=head2 exp10
+
+    $x->exp10       # => BigNum
+
+Exponential of $x in base 10. (10**$x)
+
+=cut
+
+sub exp10 {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_exp10($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+#
+## Trigonometric functions
+#
+
+sub sin {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_sin($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub asin {
+    my ($x) = @_;
+
+    # Return a complex number for x < -1 or x > 1
+    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) > 0 or Math::GMPq::Rmpq_cmp_si($$x, -1, 1) < 0) {
+        return Math::BigNum::Complex->new($x)->asin;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_asin($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub sinh {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_sinh($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub asinh {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_asinh($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub cos {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_cos($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub acos {
+    my ($x) = @_;
+
+    # Return a complex number for x < -1 or x > 1
+    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) > 0 or Math::GMPq::Rmpq_cmp_si($$x, -1, 1) < 0) {
+        return Math::BigNum::Complex->new($x)->acos;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_acos($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub cosh {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_cosh($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub acosh {
+    my ($x) = @_;
+
+    # Return a complex number for x < 1
+    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) < 0) {
+        return Math::BigNum::Complex->new($x)->acosh;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_acosh($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub tan {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_tan($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub atan {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_atan($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub tanh {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_tanh($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub atanh {
+    my ($x) = @_;
+
+    # Return a complex number for x <= -1 or x >= 1
+    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) >= 0 or Math::GMPq::Rmpq_cmp_si($$x, -1, 1) <= 0) {
+        return Math::BigNum::Complex->new($x)->atanh;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_atanh($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+sub sec {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_sec($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+#
+## asec(x) = acos(1/x)
+#
+sub asec {
+    my ($x) = @_;
+
+    # Return a complex number for x > -1 and x < 1
+    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) < 0 and Math::GMPq::Rmpq_cmp_si($$x, -1, 1) > 0) {
+        return Math::BigNum::Complex->new($x)->asec;
+    }
+
+    state $one = Math::MPFR->new(1);
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    Math::MPFR::Rmpfr_acos($r, $r, $ROUND);
+    _mpfr2rat($r);
+}
+
+sub sech {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_sech($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+#
+## asech(x) = acosh(1/x)
+#
+sub asech {
+    my ($x) = @_;
+
+    # Return a complex number for x < 0 or x > 1
+    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) > 0 or Math::GMPq::Rmpq_cmp_ui($$x, 0, 1) < 0) {
+        return Math::BigNum::Complex->new($x)->asech;
+    }
+
+    state $one = Math::MPFR->new(1);
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    Math::MPFR::Rmpfr_acosh($r, $r, $ROUND);
+    _mpfr2rat($r);
+}
+
+sub csc {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_csc($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+#
+## acsc(x) = asin(1/x)
+#
+sub acsc {
+    my ($x) = @_;
+
+    # Return a complex number for x > -1 and x < 1
+    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) < 0 and Math::GMPq::Rmpq_cmp_si($$x, -1, 1) > 0) {
+        return Math::BigNum::Complex->new($x)->acsc;
+    }
+
+    state $one = Math::MPFR->new(1);
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    Math::MPFR::Rmpfr_asin($r, $r, $ROUND);
+    _mpfr2rat($r);
+}
+
+sub csch {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_csch($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+#
+## acsch(x) = asinh(1/x)
+#
+sub acsch {
+    my ($x) = @_;
+    state $one = Math::MPFR->new(1);
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    Math::MPFR::Rmpfr_asinh($r, $r, $ROUND);
+    _mpfr2rat($r);
+}
+
+sub cot {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_cot($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+#
+## acot(x) = atan(1/x)
+#
+sub acot {
+    my ($x) = @_;
+    state $one = Math::MPFR->new(1);
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    Math::MPFR::Rmpfr_atan($r, $r, $ROUND);
+    _mpfr2rat($r);
+}
+
+sub coth {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_coth($r, _as_float($x), $ROUND);
+    _mpfr2rat($r);
+}
+
+#
+## acoth(x) = atanh(1/x)
+#
+sub acoth {
+    my ($x) = @_;
+    state $one = Math::MPFR->new(1);
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    Math::MPFR::Rmpfr_atanh($r, $r, $ROUND);
+    _mpfr2rat($r);
+}
+
+=head2 atan2
+
+    $x->atan2(BigNum)       # => BigNum
+    $x->atan2(Inf)          # => BigNum(0)
+    $x->atan2(Ninf)         # => BigNum
+
+Arctangent of $x and $y. When $y is Ninf returns PI when $x>=0 or -PI when $x < 0.
+
+=cut
+
+multimethod atan2 => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_atan2($r, _as_float($x), _as_float($y), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod atan2 => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    ZERO;
+};
+
+multimethod atan2 => qw(Math::BigNum Math::BigNum::Ninf) => sub {
+    (Math::GMPq::Rmpq_sgn(${$_[0]}) >= 0) ? pi() : (pi()->neg);
+};
+
 #
 ## Comparisons
 #
