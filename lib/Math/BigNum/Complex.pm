@@ -44,7 +44,7 @@ use overload
   sin  => sub { $_[0]->sin },
   cos  => sub { $_[0]->cos },
   exp  => sub { $_[0]->exp },
-  log  => sub { $_[0]->log },
+  log  => sub { $_[0]->ln },
   int  => sub { $_[0]->int },
   abs  => sub { $_[0]->abs },
   sqrt => sub { $_[0]->sqrt };
@@ -170,8 +170,8 @@ sub new {
 }
 
 sub stringify {
-    my $re = $_[0]->real;
-    my $im = $_[0]->imag;
+    my $re = $_[0]->re;
+    my $im = $_[0]->im;
 
     $re = "$re";
     $im = "$im";
@@ -188,13 +188,13 @@ sub stringify {
     $re eq '0' ? $sign eq '+' ? "${im}i" : "$sign${im}i" : "$re$sign${im}i";
 }
 
-sub real {
+sub re {
     my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPC::RMPC_RE($mpfr, ${$_[0]});
     Math::BigNum::_mpfr2rat($mpfr);
 }
 
-sub imag {
+sub im {
     my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPC::RMPC_IM($mpfr, ${$_[0]});
     Math::BigNum::_mpfr2rat($mpfr);
@@ -314,9 +314,9 @@ multimethod div => qw(Math::BigNum::Complex Math::BigNum) => sub {
 
 =head2 sqrt
 
-    $x->sqrt        # Complex
+    $x->sqrt        # => Complex
 
-Square root of $x.
+Square root of $x. ($x**(1/2))
 
 =cut
 
@@ -324,6 +324,158 @@ sub sqrt {
     my ($x) = @_;
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_sqrt($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 cbrt
+
+    $x->cbrt        # => Complex
+
+Cube root of $x. ($x**(1/3))
+
+=cut
+
+sub cbrt {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    state $three_inv = do {
+        my $r = Math::MPC::Rmpc_init2($PREC);
+        Math::MPC::Rmpc_set_ui($r, 3, $ROUND);
+        Math::MPC::Rmpc_ui_div($r, 1, $r, $ROUND);
+        $r;
+    };
+    Math::MPC::Rmpc_pow($r, $$x, $three_inv, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 ln
+
+    $x->ln       # => Complex
+
+Natural logarithm of $x.
+
+=cut
+
+sub ln {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_log($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 log2
+
+    $x->log2     # => Complex
+
+Logarithm to the base 2 of $x.
+
+=cut
+
+sub log2 {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_log($r, $$x, $ROUND);
+
+    state $two = (Math::MPFR::Rmpfr_init_set_ui(2, $Sidef::Types::Number::Number::ROUND))[0];
+
+    my $baseln = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_log($baseln, $two, $Sidef::Types::Number::Number::ROUND);
+    Math::MPC::Rmpc_div_fr($r, $r, $baseln, $ROUND);
+
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 log10
+
+    $x->log10     # => Complex
+
+Logarithm to the base 10 of $x.
+
+=cut
+
+sub log10 {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_log10($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 exp
+
+    $x->exp     # => Complex
+
+Exponential of $x in base e. (e**$x)
+
+=cut
+
+sub exp {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_exp($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 exp2
+
+    $x->exp2     # => Complex
+
+Exponential of $x in base 2. (2**$x)
+
+=cut
+
+sub exp2 {
+    my ($x) = @_;
+    state $two = Math::MPC->new(2);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_pow($r, $two, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 exp2
+
+    $x->exp10     # => Complex
+
+Exponential of $x in base 10. (10**$x)
+
+=cut
+
+sub exp10 {
+    my ($x) = @_;
+    state $ten = Math::MPC->new(10);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_pow($r, $ten, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 dec
+
+    $x->dec     # => Complex
+
+Subtract one from the real part of $x. ($x - 1)
+
+=cut
+
+sub dec {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_sub($r, $$x, $one, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 inc
+
+    $x->inc     # => Complex
+
+Add one to the real part of $x. ($x + 1)
+
+=cut
+
+sub inc {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_add($r, $$x, $one, $ROUND);
     bless(\$r, __PACKAGE__);
 }
 

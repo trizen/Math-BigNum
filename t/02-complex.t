@@ -11,10 +11,10 @@ plan tests => 5;
 {
     use Math::BigNum qw(:constant i);
 
-    my $z = 3 + 4*i;
+    my $z = 3 + 4 * i;
 
-    my $re = $z->real;
-    my $im = $z->imag;
+    my $re = $z->re;
+    my $im = $z->im;
 
     is("$re", "3");
     is("$im", "4");
@@ -22,7 +22,7 @@ plan tests => 5;
     $z += 2;
     is("$z", "5+4i");
 
-    my $z2 = 1 + 5*i;
+    my $z2 = 1 + 5 * i;
     my $z3 = $z + $z2;
     is("$z3", "6+9i");
 
