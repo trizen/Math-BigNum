@@ -243,6 +243,13 @@ sub _mpz2rat {
     bless \$r, __PACKAGE__;
 }
 
+sub _big2cplx {
+    my ($x, $z) = @_;
+    $$x = $$z;
+    bless $x, 'Math::BigNum::Complex';
+    $x;
+}
+
 sub stringify {
     my $v = Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
 
@@ -573,15 +580,15 @@ multimethod mul => qw(Math::BigNum Math::BigNum::Complex) => sub {
 };
 
 multimethod mul => qw(Math::BigNum Math::BigNum::Inf) => sub {
-    my ($x, $y) = @_;
+    my ($x) = @_;
     my $sign = Math::GMPq::Rmpq_sgn($$x);
-    $sign < 0 ? NINF : $sign > 0 ? $y : NAN;
+    $sign < 0 ? NINF : $sign > 0 ? INF : NAN;
 };
 
 multimethod mul => qw(Math::BigNum Math::BigNum::Ninf) => sub {
-    my ($x, $y) = @_;
+    my ($x) = @_;
     my $sign = Math::GMPq::Rmpq_sgn($$x);
-    $sign < 0 ? INF : $sign > 0 ? $y : NAN;
+    $sign < 0 ? INF : $sign > 0 ? NINF : NAN;
 };
 
 multimethod mul => qw(Math::BigNum Math::BigNum::Nan) => sub { NAN };
@@ -615,7 +622,7 @@ multimethod bmul => qw(Math::BigNum Math::BigNum::Inf) => sub {
 
         $sign < 0 ? $x->bninf
       : $sign > 0 ? $x->binf
-      :             $x->nan;
+      :             $x->bnan;
 };
 
 multimethod bmul => qw(Math::BigNum Math::BigNum::Ninf) => sub {
@@ -624,7 +631,7 @@ multimethod bmul => qw(Math::BigNum Math::BigNum::Ninf) => sub {
 
         $sign > 0 ? $x->bninf
       : $sign < 0 ? $x->binf
-      :             $x->nan;
+      :             $x->bnan;
 };
 
 multimethod bmul => qw(Math::BigNum Math::BigNum::Nan) => sub {
@@ -884,6 +891,11 @@ multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
     _mpfr2rat($r);
 };
 
+multimethod pow => qw(Math::BigNum Math::BigNum::Complex) => sub {
+    Math::BigNum::Complex->new($_[0])->pow($_[1]);
+};
+
+# TODO: optimize this for Math::GMPz::Rmpz_pow_ui()
 multimethod pow => qw(Math::BigNum $) => sub {
     $_[0]->pow(Math::BigNum->new($_[1]));
 };
@@ -892,7 +904,79 @@ multimethod pow => qw($ Math::BigNum) => sub {
     Math::BigNum->new($_[0])->pow($_[1]);
 };
 
-## more to add...
+multimethod pow => qw(Math::BigNum Math::BigNum::Inf)  => sub { $_[1] };
+multimethod pow => qw(Math::BigNum Math::BigNum::Ninf) => sub { ZERO };
+multimethod pow => qw(Math::BigNum Math::BigNum::Nan)  => sub { NAN };
+
+=head2 bpow
+
+    $x->bpow(BigNum)     # => BigNum | Complex
+    $x->bpow(Complex)    # => Complex
+    $x->bpow(Inf)        # => Inf
+    $x->bpow(Ninf)       # => BigNum(0)
+
+Raise $x to power $y, changing $x in-place.
+
+=cut
+
+multimethod bpow => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$y) >= 0 and Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
+        my $z = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_set_q($z, $$x);
+        Math::GMPz::Rmpz_pow_ui($z, $z, Math::GMPq::Rmpq_get_d($$y));
+        Math::GMPq::Rmpq_set_z($$x, $z);
+        return $x;
+    }
+
+    if (Math::GMPq::Rmpq_sgn($$x) < 0 and !Math::GMPq::Rmpq_integer_p($$y)) {
+        my $z = Sidef::Types::Number::Complex->new($x)->pow($y);
+        _big2cplx($x, $z);
+        return $x;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_pow($r, _as_float($x), _as_float($y), $ROUND);
+    Math::MPFR::Rmpfr_get_q($$x, $r);
+    $x;
+};
+
+multimethod bpow => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $y_is_int = CORE::int($y) == $y;
+
+    if ($y >= 0 and Math::GMPq::Rmpq_integer_p($$x) and $y_is_int) {
+        my $z = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_set_q($z, $$x);
+        Math::GMPz::Rmpz_pow_ui($z, $z, $y);
+        Math::GMPq::Rmpq_set_z($$x, $z);
+        return $x;
+    }
+
+    if (Math::GMPq::Rmpq_sgn($$x) < 0 and !$y_is_int) {
+        my $z = Sidef::Types::Number::Complex->new($x)->pow($y);
+        _big2cplx($x, $z);
+        return $x;
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    if ($y_is_int) {
+        if ($y >= 0) {
+            Math::MPFR::Rmpfr_pow_ui($r, _as_float($x), $y, $ROUND);
+        }
+        else {
+            Math::MPFR::Rmpfr_pow_ui($r, _as_float($x), $y, $ROUND);
+        }
+    }
+    else {
+        Math::MPFR::Rmpfr_pow($r, _as_float($x), _str2mpfr($y), $ROUND);
+    }
+
+    Math::MPFR::Rmpfr_get_q($$x, $r);
+    $x;
+};
 
 =head2 ln
 
@@ -913,6 +997,114 @@ sub ln {
     Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
     _mpfr2rat($r);
 }
+
+=head2 log
+
+    $x->log              # => BigNum | Complex
+    $x->log(BigNum)      # => BigNum | Complex
+    $x->log(Scalar)      # => BigNum | Complex
+
+Logarithm of $x in base $y. When $y is not specified, it defaults to base e.
+
+=cut
+
+multimethod log => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+        return Math::BigNum::Complex->new($x)->log($y);
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
+    my $baseln = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_log($baseln, _as_float($y), $ROUND);
+    Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
+
+    _mpfr2rat($r);
+};
+
+multimethod log => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+        return Math::BigNum::Complex->new($x)->log($y);
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+
+    if ($y == 2) {
+        Math::MPFR::Rmpfr_log2($r, _as_float($x), $ROUND);
+    }
+    elsif ($y == 10) {
+        Math::MPFR::Rmpfr_log10($r, _as_float($x), $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
+        my $baseln = Math::MPFR::Rmpfr_init2($PREC);
+        Math::MPFR::Rmpfr_log($baseln, _str2mpfr($y), $ROUND);
+        Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
+    }
+
+    _mpfr2rat($r);
+};
+
+multimethod log => qw(Math::BigNum) => sub {
+    $_[0]->ln;
+};
+
+=head2 blog
+
+    $x->blog            # => BigNum | Complex
+    $x->blog(BigNum)    # => BigNum | Complex
+    $x->log(Scalar)     # => BigNum | Complex
+
+Logarithm of $x in base $y, changing the $x in-place.
+When $y is not specified, it defaults to base e.
+
+=cut
+
+multimethod blog => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+        my $z = Math::BigNum::Complex->new($x)->log($y);
+        return _big2cplx($x, $z);
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+
+    if ($y == 2) {
+        Math::MPFR::Rmpfr_log2($r, _as_float($x), $ROUND);
+    }
+    elsif ($y == 10) {
+        Math::MPFR::Rmpfr_log10($r, _as_float($x), $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
+        my $baseln = Math::MPFR::Rmpfr_init2($PREC);
+        Math::MPFR::Rmpfr_log($baseln, _str2mpfr($y), $ROUND);
+        Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
+    }
+
+    Math::MPFR::Rmpfr_get_q($$x, $r);
+    $x;
+};
+
+multimethod blog => qw(Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+        my $z = Math::BigNum::Complex->new($x)->log($y);
+        return _big2cplx($x, $z);
+    }
+
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
+    Math::MPFR::Rmpfr_get_q($$x, $r);
+
+    $x;
+};
 
 =head2 log2
 
