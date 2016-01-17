@@ -77,9 +77,13 @@ use overload
   '<='  => sub { Math::BigNum::le($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '<=>' => sub { Math::BigNum::cmp($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
+  '>>' => sub { Math::BigNum::rsft($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<<' => sub { Math::BigNum::lsft($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+
   '**'  => sub { Math::BigNum::pow($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '-'   => sub { Math::BigNum::sub($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '/'   => sub { Math::BigNum::div($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '%'   => sub { Math::BigNum::mod($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   atan2 => sub { Math::BigNum::atan2($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
   sin  => sub { $_[0]->sin },
@@ -1782,6 +1786,10 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
     }
 };
 
+multimethod mod => qw(Math::BigNum $) => sub {
+    $_[0]->mod(Math::BigNum->new($_[1]));
+};
+
 #
 ## Miscellaneous
 #
@@ -1861,6 +1869,14 @@ sub int {
 }
 
 *as_int = \&int;
+
+sub bint {
+    my ($x) = @_;
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_set_q($z, $$x);
+    Math::GMPq::Rmpq_set_z($$x, $z);
+    $x;
+}
 
 sub float {
     my $f = Math::MPFR::Rmpfr_init2($PREC);
@@ -1949,11 +1965,23 @@ sub inc {
     bless \$r, __PACKAGE__;
 }
 
+sub binc {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_add($$x, $$x, ${(ONE)});
+    $x;
+}
+
 sub dec {
     my ($x) = @_;
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_sub($r, $$x, ${(ONE)});
     bless \$r, __PACKAGE__;
+}
+
+sub bdec {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_sub($$x, $$x, ${(ONE)});
+    $x;
 }
 
 #
@@ -1994,6 +2022,34 @@ sub not {
     Math::GMPz::Rmpz_com($r, _as_int($x));
     _mpz2rat($r);
 }
+
+multimethod lsft => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_mul_2exp($r, _as_int($x), CORE::int(Math::GMPq::Rmpq_get_d($$y)));
+    _mpz2rat($r);
+};
+
+multimethod lsft => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_mul_2exp($r, _as_int($x), CORE::int($y));
+    _mpz2rat($r);
+};
+
+multimethod rsft => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_div_2exp($r, _as_int($x), CORE::int(Math::GMPq::Rmpq_get_d($$y)));
+    _mpz2rat($r);
+};
+
+multimethod rsft => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_div_2exp($r, _as_int($x), CORE::int($y));
+    _mpz2rat($r);
+};
 
 =head2 fac
 
@@ -2256,7 +2312,7 @@ multimethod eint => qw(Math::BigNum) => sub {
     _mpfr2rat($r);
 };
 
-multimethod eint => qw(Math::BigNum) => sub {
+multimethod eint => qw($) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_eint($r, _str2mpfr($_[0]), $ROUND);
     _mpfr2rat($r);
