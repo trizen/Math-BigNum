@@ -31,15 +31,16 @@ use overload
   '|'  => sub { $_[0]->or($_[1]) },
   '^'  => sub { $_[0]->xor($_[1]) },
 
-  '>'  => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->gt($_[0]) : $_[0]->gt($_[1]) },
-  '>=' => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->ge($_[0]) : $_[0]->ge($_[1]) },
-  '<'  => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->lt($_[0]) : $_[0]->lt($_[1]) },
-  '<=' => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->le($_[0]) : $_[0]->le($_[1]) },
+  '>'   => sub { Math::BigNum::gt($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '>='  => sub { Math::BigNum::ge($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<'   => sub { Math::BigNum::lt($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<='  => sub { Math::BigNum::le($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<=>' => sub { Math::BigNum::cmp($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
-  '**'  => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->pow($_[0])   : $_[0]->pow($_[1]) },
-  '-'   => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->sub($_[0])   : $_[0]->sub($_[1]) },
-  '/'   => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->div($_[0])   : $_[0]->div($_[1]) },
-  atan2 => sub { $_[2] ? Math::BigNum::Complex->new($_[1])->atan2($_[0]) : $_[0]->atan2($_[1]) },
+  '**'  => sub { Math::BigNum::Complex::pow($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '-'   => sub { Math::BigNum::Complex::sub($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '/'   => sub { Math::BigNum::Complex::div($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  atan2 => sub { Math::BigNum::Complex::atan2($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
   sin  => sub { $_[0]->sin },
   cos  => sub { $_[0]->cos },
@@ -710,5 +711,61 @@ sub acoth {
     Math::MPC::Rmpc_atanh($r, $r, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+#
+## atan2(x, y) = atan(x/y)
+#
+
+multimethod atan2 => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div($r, $$x, $$y, $ROUND);
+    Math::MPC::Rmpc_atan($r, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+};
+
+multimethod atan2 => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    $y = $y->_as_float();
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div_fr($r, $$x, $y, $ROUND);
+    Math::MPC::Rmpc_atan($r, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+};
+
+#
+## Comparisons
+#
+
+multimethod eq => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    Math::MPC::Rmpc_cmp($$x, $$y) == 0;
+};
+
+multimethod ne => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    Math::MPC::Rmpc_cmp($$x, $$y) != 0;
+};
+
+multimethod cmp => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+
+    my $x_re = Math::MPFR::Rmpfr_init2($PREC);
+    my $y_re = Math::MPFR::Rmpfr_init2($PREC);
+
+    Math::MPC::RMPC_RE($x_re, $$x);
+    Math::MPC::RMPC_RE($y_re, $$y);
+
+    my $cmp_re = Math::MPFR::Rmpfr_cmp($x_re, $y_re);
+    return $cmp_re if $cmp_re != 0;
+
+    my $x_im = Math::MPFR::Rmpfr_init2($PREC);
+    my $y_im = Math::MPFR::Rmpfr_init2($PREC);
+
+    Math::MPC::RMPC_IM($x_im, $$x);
+    Math::MPC::RMPC_IM($y_im, $$y);
+
+    Math::MPFR::Rmpfr_cmp($x_re, $y_re);
+};
 
 1;

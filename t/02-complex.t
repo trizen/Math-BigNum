@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 5;
+plan tests => 6;
 
 # Basic operations
 {
@@ -28,4 +28,14 @@ plan tests => 5;
 
     $z3 = $z - $z2;
     is("$z3", "4-i");
+}
+
+# Trigonometric functions
+{
+    use Math::BigNum qw(:constant i);
+
+    my $x = atan2(4+5*i, 3+0*i);
+    my $y = atan2(4+5*i, 3);
+
+    ok($x == $y);
 }

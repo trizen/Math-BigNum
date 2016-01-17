@@ -73,15 +73,16 @@ use overload
   '|'  => sub { $_[0]->or($_[1]) },
   '^'  => sub { $_[0]->xor($_[1]) },
 
-  '>'  => sub { $_[2] ? Math::BigNum->new($_[1])->gt($_[0]) : $_[0]->gt($_[1]) },
-  '>=' => sub { $_[2] ? Math::BigNum->new($_[1])->ge($_[0]) : $_[0]->ge($_[1]) },
-  '<'  => sub { $_[2] ? Math::BigNum->new($_[1])->lt($_[0]) : $_[0]->lt($_[1]) },
-  '<=' => sub { $_[2] ? Math::BigNum->new($_[1])->le($_[0]) : $_[0]->le($_[1]) },
+  '>'   => sub { Math::BigNum::gt($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '>='  => sub { Math::BigNum::ge($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<'   => sub { Math::BigNum::lt($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<='  => sub { Math::BigNum::le($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<=>' => sub { Math::BigNum::cmp($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
-  '**'  => sub { $_[2] ? Math::BigNum->new($_[1])->pow($_[0])   : $_[0]->pow($_[1]) },
-  '-'   => sub { $_[2] ? Math::BigNum->new($_[1])->sub($_[0])   : $_[0]->sub($_[1]) },
-  '/'   => sub { $_[2] ? Math::BigNum->new($_[1])->div($_[0])   : $_[0]->div($_[1]) },
-  atan2 => sub { $_[2] ? Math::BigNum->new($_[1])->atan2($_[0]) : $_[0]->atan2($_[1]) },
+  '**'  => sub { Math::BigNum::pow($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '-'   => sub { Math::BigNum::sub($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '/'   => sub { Math::BigNum::div($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  atan2 => sub { Math::BigNum::atan2($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
   sin  => sub { $_[0]->sin },
   cos  => sub { $_[0]->cos },
@@ -671,6 +672,10 @@ multimethod pow => qw(Math::BigNum #) => sub {
     $_[0]->pow(Math::BigNum->new($_[1]));
 };
 
+multimethod pow => qw(# Math::BigNum) => sub {
+    Math::BigNum->new($_[0])->pow($_[1]);
+};
+
 ## more to add...
 
 =head2 ln
@@ -1149,6 +1154,31 @@ Returns true when $x is equal or less than $y.
 
 multimethod le => qw(Math::BigNum Math::BigNum) => sub {
     Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]}) <= 0;
+};
+
+=head2 cmp
+
+    $x->cmp($y)     # => Scalar
+
+Compares $x to $y. Returns a negative value when $x is less than $y,
+0 when $x and $y are equal, and a positive value when $x is greater than $y.
+
+=cut
+
+multimethod cmp => qw(Math::BigNum Math::BigNum) => sub {
+    Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]});
+};
+
+multimethod cmp => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    -1;
+};
+
+multimethod cmp => qw(Math::BigNum Math::BigNum::Ninf) => sub {
+    1;
+};
+
+multimethod cmp => qw(Math::BigNum Math::BigNum::Nan) => sub {
+
 };
 
 =head2 mod
