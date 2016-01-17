@@ -133,34 +133,38 @@ multimethod new => qw($ Math::BigNum) => sub {
 };
 
 multimethod new => qw($ #) => sub {
-    if (CORE::int($_[1]) == $_[1]) {
-        my $r = Math::GMPq::Rmpq_init();
-        if ($_[1] >= 0) {
-            Math::GMPq::Rmpq_set_ui($r, $_[1], 1);
-        }
-        else {
-            Math::GMPq::Rmpq_set_si($r, $_[1], 1);
-        }
-        bless \$r, __PACKAGE__;
-    }
-    else {
-        bless(\_str2mpq($_[1]), $_[0]);
-    }
+    bless(\_str2mpq($_[1]), $_[0]);
 };
 
 multimethod new => qw($ $) => sub {
-    bless(\_str2mpq($_[1]), $_[0]);
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_str($r, $_[1], 10);
+    Math::GMPq::Rmpq_canonicalize($r) if (index($_[1], '/') != -1);
+    bless(\$r, $_[0]);
+};
+
+multimethod new => qw($ # #) => sub {
+    if ($_[2] == 10) {
+        (bless \_str2mpq($_[1]), $_[0]);
+    }
+    else {
+        my $r = Math::GMPq::Rmpq_init();
+        Math::GMPq::Rmpq_set_str($r, $_[1], $_[2]);
+        Math::GMPq::Rmpq_canonicalize($r) if (index($_[1], '/') != -1);
+        bless(\$r, $_[0]);
+    }
 };
 
 multimethod new => qw($ $ $) => sub {
     my $r = Math::GMPq::Rmpq_init();
     if ($_[2] == 10) {
         Math::GMPq::Rmpq_set_str($r, _str2rat($_[1]), 10);
+        Math::GMPq::Rmpq_canonicalize($r);
     }
     else {
         Math::GMPq::Rmpq_set_str($r, $_[1], $_[2]);
+        Math::GMPq::Rmpq_canonicalize($r) if (index($_[1], '/') != -1);
     }
-    Math::GMPq::Rmpq_canonicalize($r);
     bless(\$r, $_[0]);
 };
 
@@ -223,8 +227,21 @@ sub _str2mpfr {
 
 sub _str2mpq {
     my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set_str($r, _str2rat($_[0]), 10);
-    Math::GMPq::Rmpq_canonicalize($r);
+
+    if ((~$_[0] & $_[0]) eq '0' and CORE::int($_[0]) == $_[0]) {
+        if ($_[0] >= 0) {
+            Math::GMPq::Rmpq_set_ui($r, $_[0], 1);
+        }
+        else {
+            Math::GMPq::Rmpq_set_si($r, $_[0], 1);
+        }
+    }
+    else {
+        my $rat = _str2rat($_[0]);
+        Math::GMPq::Rmpq_set_str($r, $rat, 10);
+        Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
+    }
+
     $r;
 }
 
