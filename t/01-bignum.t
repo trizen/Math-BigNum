@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 34;
+plan tests => 86;
 
 # Initialization
 
@@ -145,4 +145,73 @@ plan tests => 34;
     ok(!(3 == 4));
     ok(8 != 3);
     ok(!(4 != 4));
+
+    is(4 <=> 4,     "0");
+    is(4.2 <=> 4.2, "0");
+    is(3.4 <=> 6.4, "-1");
+    is(9.4 <=> 2.3, "1");
+}
+
+{
+    use Math::BigNum;
+
+    is(4 <=> Math::BigNum->new(4), 0);
+    is(3 <=> Math::BigNum->new(4), -1);
+    is(4 <=> Math::BigNum->new(3), 1);
+
+    is(Math::BigNum->new(2) <=> 3, -1);
+    is(Math::BigNum->new(4) <=> 2, 1);
+    is(Math::BigNum->new(3) <=> 3, 0);
+
+    is(Math::BigNum->new(3.4) <=> 3.4, 0);
+    is(Math::BigNum->new(8.3) <=> 2.3, 1);
+    is(Math::BigNum->new(1.4) <=> 3,   -1);
+
+    is(3.4 <=> Math::BigNum->new(3.4), 0);
+    is(2.3 <=> Math::BigNum->new(8.3), -1);
+    is(3.1 <=> Math::BigNum->new(1.4), 1);
+
+    ok(Math::BigNum->new(3) > 1);
+    ok(Math::BigNum->new(3.4) > 2.3);
+    ok(!(Math::BigNum->new(4) > 5));
+    ok(!(Math::BigNum->new(4.3) > 5.7));
+
+    ok(3 > Math::BigNum->new(1));
+    ok(3.4 > Math::BigNum->new(2.3));
+    ok(!(4 > Math::BigNum->new(5)));
+    ok(!(4.3 > Math::BigNum->new(5.7)));
+
+    ok(Math::BigNum->new(9) >= 9);
+    ok(Math::BigNum->new(4.5) >= 3.4);
+    ok(Math::BigNum->new(5.6) >= 5.6);
+    ok(!(Math::BigNum->new(4.3) >= 10.3));
+    ok(!(Math::BigNum->new(3) >= 21));
+
+    ok(9 >= Math::BigNum->new(9));
+    ok(4.5 >= Math::BigNum->new(3.4));
+    ok(5.6 >= Math::BigNum->new(5.6));
+    ok(!(4.3 >= Math::BigNum->new(10.3)));
+    ok(!(3 >= Math::BigNum->new(21)));
+
+    ok(Math::BigNum->new(1) < 3);
+    ok(Math::BigNum->new(2.3) < 3.4);
+    ok(!(Math::BigNum->new(5) < 4));
+    ok(!(Math::BigNum->new(5.7) < 4.3));
+
+    ok(1 < Math::BigNum->new(3));
+    ok(2.3 < Math::BigNum->new(3.4));
+    ok(!(5 < Math::BigNum->new(4)));
+    ok(!(5.7 < Math::BigNum->new(4.3)));
+
+    ok(Math::BigNum->new(9) <= 9);
+    ok(Math::BigNum->new(3.4) <= 4.5);
+    ok(Math::BigNum->new(5.6) <= 5.6);
+    ok(!(Math::BigNum->new(10.3) <= 4.3));
+    ok(!(Math::BigNum->new(21) <= 3));
+
+    ok(9 <= Math::BigNum->new(9));
+    ok(3.4 <= Math::BigNum->new(4.5));
+    ok(5.6 <= Math::BigNum->new(5.6));
+    ok(!(12.3 <= Math::BigNum->new(4.3)));
+    ok(!(21 <= Math::BigNum->new(3)));
 }

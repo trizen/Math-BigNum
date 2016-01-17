@@ -24,7 +24,7 @@ Version 0.01
 =head1 SYNOPSIS
 
     use Math::BigNum qw(:constant);
-    print ((100->fac + 1)/2);
+    print 1/2 * (100->fac + 1);
 
 =head1 DESCRIPTION
 
@@ -142,14 +142,6 @@ multimethod new => qw($ $ #) => sub {
 
 multimethod new => qw($ # #) => sub {
     bless(\Math::GMPq->new(_str2rat($_[1]), $_[2]), $_[0]);
-};
-
-multimethod new => qw(Math::BigFloat #) => sub {
-    bless(\Math::GMPq->new(_str2rat($_[1]), 10), __PACKAGE__);
-};
-
-multimethod new => qw(Math::BigFloat # #) => sub {
-    bless(\Math::GMPq->new(_str2rat($_[1]), $_[2]), __PACKAGE__);
 };
 
 # TODO: find a better solution
@@ -1029,9 +1021,11 @@ sub acoth {
 
 =head2 atan2
 
-    $x->atan2(BigNum)       # => BigNum
-    $x->atan2(Inf)          # => BigNum(0)
-    $x->atan2(Ninf)         # => BigNum
+    $x->atan2(BigNum)           # => BigNum
+    $x->atan2(Inf)              # => BigNum(0)
+    $x->atan2(Ninf)             # => BigNum
+    $x->atan2(Scalar)           # => BigNum
+    atan2(Scalar, BigNum)       # => BigNum
 
 Arctangent of $x and $y. When $y is Ninf returns PI when $x>=0 or -PI when $x < 0.
 
@@ -1041,6 +1035,20 @@ multimethod atan2 => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_atan2($r, _as_float($x), _as_float($y), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod atan2 => qw(Math::BigNum #) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_atan2($r, _as_float($x), _str2mpfr($y), $ROUND);
+    _mpfr2rat($r);
+};
+
+multimethod atan2 => qw(# Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_atan2($r, _str2mpfr($x), _as_float($y), $ROUND);
     _mpfr2rat($r);
 };
 
@@ -1080,7 +1088,7 @@ multimethod eq => qw(Math::BigNum Math::BigNum::Complex) => sub {
 
 multimethod eq => qw(Math::BigNum Math::BigNum::Inf)  => sub { 0 };
 multimethod eq => qw(Math::BigNum Math::BigNum::Ninf) => sub { 0 };
-multimethod eq => qw(Math::BigNum Math::BigNum::Nan)  => sub { 0 };
+multimethod eq => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
 
 =head2 ne
 
@@ -1104,15 +1112,18 @@ multimethod ne => qw(Math::BigNum Math::BigNum::Complex) => sub {
     !($y->im->is_zero && Math::GMPq::Rmpq_equal($$x, ${$y->re}));
 };
 
-multimethod ne => qw(Math::BigNum Math::BigNum::Inf)  => sub { 0 };
-multimethod ne => qw(Math::BigNum Math::BigNum::Ninf) => sub { 0 };
-multimethod ne => qw(Math::BigNum Math::BigNum::Nan)  => sub { 0 };
+multimethod ne => qw(Math::BigNum Math::BigNum::Inf)  => sub { 1 };
+multimethod ne => qw(Math::BigNum Math::BigNum::Ninf) => sub { 1 };
+multimethod ne => qw(Math::BigNum Math::BigNum::Nan)  => sub { 1 };
 
 =head2 gt
 
-    $x->gt($y)
+    $x->gt(BigNum)             # => Bool
+    $x->gt(Complex)            # => Bool
+    $x->gt(Scalar)             # => Bool
+    gt(Scalar, BigNum)         # => Bool
 
-Returns true when $x is greater than $y.
+Returns a true value when $x is greater than $y.
 
 =cut
 
@@ -1120,11 +1131,30 @@ multimethod gt => qw(Math::BigNum Math::BigNum) => sub {
     Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]}) > 0;
 };
 
+multimethod gt => qw(Math::BigNum #) => sub {
+    $_[0]->cmp($_[1]) > 0;
+};
+
+multimethod gt => qw(# Math::BigNum) => sub {
+    $_[1]->cmp($_[0]) < 0;
+};
+
+multimethod gt => qw(Math::BigNum Math::BigNum::Complex) => sub {
+    $_[1]->lt($_[0]);
+};
+
+multimethod gt => qw(Math::BigNum Math::BigNum::Inf)  => sub { 0 };
+multimethod gt => qw(Math::BigNum Math::BigNum::Ninf) => sub { 1 };
+multimethod gt => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+
 =head2 ge
 
-    $x->ge($y)
+    $x->ge(BigNum)               # => Bool
+    $x->ge(Complex)              # => Bool
+    $x->ge(Scalar)               # => Bool
+    ge(Scalar, BigNum)           # => Bool
 
-Returns true when $x is equal or greater than $y.
+Returns a true value when $x is equal or greater than $y.
 
 =cut
 
@@ -1132,11 +1162,30 @@ multimethod ge => qw(Math::BigNum Math::BigNum) => sub {
     Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]}) >= 0;
 };
 
+multimethod ge => qw(Math::BigNum #) => sub {
+    $_[0]->cmp($_[1]) >= 0;
+};
+
+multimethod ge => qw(# Math::BigNum) => sub {
+    $_[1]->cmp($_[0]) <= 0;
+};
+
+multimethod ge => qw(Math::BigNum Math::BigNum::Complex) => sub {
+    $_[1]->le($_[0]);
+};
+
+multimethod ge => qw(Math::BigNum Math::BigNum::Inf)  => sub { 0 };
+multimethod ge => qw(Math::BigNum Math::BigNum::Ninf) => sub { 1 };
+multimethod ge => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+
 =head2 lt
 
-    $x->lt($y)
+    $x->lt(BigNum)             # => Bool
+    $x->lt(Complex)            # => Bool
+    $x->lt(Scalar)             # => Bool
+    lt(Scalar, BigNum)         # => Bool
 
-Returns true when $x is less than $y.
+Returns a true value when $x is less than $y.
 
 =cut
 
@@ -1144,11 +1193,30 @@ multimethod lt => qw(Math::BigNum Math::BigNum) => sub {
     Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]}) < 0;
 };
 
+multimethod lt => qw(Math::BigNum #) => sub {
+    $_[0]->cmp($_[1]) < 0;
+};
+
+multimethod lt => qw(# Math::BigNum) => sub {
+    $_[1]->cmp($_[0]) > 0;
+};
+
+multimethod lt => qw(Math::BigNum Math::BigNum::Complex) => sub {
+    $_[1]->gt($_[0]);
+};
+
+multimethod lt => qw(Math::BigNum Math::BigNum::Inf)  => sub { 1 };
+multimethod lt => qw(Math::BigNum Math::BigNum::Ninf) => sub { 0 };
+multimethod lt => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+
 =head2 le
 
-    $x->le($y)
+    $x->le(BigNum)                # => Bool
+    $x->le(Complex)               # => Bool
+    $x->le(Scalar)                # => Bool
+    le(Scalar, BigNum)            # => Bool
 
-Returns true when $x is equal or less than $y.
+Returns a true value when $x is equal or less than $y.
 
 =cut
 
@@ -1156,11 +1224,30 @@ multimethod le => qw(Math::BigNum Math::BigNum) => sub {
     Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]}) <= 0;
 };
 
+multimethod le => qw(Math::BigNum #) => sub {
+    $_[0]->cmp($_[1]) <= 0;
+};
+
+multimethod le => qw(# Math::BigNum) => sub {
+    $_[1]->cmp($_[0]) >= 0;
+};
+
+multimethod le => qw(Math::BigNum Math::BigNum::Complex) => sub {
+    $_[1]->ge($_[0]);
+};
+
+multimethod le => qw(Math::BigNum Math::BigNum::Inf)  => sub { 1 };
+multimethod le => qw(Math::BigNum Math::BigNum::Ninf) => sub { 0 };
+multimethod le => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+
 =head2 cmp
 
-    $x->cmp($y)     # => Scalar
+    $x->cmp(BigNum)         # => Scalar
+    $x->cmp(Complex)        # => Scalar
+    $x->cmp(Scalar)         # => Scalar
+    cmp(Scalar, BigNum)     # => Scalar
 
-Compares $x to $y. Returns a negative value when $x is less than $y,
+Compares $x to $y and returns a negative value when $x is less than $y,
 0 when $x and $y are equal, and a positive value when $x is greater than $y.
 
 =cut
@@ -1181,9 +1268,72 @@ multimethod cmp => qw(Math::BigNum Math::BigNum::Nan) => sub {
 
 };
 
+multimethod cmp => qw(Math::BigNum #) => sub {
+    my ($x, $y) = @_;
+
+    if (CORE::int($y) == $y) {
+        $y > 0
+          ? Math::GMPq::Rmpq_cmp_ui($$x, $y, 1)
+          : Math::GMPq::Rmpq_cmp_si($$x, $y, 1);
+    }
+    else {
+        Math::GMPq::Rmpq_cmp($$x, Math::GMPq->new(_str2rat($_[1]), 10));
+    }
+};
+
+multimethod cmp => qw(# Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    if (CORE::int($x) == $x) {
+        my $cmp =
+          $x > 0
+          ? Math::GMPq::Rmpq_cmp_ui($$y, $x, 1)
+          : Math::GMPq::Rmpq_cmp_si($$y, $x, 1);
+        $cmp < 0 ? 1 : $cmp > 0 ? -1 : 0;
+    }
+    else {
+        Math::GMPq::Rmpq_cmp(Math::GMPq->new(_str2rat($_[0]), 10), $$y);
+    }
+};
+
+=head2 acmp
+
+    $x->acmp(BigNum)         # => Scalar
+    $x->acmp(Complex)        # => Scalar
+    cmp(Scalar, BigNum)      # => Scalar
+
+Compares the absolute values of $x and $y. Returns a negative value
+when the absolute value of $x is less than the absolute value of $y,
+0 when the absolute value of $x is equal with the absolute value of $y,
+and a positive value when the absolute value of $x is greater than the
+absolute value of $y.
+
+=cut
+
+multimethod acmp => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $xn = $$x;
+    my $yn = $$y;
+
+    if (Math::GMPq::Rmpq_sgn($xn) < 0) {
+        my $r = Math::GMPq::Rmpq_init();
+        Math::GMPq::Rmpq_abs($r, $xn);
+        $xn = $r;
+    }
+
+    if (Math::GMPq::Rmpq_sgn($yn) < 0) {
+        my $r = Math::GMPq::Rmpq_init();
+        Math::GMPq::Rmpq_abs($r, $yn);
+        $yn = $r;
+    }
+
+    Math::GMPq::Rmpq_cmp($xn, $yn);
+};
+
 =head2 mod
 
-    $x->mod(BigNum)     # BigNum | Nan
+    $x->mod(BigNum)      # BigNum | Nan
 
 Remainder of $x divided by $y. ($x % $y)
 
@@ -1481,8 +1631,8 @@ multimethod dfac => qw(#) => sub {
 
 =head2 prim
 
-    $x->prim                 # => BigNum | Nan
-    BigNum::prim(Scalar)     # => BigNum | Nan
+    $x->prim            # => BigNum | Nan
+    prim(Scalar)        # => BigNum | Nan
 
 Primorial of $x. Returns Nan when $x is negative. (2*3*5*7*11*...*$x)
 
@@ -1506,8 +1656,8 @@ multimethod prim => qw(#) => sub {
 
 =head2 fib
 
-    $n->fib                  # => BigNum | Nan
-    BigNum::fib(Scalar)      # => BigNum | Nan
+    $n->fib          # => BigNum | Nan
+    fib(Scalar)      # => BigNum | Nan
 
 The $n'th Fibonacci number. Returns Nan when $n is negative.
 
