@@ -4,6 +4,8 @@ use 5.010;
 use strict;
 use warnings;
 
+no warnings qw(qw);
+
 use Math::GMPq qw();
 use Math::GMPz qw();
 use Math::MPFR qw();
@@ -130,21 +132,37 @@ multimethod new => qw($ Math::BigNum) => sub {
     $_[1]->copy;
 };
 
-multimethod new => qw($ $) => sub {
-    bless(\Math::GMPq->new(_str2rat($_[1]), 10), $_[0]);
+multimethod new => qw($ #) => sub {
+    if (CORE::int($_[1]) == $_[1]) {
+        my $r = Math::GMPq::Rmpq_init();
+        if ($_[1] >= 0) {
+            Math::GMPq::Rmpq_set_ui($r, $_[1], 1);
+        }
+        else {
+            Math::GMPq::Rmpq_set_si($r, $_[1], 1);
+        }
+        bless \$r, __PACKAGE__;
+    }
+    else {
+        bless(\_str2mpq($_[1]), $_[0]);
+    }
 };
 
-#multimethod new => qw($ $) => sub {
-#    bless(\Math::GMPq->new(_str2rat($_[1]), 10), $_[0]);
-#};
+multimethod new => qw($ $) => sub {
+    bless(\_str2mpq($_[1]), $_[0]);
+};
 
 multimethod new => qw($ $ $) => sub {
-    bless(\Math::GMPq->new(($_[2] == 10 ? _str2rat($_[1]) : $_[1]), $_[2]), $_[0]);
+    my $r = Math::GMPq::Rmpq_init();
+    if ($_[2] == 10) {
+        Math::GMPq::Rmpq_set_str($r, _str2rat($_[1]), 10);
+    }
+    else {
+        Math::GMPq::Rmpq_set_str($r, $_[1], $_[2]);
+    }
+    Math::GMPq::Rmpq_canonicalize($r);
+    bless(\$r, $_[0]);
 };
-
-#multimethod new => qw($ $ $) => sub {
-#    bless(\Math::GMPq->new(_str2rat($_[1]), $_[2]), $_[0]);
-#};
 
 # TODO: find a better solution
 sub _str2rat {
@@ -204,7 +222,10 @@ sub _str2mpfr {
 }
 
 sub _str2mpq {
-    Math::GMPq->new(_str2rat($_[0]), 10);
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_str($r, _str2rat($_[0]), 10);
+    Math::GMPq::Rmpq_canonicalize($r);
+    $r;
 }
 
 sub _as_float {
@@ -658,7 +679,7 @@ Inf when $y is $zero and $x is positive, Ninf when $y is zero and $x is negative
 multimethod div => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    if (CORE::not Math::GMPq::Rmpq_sgn($$y)) {
+    if (!Math::GMPq::Rmpq_sgn($$y)) {
         my $sign = Math::GMPq::Rmpq_sgn($$x);
         return (!$sign ? NAN : $sign > 0 ? INF : NINF);
     }
@@ -671,7 +692,7 @@ multimethod div => qw(Math::BigNum Math::BigNum) => sub {
 multimethod div => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    if ($y == 0) {
+    if (!$y) {
         my $sign = Math::GMPq::Rmpq_sgn($$x);
         return (!$sign ? NAN : $sign > 0 ? INF : NINF);
     }
@@ -707,7 +728,7 @@ Divide $x by $y, changing $x in-place. The return values are the same as for C<d
 multimethod bdiv => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    if (CORE::not Math::GMPq::Rmpq_sgn($$y)) {
+    if (!Math::GMPq::Rmpq_sgn($$y)) {
         my $sign = Math::GMPq::Rmpq_sgn($$x);
         return (!$sign ? NAN : $sign > 0 ? INF : NINF);
     }
@@ -719,7 +740,7 @@ multimethod bdiv => qw(Math::BigNum Math::BigNum) => sub {
 multimethod bdiv => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    if ($y == 0) {
+    if (!$y) {
         my $sign = Math::GMPq::Rmpq_sgn($$x);
         return (!$sign ? NAN : $sign > 0 ? INF : NINF);
     }
@@ -886,7 +907,7 @@ multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
         return _mpz2rat($z);
     }
 
-    if (Math::GMPq::Rmpq_sgn($$x) < 0 and CORE::not Math::GMPq::Rmpq_integer_p($$y)) {
+    if (Math::GMPq::Rmpq_sgn($$x) < 0 and !Math::GMPq::Rmpq_integer_p($$y)) {
         return Sidef::Types::Number::Complex->new($x)->pow($y);
     }
 
@@ -1697,7 +1718,7 @@ multimethod cmp => qw(Math::BigNum $) => sub {
           : Math::GMPq::Rmpq_cmp_si($$x, $y, 1);
     }
     else {
-        Math::GMPq::Rmpq_cmp($$x, Math::GMPq->new(_str2rat($_[1]), 10));
+        Math::GMPq::Rmpq_cmp($$x, _str2mpq($_[1]));
     }
 };
 
@@ -1712,7 +1733,7 @@ multimethod cmp => qw($ Math::BigNum) => sub {
         $cmp < 0 ? 1 : $cmp > 0 ? -1 : 0;
     }
     else {
-        Math::GMPq::Rmpq_cmp(Math::GMPq->new(_str2rat($_[0]), 10), $$y);
+        Math::GMPq::Rmpq_cmp(_str2mpq($_[0]), $$y);
     }
 };
 
@@ -1776,7 +1797,7 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
         my $yf = _as_float($y);
         Math::MPFR::Rmpfr_fmod($r, _as_float($x), $yf, $ROUND);
         my $sign = Math::MPFR::Rmpfr_sgn($r);
-        if (CORE::not $sign) {
+        if (!$sign) {
             return (ZERO);
         }
         elsif (($sign > 0) ne (Math::MPFR::Rmpfr_sgn($yf) > 0)) {
