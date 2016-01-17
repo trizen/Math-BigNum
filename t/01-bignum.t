@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 86;
+plan tests => 103;
 
 # Initialization
 
@@ -130,6 +130,48 @@ plan tests => 86;
     # Scalar**Obj
     my $z3 = 2**$x;
     is("$z3", 2**3);
+
+    my $r = Math::BigNum->new(125)->root(3);
+    ok("$r" =~ /^5\b/);
+}
+
+# Mixed arithmetic
+{
+    use Math::BigNum;
+
+    my $x = Math::BigNum->new(12);
+    my $y = $x->div(4);
+    is("$y", "3");
+    is("$x", "12");
+
+    $x->bdiv(3);
+    is("$x", "4");
+
+    $x->bdiv(Math::BigNum->new(2));
+    is("$x", "2");
+
+    $x->bmul(5);
+    is("$x", "10");
+
+    $x->bmul(Math::BigNum->new(0.5));
+    is("$x", "5");
+
+    $x->bsub(1);
+    is("$x", "4");
+
+    $x->badd(38);
+    is("$x", "42");
+
+    $x->bsub(Math::BigNum->new(10));
+    is("$x", "32");
+
+    $x->badd(Math::BigNum->new(3));
+    is("$x", "35");
+
+    my $copy = $x->copy;
+    $x->bdiv(Math::BigNum->new('5'));
+    is("$x",    7);
+    is("$copy", 35);
 }
 
 # Comparisons
@@ -152,6 +194,7 @@ plan tests => 86;
     is(9.4 <=> 2.3, "1");
 }
 
+# Mixed comparisons
 {
     use Math::BigNum;
 
@@ -214,4 +257,20 @@ plan tests => 86;
     ok(5.6 <= Math::BigNum->new(5.6));
     ok(!(12.3 <= Math::BigNum->new(4.3)));
     ok(!(21 <= Math::BigNum->new(3)));
+}
+
+# b* methods
+{
+    use Math::BigNum qw(:constant);
+
+    my $x = 1;
+    is(ref($x->badd(Math::BigNum::Inf->new)), 'Math::BigNum::Inf');
+    is(ref($x),                               'Math::BigNum::Inf');
+
+    my $y = 2;
+    $y->badd(3);
+    is("$y", "5");
+
+    $y->bsub("3");
+    is("$y", "2");
 }
