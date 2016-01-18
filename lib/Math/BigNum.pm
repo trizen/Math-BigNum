@@ -246,6 +246,10 @@ sub _str2mpq {
     $r;
 }
 
+sub _str2mpz {
+    Math::GMPz::Rmpz_init_set_str($_[0], 10);
+}
+
 sub _as_float {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_set_q($r, ${$_[0]}, $ROUND);
@@ -746,7 +750,10 @@ multimethod bdiv => qw(Math::BigNum Math::BigNum) => sub {
 
     if (!Math::GMPq::Rmpq_sgn($$y)) {
         my $sign = Math::GMPq::Rmpq_sgn($$x);
-        return (!$sign ? NAN : $sign > 0 ? INF : NINF);
+        return
+            $sign > 0 ? $x->binf
+          : $sign < 0 ? $x->bninf
+          :             $x->bnan;
     }
 
     Math::GMPq::Rmpq_div($$x, $$x, $$y);
@@ -758,10 +765,108 @@ multimethod bdiv => qw(Math::BigNum $) => sub {
 
     if (!$y) {
         my $sign = Math::GMPq::Rmpq_sgn($$x);
-        return (!$sign ? NAN : $sign > 0 ? INF : NINF);
+        return
+            $sign > 0 ? $x->binf
+          : $sign < 0 ? $x->bninf
+          :             $x->bnan;
     }
 
     Math::GMPq::Rmpq_div($$x, $$x, _str2mpq($y));
+    $x;
+};
+
+=head2 idiv
+
+    $x->idiv(BigNum)        # => BigNum | Nan | Inf | Ninf
+    $x->idiv(Scalar)        # => BigNum | Nan | Inf | Ninf
+    $x->idiv(Inf)           # => BigNum(0)
+    $x->idiv(Ninf)          # => BigNum(0)
+
+Integer division of $x by $y.
+
+=cut
+
+multimethod idiv => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    if (!Math::GMPq::Rmpq_sgn($$y)) {
+        my $sign = Math::GMPq::Rmpq_sgn($$x);
+        return (!$sign ? NAN : $sign > 0 ? INF : NINF);
+    }
+
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_div($r, _as_int($x), _as_int($y));
+    _mpz2rat($r);
+};
+
+multimethod idiv => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    if (!$y) {
+        my $sign = Math::GMPq::Rmpq_sgn($$x);
+        return (!$sign ? NAN : $sign > 0 ? INF : NINF);
+    }
+
+    if (CORE::int($y) == $y and $y >= 0) {
+        my $r = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_div_ui($r, _as_int($x), $y);
+        return _mpz2rat($r);
+    }
+
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_div($r, _as_int($x), _str2mpz($y));
+    _mpz2rat($r);
+};
+
+=head2 bidiv
+
+    $x->bidiv(BigNum)       # => BigNum | Nan | Inf | Ninf
+    $x->bidiv(Scalar)       # => BigNum | Nan | Inf | Ninf
+    $x->bidiv(Inf)          # => BigNum(0)
+    $x->bidiv(Ninf)         # => BigNum(0)
+
+Integer division of $x by $y, changing $x in-place.
+
+=cut
+
+multimethod bidiv => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    if (!Math::GMPq::Rmpq_sgn($$y)) {
+        my $sign = Math::GMPq::Rmpq_sgn($$x);
+        return
+            $sign > 0 ? $x->binf
+          : $sign < 0 ? $x->bninf
+          :             $x->bnan;
+    }
+
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_div($r, _as_int($x), _as_int($y));
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
+};
+
+multimethod idiv => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    if (!$y) {
+        my $sign = Math::GMPq::Rmpq_sgn($$x);
+        return
+            $sign > 0 ? $x->binf
+          : $sign < 0 ? $x->bninf
+          :             $x->bnan;
+    }
+
+    if (CORE::int($y) == $y and $y >= 0) {
+        my $r = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_div_ui($r, _as_int($x), $y);
+        Math::GMPq::Rmpq_set_z($$x, $r);
+        return $x;
+    }
+
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_div($r, _as_int($x), _str2mpz($y));
+    Math::GMPq::Rmpq_set_z($$x, $r);
     $x;
 };
 

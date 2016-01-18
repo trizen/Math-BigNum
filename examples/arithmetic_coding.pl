@@ -73,7 +73,7 @@ sub arithmethic_coding {
     #~ say $U;
 
     my $pow = Math::BigNum->new($pf)->blog(10)->int;
-    my $enc = ($U - 1)->bdiv(Math::BigNum->new(10)->bpow($pow))->int;
+    my $enc = ($U - 1)->bidiv(Math::BigNum->new(10)->bpow($pow));
 
     return ($enc, $pow, \%freq);
 }
@@ -112,13 +112,13 @@ sub arithmethic_decoding {
     for (my $i = $base - 1 ; $i >= 0 ; $i--) {
 
         my $pow = $base**$i;
-        my $div = int($enc / $pow);
+        my $div = $enc->idiv($pow);
 
         my $c  = $dict{$div};
         my $fv = $freq->{$c};
         my $cv = $cf{$c};
 
-        my $rem = ($enc - $pow * $cv) / $fv;
+        my $rem = ($enc - $pow * $cv)->idiv($fv);
 
         #~ say "$enc / $base^$i = $div ($c)";
         #~ say "($enc - $base^$i * $cv) / $fv = $rem\n";
