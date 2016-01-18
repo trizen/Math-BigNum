@@ -260,8 +260,6 @@ sub _as_int {
 
 sub _mpfr2rat {
 
-    $PREC = $PREC->get_value if ref($PREC);
-
     if (Math::MPFR::Rmpfr_inf_p($_[0])) {
         if (Math::MPFR::Rmpfr_sgn($_[0]) > 0) {
             return INF;
@@ -926,7 +924,7 @@ multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
     }
 
     if (Math::GMPq::Rmpq_sgn($$x) < 0 and !Math::GMPq::Rmpq_integer_p($$y)) {
-        return Sidef::Types::Number::Complex->new($x)->pow($y);
+        return Math::BigNum::Complex->new($x)->pow($y);
     }
 
     my $r = Math::MPFR::Rmpfr_init2($PREC);
@@ -974,7 +972,7 @@ multimethod bpow => qw(Math::BigNum Math::BigNum) => sub {
     }
 
     if (Math::GMPq::Rmpq_sgn($$x) < 0 and !Math::GMPq::Rmpq_integer_p($$y)) {
-        my $z = Sidef::Types::Number::Complex->new($x)->pow($y);
+        my $z = Math::BigNum::Complex->new($x)->pow($y);
         _big2cplx($x, $z);
         return $x;
     }
@@ -999,7 +997,7 @@ multimethod bpow => qw(Math::BigNum $) => sub {
     }
 
     if (Math::GMPq::Rmpq_sgn($$x) < 0 and !$y_is_int) {
-        my $z = Sidef::Types::Number::Complex->new($x)->pow($y);
+        my $z = Math::BigNum::Complex->new($x)->pow($y);
         _big2cplx($x, $z);
         return $x;
     }

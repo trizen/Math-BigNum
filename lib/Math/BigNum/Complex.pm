@@ -377,10 +377,10 @@ sub log2 {
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_log($r, $$x, $ROUND);
 
-    state $two = (Math::MPFR::Rmpfr_init_set_ui(2, $Sidef::Types::Number::Number::ROUND))[0];
+    state $two = (Math::MPFR::Rmpfr_init_set_ui(2, $Math::BigNum::ROUND))[0];
 
     my $baseln = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_log($baseln, $two, $Sidef::Types::Number::Number::ROUND);
+    Math::MPFR::Rmpfr_log($baseln, $two, $Math::BigNum::ROUND);
     Math::MPC::Rmpc_div_fr($r, $r, $baseln, $ROUND);
 
     bless(\$r, __PACKAGE__);
