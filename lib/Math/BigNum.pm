@@ -137,9 +137,10 @@ multimethod new => qw($ #) => sub {
 };
 
 multimethod new => qw($ $) => sub {
-    my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set_str($r, $_[1], 10);
-    Math::GMPq::Rmpq_canonicalize($r) if (index($_[1], '/') != -1);
+    my $r   = Math::GMPq::Rmpq_init();
+    my $rat = _str2rat($_[1]);
+    Math::GMPq::Rmpq_set_str($r, $rat, 10);
+    Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
     bless(\$r, $_[0]);
 };
 

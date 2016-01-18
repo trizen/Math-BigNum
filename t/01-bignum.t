@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 103;
+plan tests => 105;
 
 # Initialization
 
@@ -33,12 +33,20 @@ plan tests => 103;
     # as_frac()
     is($x->as_frac, "1/3");
 
+    my $bigstr =
+        "46663107721972076340849619428133350245357984132190810"
+      . "734296481947608799996614957804470731988078259143126848"
+      . "960413611879125592605458432000000000000000000000000.5";
+
     # Factorial
     my $fac = ((100->fac + 1) / 2);
-    is("$fac",
-            "46663107721972076340849619428133350245357984132190810"
-          . "734296481947608799996614957804470731988078259143126848"
-          . "960413611879125592605458432000000000000000000000000.5");
+    is("$fac", $bigstr);
+
+    my $bignum = Math::BigNum->new($bigstr);
+    is("$bignum", $bigstr);
+
+    $bignum = Math::BigNum->new($bigstr, "10");
+    is("$bignum", $bigstr);
 
     # Division by zero
     my $inf = $x / 0;
