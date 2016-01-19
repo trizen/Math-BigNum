@@ -704,6 +704,25 @@ multimethod div => qw(Math::BigNum Math::BigNum) => sub {
         return (!$sign ? NAN : $sign > 0 ? INF : NINF);
     }
 
+    # Unsure optimization: set the numerator and denominator manually for integers.
+    # Doing this, we get about the same performance as we would do integer division,
+    # and this is because we prevent the expensive mpq_canonicalize() to get called,
+    # but this may have some other, nasty consequences. However, I haven't found any.
+    # See also `Rational Arithmetic` on: https://gmplib.org/manual/Efficiency.html
+    #~ if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
+    #~ my $num_z = Math::GMPz::Rmpz_init();
+    #~ my $den_z = Math::GMPz::Rmpz_init();
+
+    #~ Math::GMPq::Rmpq_numref($num_z, $$x);
+    #~ Math::GMPq::Rmpq_numref($den_z, $$y);
+
+    #~ my $r = Math::GMPq::Rmpq_init();
+    #~ Math::GMPq::Rmpq_set_num($r, $num_z);
+    #~ Math::GMPq::Rmpq_set_den($r, $den_z);
+
+    #~ return bless \$r, __PACKAGE__;
+    #~ }
+
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_div($r, $$x, $$y);
     bless \$r, __PACKAGE__;
@@ -885,11 +904,25 @@ sub neg {
     bless \$r, __PACKAGE__;
 }
 
+=head2 bneg
+
+    $x->bneg
+
+Negative value of $x, changing $x in-place.
+
+=cut
+
+sub bneg {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_neg($$x, $$x);
+    $x;
+}
+
 =head2 abs
 
     $x->abs     # => BigNum
 
-Absolute value of $x. Returns -$x when $x is negative and $x otherwise.
+Absolute value of $x.
 
 =cut
 
@@ -900,16 +933,36 @@ sub abs {
     bless \$r, __PACKAGE__;
 }
 
+=head2 babs
+
+    $x->babs     # => BigNum
+
+Absolute value of $x, changing $x in-place.
+
+=cut
+
+sub babs {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_abs($$x, $$x);
+    $x;
+}
+
 =head2 inv
 
-    $x->inv     # => BigNum
+    $x->inv     # => BigNum | Inf
 
-Inverse value of $x. (1/$x)
+Inverse value of $x. Return Inf when $x is zero. (1/$x)
 
 =cut
 
 sub inv {
     my ($x) = @_;
+
+    # Return Inf when $x is zero.
+    if (!Math::GMPq::Rmpq_sgn($$x)) {
+        return INF;
+    }
+
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_inv($r, $$x);
     bless \$r, __PACKAGE__;
@@ -1937,7 +1990,7 @@ multimethod mod => qw(Math::BigNum $) => sub {
 #
 
 sub is_zero {
-    CORE::not Math::GMPq::Rmpq_sgn(${$_[0]});
+    !Math::GMPq::Rmpq_sgn(${$_[0]});
 }
 
 sub is_one {
@@ -1971,7 +2024,7 @@ sub is_ninf { 0 }
 sub is_even {
     my ($x) = @_;
 
-    if (CORE::not Math::GMPq::Rmpq_integer_p($$x)) {
+    if (!Math::GMPq::Rmpq_integer_p($$x)) {
         return 0;
     }
 
@@ -1984,7 +2037,7 @@ sub is_even {
 sub is_odd {
     my ($x) = @_;
 
-    if (CORE::not Math::GMPq::Rmpq_integer_p($$x)) {
+    if (!Math::GMPq::Rmpq_integer_p($$x)) {
         return 0;
     }
 
@@ -2055,7 +2108,7 @@ sub digits {
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
     Math::GMPz::Rmpz_abs($z, $z);
-    my @digits = (map { _new_uint($_) } split(//, Math::GMPz::Rmpz_get_str($z, 10)));
+    my @digits = split(//, Math::GMPz::Rmpz_get_str($z, 10));
     @digits;
 }
 
@@ -2063,7 +2116,7 @@ sub length {
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
     Math::GMPz::Rmpz_abs($z, $z);
-    _new_uint(Math::GMPz::Rmpz_snprintf(my $buf, 0, "%Zd", $z, 0));
+    Math::GMPz::Rmpz_snprintf(my $buf, 0, "%Zd", $z, 0);
 }
 
 sub floor {
@@ -2195,8 +2248,8 @@ multimethod rsft => qw(Math::BigNum $) => sub {
 
 =head2 fac
 
-    $x->fac                  # => BigNum | Nan
-    BigNum::fac(Scalar)      # => BigNum | Nan
+    $x->fac           # => BigNum | Nan
+    fac(Scalar)       # => BigNum | Nan
 
 Factorial of $x. Returns Nan when $x is negative. (1*2*3*...*$x)
 
@@ -2220,8 +2273,8 @@ multimethod fac => qw($) => sub {
 
 =head2 dfac
 
-    $x->dfac                 # => BigNum | Nan
-    BigNum::dfac(Scalar)     # => BigNum | Nan
+    $x->dfac            # => BigNum | Nan
+    dfac(Scalar)        # => BigNum | Nan
 
 Double factorial of $x. Returns Nan when $x is negative.
 
@@ -2320,9 +2373,9 @@ multimethod binomial => qw(Math::BigNum $) => sub {
 
 =head2 agm
 
-    $x->agm(BigNum)                 # => BigNum
-    $x->agm(Scalar)                 # => BigNum
-    BigNum::agm(Scalar, Scalar)     # => BigNum
+    $x->agm(BigNum)            # => BigNum
+    $x->agm(Scalar)            # => BigNum
+    agm(Scalar, Scalar)        # => BigNum
 
 Arithmetic-geometric mean of $x and $y.
 

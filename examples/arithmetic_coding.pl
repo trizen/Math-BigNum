@@ -153,3 +153,15 @@ foreach my $str (
 
     say "-" x 80;
 }
+
+open my $fh, '<', __FILE__;
+my $content = do { local $/; <$fh> };
+
+my ($enc, $pow, $freq) = arithmethic_coding($content);
+my $dec = arithmethic_decoding($enc, $pow, $freq);
+
+if ($dec ne $content) {
+    die "Failed to encode and decode the __FILE__ correctly.";
+}
+
+say "Done!";

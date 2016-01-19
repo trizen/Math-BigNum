@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 105;
+plan tests => 107;
 
 # Initialization
 
@@ -280,5 +280,11 @@ plan tests => 105;
     is("$y", "5");
 
     $y->bsub("3");
+    is("$y", "2");
+
+    $y->bneg;
+    is("$y", "-2");
+
+    $y->babs;
     is("$y", "2");
 }
