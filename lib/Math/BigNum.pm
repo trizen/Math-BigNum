@@ -47,17 +47,55 @@ use Math::BigNum::Inf qw();
 use Math::BigNum::Ninf qw();
 use Math::BigNum::Nan qw();
 
-use constant {
-              NAN  => Math::BigNum::Nan->new,
-              INF  => Math::BigNum::Inf->new,
-              NINF => Math::BigNum::Ninf->new,
-              ONE  => bless(\Math::GMPq->new(1), __PACKAGE__),
-              ZERO => bless(\Math::GMPq->new(0), __PACKAGE__),
-              MONE => bless(\Math::GMPq->new(-1), __PACKAGE__),
-             };
+# The reason for using subroutines instead of constants,
+# it's that the user may change the values of the constants
+# with the `b*` methods, resulting in very confusing behavior.
+#---------------------------------------------------------------
+# For example, let's say we return ZERO from method f():
+#   my $x = $i->f();
+#
+# Then the user says something like this:
+#   $x->badd(3)
+#
+# If we now call f() again, it will return 3, instead of 0, because
+# the returned constant ZERO was changed in-place, and this affects
+# all methods globally, therefore we can't use constants!
+#---------------------------------------------------------------
+
+#~ use constant {
+#~ NAN  => Math::BigNum::Nan->new,
+#~ INF  => Math::BigNum::Inf->new,
+#~ NINF => Math::BigNum::Ninf->new,
+#~ ONE  => bless(\Math::GMPq->new(1), __PACKAGE__),
+#~ ZERO => bless(\Math::GMPq->new(0), __PACKAGE__),
+#~ MONE => bless(\Math::GMPq->new(-1), __PACKAGE__),
+#~ };
+
+sub NAN  { Math::BigNum::Nan->new }
+sub INF  { Math::BigNum::Inf->new }
+sub NINF { Math::BigNum::Ninf->new }
+
+sub ONE {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_ui($r, 1, 1);
+    bless \$r, __PACKAGE__;
+}
+
+sub ZERO {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_ui($r, 0, 1);
+    bless \$r, __PACKAGE__;
+}
+
+sub MONE {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_si($r, -1, 1);
+    bless \$r, __PACKAGE__;
+}
 
 use Math::BigNum::Complex qw();
-use constant {i => Math::BigNum::Complex->new(0, 1)};
+use constant {i => Math::BigNum::Complex->new(0, 1)};    # I think this is safe to be a constant
+                                                         # as long as it's never returned from methods!
 
 use overload
   '""' => \&stringify,
@@ -865,7 +903,7 @@ multimethod bidiv => qw(Math::BigNum Math::BigNum) => sub {
     $x;
 };
 
-multimethod idiv => qw(Math::BigNum $) => sub {
+multimethod bidiv => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     if (!$y) {
@@ -891,7 +929,7 @@ multimethod idiv => qw(Math::BigNum $) => sub {
 
 =head2 neg
 
-    $x->neg
+    $x->neg     # => BigNum
 
 Negative value of $x. Returns abs($x) when $x is negative, and -$x when $x is positive.
 
@@ -906,7 +944,7 @@ sub neg {
 
 =head2 bneg
 
-    $x->bneg
+    $x->bneg     # => BigNum
 
 Negative value of $x, changing $x in-place.
 
@@ -985,7 +1023,7 @@ sub sqr {
 
 =head2 sqrt
 
-    $x->sqrt    # => BigNum or Complex
+    $x->sqrt    # => BigNum | Complex
 
 Square root of $x. Returns a Complex number when $x is negative.
 
@@ -1002,6 +1040,27 @@ sub sqrt {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_sqrt($r, _as_float($x), $ROUND);
     _mpfr2rat($r);
+}
+
+=head2 isqrt
+
+    $x->isqrt       # => BigNum | Complex
+
+Integer square root of $x. Returns a Complex number when $x is negative.
+
+=cut
+
+sub isqrt {
+    my ($x)    = @_;
+    my $r      = Math::GMPz::Rmpz_init();
+    my $z      = _as_int($x);
+    my $is_neg = Math::GMPz::Rmpz_sgn($z) < 0;
+    Math::GMPz::Rmpz_abs($z, $z) if $is_neg;
+    Math::GMPz::Rmpz_sqrt($r, $z);
+
+    $is_neg
+      ? Math::BigNum::Complex->new(0, _mpz2rat($r))
+      : _mpz2rat($r);
 }
 
 =head2 cbrt
@@ -1058,6 +1117,55 @@ multimethod root => qw(Math::BigNum Math::BigNum::Ninf) => sub {
 
 multimethod root => qw(Math::BigNum Math::BigNum::Nan) => sub {
     NAN;
+};
+
+=head2 iroot
+
+    $x->iroot(BigNum)       # => BigNum | Complex
+    $x->iroot(Scalar)       # => BigNum | Complex
+
+Nth integer root of $x. Returns a Complex number when $x is negative and $y is even.
+
+=cut
+
+multimethod iroot => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $z    = _as_int($x);
+    my $root = CORE::int(Math::GMPq::Rmpq_get_d($$y));
+
+    my ($is_even, $is_neg) = $root % 2 == 0;
+    ($is_neg = Math::GMPz::Rmpz_sgn($z) < 0) if $is_even;
+    Math::GMPz::Rmpz_abs($z, $z) if ($is_even && $is_neg);
+    Math::GMPz::Rmpz_root($z, $z, $root);
+
+    $is_even && $is_neg
+      ? Math::BigNum::Complex->new(0, _mpz2rat($z))
+      : _mpz2rat($z);
+};
+
+multimethod iroot => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $z    = _as_int($x);
+    my $root = CORE::int($y);
+
+    my ($is_even, $is_neg) = $root % 2 == 0;
+    ($is_neg = Math::GMPz::Rmpz_sgn($z) < 0) if $is_even;
+    Math::GMPz::Rmpz_abs($z, $z) if ($is_even && $is_neg);
+    Math::GMPz::Rmpz_root($z, $z, $root);
+
+    $is_even && $is_neg
+      ? Math::BigNum::Complex->new(0, _mpz2rat($z))
+      : _mpz2rat($z);
+};
+
+multimethod iroot => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    ONE;
+};
+
+multimethod iroot => qw(Math::BigNum Math::BigNum::Ninf) => sub {
+    ONE;
 };
 
 =head2 pow
@@ -1948,7 +2056,7 @@ multimethod acmp => qw(Math::BigNum Math::BigNum) => sub {
 
 =head2 mod
 
-    $x->mod(BigNum)      # BigNum | Nan
+    $x->mod(BigNum)      # => BigNum | Nan
 
 Remainder of $x divided by $y. ($x % $y)
 
@@ -1989,9 +2097,26 @@ multimethod mod => qw(Math::BigNum $) => sub {
 ## Miscellaneous
 #
 
+=head2 is_zero
+
+    $x->is_zero     # => Bool
+
+Returns a true value when $x is 0.
+
+=cut
+
 sub is_zero {
     !Math::GMPq::Rmpq_sgn(${$_[0]});
 }
+
+=head2 is_one
+
+    $x->is_one           # => Bool
+    $x->is_one('-')      # => Bool
+
+Returns a true value when $x is 1. By specifying the argument C<'-'>, will return true only when $x is -1.
+
+=cut
 
 sub is_one {
     defined($_[1]) && $_[1] eq '-'
@@ -1999,63 +2124,170 @@ sub is_one {
       : Math::GMPq::Rmpq_equal(${$_[0]}, ${(ONE)});
 }
 
+=head2 is_pos
+
+    $x->is_pos          # => Bool
+
+Returns a true value when $x is greater than zero.
+
+=cut
+
 sub is_pos {
     Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
 }
 
+=head2 is_neg
+
+    $x->is_neg          # => Bool
+
+Returns a true value when $x is less than zero.
+
+=cut
+
 sub is_neg {
     Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
 }
+
+=head2 is_int
+
+    $x->is_int          # => Bool
+
+Returns a true value when $x is an integer.
+
+=cut
+
+sub is_int {
+    Math::GMPq::Rmpq_integer_p(${$_[0]});
+}
+
+=head2 is_real
+
+    $x->is_real         # => Bool
+
+Always returns a true value when invoked on Math::BigNum objects.
+
+=cut
+
+sub is_real { 1 }
+
+=head2 is_inf
+
+    $x->is_inf          # => Bool
+
+Always returns a false value when invoked on Math::BigNum objects.
+
+=cut
+
+sub is_inf { 0 }
+
+=head2 is_nan
+
+    $x->is_nan          # => Bool
+
+Always returns a false value when invoked on Math::BigNum objects.
+
+=cut
+
+sub is_nan { 0 }
+
+=head2 is_ninf
+
+    $x->is_ninf          # => Bool
+
+Always returns a false value when invoked on Math::BigNum objects.
+
+=cut
+
+sub is_ninf { 0 }
+
+=head2 is_even
+
+    $x->is_even          # => Bool
+
+Returns a true value when $x is divisible by 2. Returns C<undef> if $x is NOT an integer.
+
+=cut
+
+sub is_even {
+    my ($x) = @_;
+
+    if (!Math::GMPq::Rmpq_integer_p($$x)) {
+        return;
+    }
+
+    my $nz = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_get_num($nz, $$x);
+    Math::GMPz::Rmpz_even_p($nz);
+}
+
+=head2 is_odd
+
+    $x->is_odd          # => Bool
+
+Returns a true value when $x is NOT divisible by 2. Returns C<undef> if $x is NOT an integer.
+
+=cut
+
+sub is_odd {
+    my ($x) = @_;
+
+    if (!Math::GMPq::Rmpq_integer_p($$x)) {
+        return;
+    }
+
+    my $nz = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_get_num($nz, $$x);
+    Math::GMPz::Rmpz_odd_p($nz);
+}
+
+=head2 sign
+
+    $x->sign            # => Scalar
+
+Returns C<'-'> when $x is negative, C<'+'> when $x is positive, and C<''> when $x is zero.
+
+=cut
 
 sub sign {
     my $sign = Math::GMPq::Rmpq_sgn(${$_[0]});
     $sign > 0 ? '+' : $sign < 0 ? '-' : '';
 }
 
-sub is_int {
-    Math::GMPq::Rmpq_integer_p(${$_[0]});
-}
+=head2 max
 
-sub is_real { 1 }
-sub is_inf  { 0 }
-sub is_nan  { 0 }
-sub is_ninf { 0 }
+    $x->max(BigNum)         # => BigNum
 
-sub is_even {
-    my ($x) = @_;
+Returns the maximum value between $x and $y.
 
-    if (!Math::GMPq::Rmpq_integer_p($$x)) {
-        return 0;
-    }
+=cut
 
-    my $nz = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_get_num($nz, $$x);
-
-    Math::GMPz::Rmpz_even_p($nz);
-}
-
-sub is_odd {
-    my ($x) = @_;
-
-    if (!Math::GMPq::Rmpq_integer_p($$x)) {
-        return 0;
-    }
-
-    my $nz = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_get_num($nz, $$x);
-
-    Math::GMPz::Rmpz_odd_p($nz);
-}
-
+# TODO: add multimethods that handle scalars and +/-Inf
 multimethod max => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     Math::GMPq::Rmpq_cmp($$x, $$y) > 0 ? $x : $y;
 };
 
+=head2 min
+
+    $x->min(BigNum)         # => BigNum
+
+Returns the minimum value between $x and $y.
+
+=cut
+
+# TODO: add multimethods that handle scalars and +/-Inf
 multimethod min => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     Math::GMPq::Rmpq_cmp($$x, $$y) < 0 ? $x : $y;
 };
+
+=head2 int
+
+    $x->int         # => BigNum
+
+Returns a truncated integer from the value of $x.
+
+=cut
 
 sub int {
     my $z = Math::GMPz::Rmpz_init();
@@ -2065,6 +2297,14 @@ sub int {
 
 *as_int = \&int;
 
+=head2 bint
+
+    $x->bint        # => BigNum
+
+Truncates $x to an integer in-place.
+
+=cut
+
 sub bint {
     my ($x) = @_;
     my $z = Math::GMPz::Rmpz_init();
@@ -2072,6 +2312,15 @@ sub bint {
     Math::GMPq::Rmpq_set_z($$x, $z);
     $x;
 }
+
+=head2 float
+
+    $x->float       # => BigNum
+
+Returns a truncated number that fits inside
+number of bits specified in C<$Math::BigNum::PREC>.
+
+=cut
 
 sub float {
     my $f = Math::MPFR::Rmpfr_init2($PREC);
@@ -2081,10 +2330,28 @@ sub float {
 
 *as_float = \&float;
 
+=head2 as_rat
+
+    $x->float       # => Scalar
+
+Returns a string representing the number as a fraction.
+For C<$x=0.5>, it returns C<"1/2">.
+
+=cut
+
 sub as_rat {
     my $rat = Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
     index($rat, '/') == -1 ? "$rat/1" : $rat;
 }
+
+=head2 as_bin
+
+    $x->as_bin      # => Scalar
+
+Returns a string representing the value of $x in binary.
+For C<$x=42>, it returns C<"101010">.
+
+=cut
 
 sub as_bin {
     my $z = Math::GMPz::Rmpz_init();
@@ -2092,11 +2359,29 @@ sub as_bin {
     Math::GMPz::Rmpz_get_str($z, 2);
 }
 
+=head2 as_oct
+
+    $x->as_oct      # => Scalar
+
+Returns a string representing the value of $x in octal.
+For C<$x=42>, it returns C<"52">.
+
+=cut
+
 sub as_oct {
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
     Math::GMPz::Rmpz_get_str($z, 8);
 }
+
+=head2 as_hex
+
+    $x->as_hex      # => Scalar
+
+Returns a string representing the value of $x in hexadecimal.
+For C<$x=42>, it returns C<"2a">.
+
+=cut
 
 sub as_hex {
     my $z = Math::GMPz::Rmpz_init();
@@ -2104,13 +2389,30 @@ sub as_hex {
     Math::GMPz::Rmpz_get_str($z, 16);
 }
 
+=head2 digits
+
+    $x->digits      # => List of scalars
+
+Returns a list with the digits of $x in base 10 before the decimal point.
+For C<$x=-1234.56>, it returns C<(1,2,3,4)>
+
+=cut
+
 sub digits {
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
     Math::GMPz::Rmpz_abs($z, $z);
-    my @digits = split(//, Math::GMPz::Rmpz_get_str($z, 10));
-    @digits;
+    split(//, Math::GMPz::Rmpz_get_str($z, 10));
 }
+
+=head2 length
+
+    $x->length        # => Scalar
+
+Returns the number of digits of $x in base 10 before the decimal point.
+For C<$x=-1234.56>, it returns C<4>.
+
+=cut
 
 sub length {
     my $z = Math::GMPz::Rmpz_init();
@@ -2118,6 +2420,15 @@ sub length {
     Math::GMPz::Rmpz_abs($z, $z);
     Math::GMPz::Rmpz_snprintf(my $buf, 0, "%Zd", $z, 0);
 }
+
+=head2 floor
+
+    $x->floor       # => BigNum
+
+Returns $x if $x is an integer, otherwise it rounds $x towards -Infinity.
+For C<$x=2.5>, returns C<2>, and for C<$x=-2.5>, returns C<-3>.
+
+=cut
 
 sub floor {
     my ($x) = @_;
@@ -2136,6 +2447,15 @@ sub floor {
     }
 }
 
+=head2 ceil
+
+    $x->ceil       # => BigNum
+
+Returns $x if $x is an integer, otherwise it rounds $x towards +Infinity.
+For C<$x=2.5>, returns C<3>, and for C<$x=-2.5>, returns C<-2>.
+
+=cut
+
 sub ceil {
     my ($x) = @_;
     Math::GMPq::Rmpq_integer_p($$x) && return $x;
@@ -2153,6 +2473,14 @@ sub ceil {
     }
 }
 
+=head2 inc
+
+    $x->inc     # => BigNum
+
+Returns C<$x + 1>.
+
+=cut
+
 sub inc {
     my ($x) = @_;
     my $r = Math::GMPq::Rmpq_init();
@@ -2160,11 +2488,27 @@ sub inc {
     bless \$r, __PACKAGE__;
 }
 
+=head2 binc
+
+    $x->binc     # => BigNum
+
+Increments $x by 1 in-place.
+
+=cut
+
 sub binc {
     my ($x) = @_;
     Math::GMPq::Rmpq_add($$x, $$x, ${(ONE)});
     $x;
 }
+
+=head2 dec
+
+    $x->dec     # => BigNum
+
+Returns C<$x - 1>.
+
+=cut
 
 sub dec {
     my ($x) = @_;
@@ -2172,6 +2516,14 @@ sub dec {
     Math::GMPq::Rmpq_sub($r, $$x, ${(ONE)});
     bless \$r, __PACKAGE__;
 }
+
+=head2 bdec
+
+    $x->bdec     # => BigNum
+
+Decrements $x by 1 in-place.
+
+=cut
 
 sub bdec {
     my ($x) = @_;
@@ -2183,12 +2535,31 @@ sub bdec {
 ## Integer operations
 #
 
+=head2 expmod
+
+    $x->expmod(BigNum, BigNum)      # => BigNum
+
+Calculates C<($x ** $y) % $z>, where all three values are integers.
+
+=cut
+
+# TODO: make `expmod` to also support scalars.
 multimethod expmod => qw(Math::BigNum Math::BigNum Math::BigNum) => sub {
     my ($x, $y, $z) = @_;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_powm($r, _as_int($x), _as_int($y), _as_int($z));
     _mpz2rat($r);
 };
+
+=head2 and
+
+    $x->and(BigNum)         # => BigNum
+    $x->and(Scalar)         # => BigNum
+    Scalar & BigNum         # => BigNum
+
+Integer logical-and operation.
+
+=cut
 
 multimethod and => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
@@ -2197,12 +2568,60 @@ multimethod and => qw(Math::BigNum Math::BigNum) => sub {
     _mpz2rat($r);
 };
 
+multimethod and => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_and($r, _as_int($x), _str2mpz($y));
+    _mpz2rat($r);
+};
+
+multimethod and => qw($ Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_and($r, _str2mpz($x), _as_int($y));
+    _mpz2rat($r);
+};
+
+=head2 or
+
+    $x->or(BigNum)         # => BigNum
+    $x->or(Scalar)         # => BigNum
+    Scalar | BigNum        # => BigNum
+
+Integer logical-or operation.
+
+=cut
+
 multimethod or => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_ior($r, _as_int($x), _as_int($y));
     _mpz2rat($r);
 };
+
+multimethod or => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_ior($r, _as_int($x), _str2mpz($y));
+    _mpz2rat($r);
+};
+
+multimethod or => qw($ Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_ior($r, _str2mpz($x), _as_int($y));
+    _mpz2rat($r);
+};
+
+=head2 xor
+
+    $x->xor(BigNum)         # => BigNum
+    $x->xor(Scalar)         # => BigNum
+    Scalar ^ BigNum         # => BigNum
+
+Integer logical-xor operation.
+
+=cut
 
 multimethod xor => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
@@ -2211,12 +2630,46 @@ multimethod xor => qw(Math::BigNum Math::BigNum) => sub {
     _mpz2rat($r);
 };
 
+multimethod xor => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_xor($r, _as_int($x), _str2mpz($y));
+    _mpz2rat($r);
+};
+
+multimethod xor => qw($ Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_xor($r, _str2mpz($x), _as_int($y));
+    _mpz2rat($r);
+};
+
+=head2 not
+
+    $x->not         # => BigNum
+    ~BigNum         # => BigNum
+
+Integer logical-not operation. (The one's complement of $x).
+
+=cut
+
 sub not {
     my ($x) = @_;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_com($r, _as_int($x));
     _mpz2rat($r);
 }
+
+=head2 lsft
+
+    $x->lsft(BigNum)         # => BigNum
+    $x->lsft(Scalar)         # => BigNum
+    BigNum << BigNum         # => BigNum
+    BigNum << Scalar         # => BigNum
+
+Integer left-shift operation. (C<$x * (2 ** $y)>)
+
+=cut
 
 multimethod lsft => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
@@ -2231,6 +2684,17 @@ multimethod lsft => qw(Math::BigNum $) => sub {
     Math::GMPz::Rmpz_mul_2exp($r, _as_int($x), CORE::int($y));
     _mpz2rat($r);
 };
+
+=head2 rsft
+
+    $x->rsft(BigNum)         # => BigNum
+    $x->rsft(Scalar)         # => BigNum
+    BigNum << BigNum         # => BigNum
+    BigNum << Scalar         # => BigNum
+
+Integer right-shift operation. (C<$x / (2 ** $y)>)
+
+=cut
 
 multimethod rsft => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
@@ -2251,7 +2715,7 @@ multimethod rsft => qw(Math::BigNum $) => sub {
     $x->fac           # => BigNum | Nan
     fac(Scalar)       # => BigNum | Nan
 
-Factorial of $x. Returns Nan when $x is negative. (1*2*3*...*$x)
+Factorial of $x. Returns Nan when $x is negative. (C<1*2*3*...*$x>)
 
 =cut
 
@@ -2301,7 +2765,7 @@ multimethod dfac => qw($) => sub {
     $x->prim            # => BigNum | Nan
     prim(Scalar)        # => BigNum | Nan
 
-Primorial of $x. Returns Nan when $x is negative. (2*3*5*7*11*...*$x)
+Primorial of $x. Returns Nan when $x is negative. (C<2*3*5*7*11*...*$x>)
 
 =cut
 
@@ -2399,6 +2863,16 @@ multimethod agm => qw($ $) => sub {
     _mpfr2rat($r);
 };
 
+=head2 hypot
+
+    $x->hypot(BigNum)          # => BigNum
+    $x->hypot(Scalar)          # => BigNum
+    hypot(Scalar, Scalar)      # => BigNum
+
+The value of the hypotenuse for catheti $x and $y. (C<sqrt($x**2 + $y**2)>)
+
+=cut
+
 multimethod hypot => qw(Math::BigNum Math::BigNum) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_hypot($r, _as_float($_[0]), _as_float($_[1]), $ROUND);
@@ -2417,6 +2891,15 @@ multimethod hypot => qw($ $) => sub {
     _mpfr2rat($r);
 };
 
+=head2 gamma
+
+    $x->gamma        # => BigNum | Inf | Nan
+    gamma(Scalar)    # => BigNum | Inf | Nan
+
+The Gamma function on $x. Returns Inf when $x is zero, and Nan when $x is negative.
+
+=cut
+
 multimethod gamma => qw(Math::BigNum) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_gamma($r, _as_float($_[0]), $ROUND);
@@ -2428,6 +2911,16 @@ multimethod gamma => qw($) => sub {
     Math::MPFR::Rmpfr_gamma($r, _str2mpfr($_[0]), $ROUND);
     _mpfr2rat($r);
 };
+
+=head2 lngamma
+
+    $x->lngamma          # => BigNum | Inf
+    lngamma(Scalar)      # => BigNum | Inf
+
+The natural logarithm of the Gamma function on $x.
+Returns Inf when $x is negative or equal with zero.
+
+=cut
 
 multimethod lngamma => qw(Math::BigNum) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
@@ -2441,6 +2934,16 @@ multimethod lngamma => qw($) => sub {
     _mpfr2rat($r);
 };
 
+=head2 lgamma
+
+    $x->lgamma          # => BigNum | Inf
+    lgamma(Scalar)      # => BigNum | Inf
+
+The logarithm of the absolute value of the Gamma function.
+Returns Inf when $x is negative or equal with zero.
+
+=cut
+
 multimethod lgamma => qw(Math::BigNum) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_lgamma($r, _as_float($_[0]), $ROUND);
@@ -2452,6 +2955,16 @@ multimethod lgamma => qw($) => sub {
     Math::MPFR::Rmpfr_lgamma($r, _str2mpfr($_[0]), $ROUND);
     _mpfr2rat($r);
 };
+
+=head2 digamma
+
+    $x->digamma          # => BigNum | Ninf | Nan
+    digamma(Scalar)      # => BigNum | Ninf | Nan
+
+The Digamma function (sometimes also called Psi).
+Returns Nan when $x is negative, and -Inf when $x is 0.
+
+=cut
 
 multimethod digamma => qw(Math::BigNum) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
@@ -2465,6 +2978,15 @@ multimethod digamma => qw($) => sub {
     _mpfr2rat($r);
 };
 
+=head2 zeta
+
+    $x->zeta        # => BigNum | Inf
+    zeta(Scalar)    # => BigNum | Inf
+
+The zeta function on $x. Returns Inf when $x is 1.
+
+=cut
+
 multimethod zeta => qw(Math::BigNum) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_zeta($r, _as_float($_[0]), $ROUND);
@@ -2476,6 +2998,15 @@ multimethod zeta => qw($) => sub {
     Math::MPFR::Rmpfr_zeta($r, _str2mpfr($_[0]), $ROUND);
     _mpfr2rat($r);
 };
+
+=head2 erf
+
+    $x->erf          # => BigNum
+    erf(Scalar)      # => BigNum
+
+The error function on $x.
+
+=cut
 
 multimethod erf => qw(Math::BigNum) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
@@ -2489,6 +3020,15 @@ multimethod erf => qw($) => sub {
     _mpfr2rat($r);
 };
 
+=head2 erfc
+
+    $x->erfc        # => BigNum
+    erfc(Scalar)    # => BigNum
+
+Complementary error function on $x.
+
+=cut
+
 multimethod erfc => qw(Math::BigNum) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_erfc($r, _as_float($_[0]), $ROUND);
@@ -2501,6 +3041,15 @@ multimethod erfc => qw($) => sub {
     _mpfr2rat($r);
 };
 
+=head2 eint
+
+    $x->eint            # => BigNum | Nan
+    eint(Scalar)        # => BigNum | Nan
+
+Exponential integral of $x. Returns Nan when $x is negative.
+
+=cut
+
 multimethod eint => qw(Math::BigNum) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_eint($r, _as_float($_[0]), $ROUND);
@@ -2512,6 +3061,15 @@ multimethod eint => qw($) => sub {
     Math::MPFR::Rmpfr_eint($r, _str2mpfr($_[0]), $ROUND);
     _mpfr2rat($r);
 };
+
+=head2 li2
+
+    $x->li2         # => BigNum
+    li(Scalar)      # => BigNum
+
+The dilogarithm function, defined as the integral of C<-log(1-t)/t> from 0 to $x.
+
+=cut
 
 multimethod li2 => qw(Math::BigNum) => sub {
     my $r = Math::MPFR::Rmpfr_init2($PREC);

@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 107;
+plan tests => 117;
 
 # Initialization
 
@@ -265,6 +265,50 @@ plan tests => 107;
     ok(5.6 <= Math::BigNum->new(5.6));
     ok(!(12.3 <= Math::BigNum->new(4.3)));
     ok(!(21 <= Math::BigNum->new(3)));
+}
+
+# Integer tests
+{
+    use Math::BigNum;
+
+    my $x = Math::BigNum->new(42);
+    my $y = Math::BigNum->new(1227);
+
+    my $int =
+        '53885464952588636769288796952610833906623325457053423'
+      . '69492596680077919898979278105197183545838519370517708'
+      . '740399910496813982887129';
+
+    my $i = $y**42;
+    is("$i", $int);
+
+    $i = $y**$x;
+    is("$i", $int);
+
+    my $j = $i->idiv(1227);
+    ok("$j" =~ /9638805202027\z/);
+
+    $i->bidiv(1227);
+    ok($i == $j);
+
+    my $root = $y->iroot(3);
+    is("$root", "10");
+
+    $root = $y->iroot(Math::BigNum->new(4));
+    is("$root", "5");
+
+    $y->bneg;
+    $root = $y->iroot(2);
+    is("$root", "35i");
+
+    $root = $y->iroot(Math::BigNum->new(3));
+    is("$root", "-10");
+
+    $root = $y->iroot(Math::BigNum->new(6));
+    is("$root", "3i");
+
+    $root = $y->iroot(5);
+    is("$root", "-4");
 }
 
 # b* methods
