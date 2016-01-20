@@ -2071,23 +2071,30 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
-        my $r      = _as_int($x);
+
         my $yz     = _as_int($y);
         my $sign_y = Math::GMPz::Rmpz_sgn($yz);
         return NAN if !$sign_y;
+
+        my $r = _as_int($x);
         Math::GMPz::Rmpz_mod($r, $r, $yz);
-        Math::GMPz::Rmpz_add($r, $r, $yz) if ($sign_y > 0 xor Math::GMPq::Rmpq_sgn($r) > 0);
+        if (!Math::GMPz::Rmpz_sgn($r)) {
+            return (ZERO);    # return faster
+        }
+        elsif ($sign_y < 0) {
+            Math::GMPz::Rmpz_add($r, $r, $yz);
+        }
         _mpz2rat($r);
     }
     else {
         my $r  = _as_float($x);
         my $yf = _as_float($y);
         Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
-        my $sign = Math::MPFR::Rmpfr_sgn($r);
-        if (!$sign) {
+        my $sign_r = Math::MPFR::Rmpfr_sgn($r);
+        if (!$sign_r) {
             return (ZERO);    # return faster
         }
-        elsif ($sign > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
+        elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
             Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
         }
         _mpfr2rat($r);
@@ -2104,7 +2111,12 @@ multimethod mod => qw(Math::BigNum $) => sub {
         my $neg_y = $y < 0;
         $y = CORE::abs($y) if $neg_y;
         Math::GMPz::Rmpz_mod_ui($r, $r, $y);
-        Math::GMPz::Rmpz_sub_ui($r, $r, $y) if (!$neg_y xor Math::GMPq::Rmpq_sgn($r) > 0);
+        if (!Math::GMPz::Rmpz_sgn($r)) {
+            return (ZERO);    # return faster
+        }
+        elsif ($neg_y) {
+            Math::GMPz::Rmpz_sub_ui($r, $r, $y);
+        }
         _mpz2rat($r);
     }
     else {
@@ -2138,12 +2150,16 @@ multimethod bmod => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
-        my $r      = _as_int($x);
+
         my $yz     = _as_int($y);
         my $sign_y = Math::GMPz::Rmpz_sgn($yz);
         return NAN if !$sign_y;
+
+        my $r = _as_int($x);
         Math::GMPz::Rmpz_mod($r, $r, $yz);
-        Math::GMPz::Rmpz_add($r, $r, $yz) if ($sign_y > 0 xor Math::GMPq::Rmpq_sgn($r) > 0);
+        if ($sign_y < 0 and Math::GMPz::Rmpz_sgn($r)) {
+            Math::GMPz::Rmpz_add($r, $r, $yz);
+        }
         Math::GMPq::Rmpq_set_z($$x, $r);
     }
     else {
@@ -2173,18 +2189,20 @@ multimethod bmod => qw(Math::BigNum $) => sub {
         my $neg_y = $y < 0;
         $y = CORE::abs($y) if $neg_y;
         Math::GMPz::Rmpz_mod_ui($r, $r, $y);
-        Math::GMPz::Rmpz_sub_ui($r, $r, $y) if (!$neg_y xor Math::GMPq::Rmpq_sgn($r) > 0);
+        if ($neg_y and Math::GMPz::Rmpz_sgn($r)) {
+            Math::GMPz::Rmpz_sub_ui($r, $r, $y);
+        }
         Math::GMPq::Rmpq_set_z($$x, $r);
     }
     else {
         my $r  = _as_float($x);
         my $yf = _str2mpfr($y);
         Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
-        my $sign = Math::MPFR::Rmpfr_sgn($r);
-        if (!$sign) {
+        my $sign_r = Math::MPFR::Rmpfr_sgn($r);
+        if (!$sign_r) {
             ## ok
         }
-        elsif ($sign > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
+        elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
             Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
         }
         Math::MPFR::Rmpfr_get_q($$x, $r);

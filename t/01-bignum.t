@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 154;
+plan tests => 178;
 
 # Initialization
 
@@ -193,35 +193,120 @@ plan tests => 154;
     $x = Math::BigNum->new(335) % -13;
     is("$x", "-3");
 
+    $x = Math::BigNum->new(335);
+    $x->bmod(-13);
+    is("$x", "-3");
+
     $x = Math::BigNum->new(335) % -5;
+    is("$x", "0");
+
+    $x = Math::BigNum->new(335);
+    $x->bmod(-5);
+    is("$x", "0");
+
+    $x = Math::BigNum->new(335);
+    $x->bmod(Math::BigNum->new("-5"));
     is("$x", "0");
 
     $x = Math::BigNum->new(335) % Math::BigNum->new("-5.3");
     ok("$x" =~ /^-4\.[12]/);
 
+    $x = Math::BigNum->new(335) % -5.3;
+    ok("$x" =~ /^-4\.[12]/);
+
     $x = Math::BigNum->new(-335) % Math::BigNum->new("-3.3");
+    ok("$x" =~ /^-1\.[67]/);
+
+    $x = Math::BigNum->new(-335) % -3.3;
+    ok("$x" =~ /^-1\.[67]/);
+
+    $x = Math::BigNum->new(-335);
+    $x->bmod(-3.3);
+    ok("$x" =~ /^-1\.[67]/);
+
+    $x = Math::BigNum->new(-335);
+    $x->bmod(Math::BigNum->new("-3.3"));
     ok("$x" =~ /^-1\.[67]/);
 
     $x = Math::BigNum->new(335) % Math::BigNum->new("13.3");
     ok("$x" =~ /^2\.[45]/);
 
+    $x = Math::BigNum->new(335) % 13.3;
+    ok("$x" =~ /^2\.[45]/);
+
     $x = Math::BigNum->new(-335) % Math::BigNum->new("13.3");
+    ok("$x" =~ /^10\.[78]/);
+
+    $x = Math::BigNum->new(-335);
+    $x->bmod(13.3);
+    ok("$x" =~ /^10\.[78]/);
+
+    $x = Math::BigNum->new(-335);
+    $x->bmod(Math::BigNum->new("13.3"));
+    ok("$x" =~ /^10\.[78]/);
+
+    $x = Math::BigNum->new(-335) % 13.3;
     ok("$x" =~ /^10\.[78]/);
 
     $x = Math::BigNum->new(335) % Math::BigNum->new("-13.3");
     ok("$x" =~ /^-10\.[78]/);
 
+    $x = Math::BigNum->new(335) % -13.3;
+    ok("$x" =~ /^-10\.[78]/);
+
+    $x = Math::BigNum->new(335);
+    $x->bmod(-13.3);
+    ok("$x" =~ /^-10\.[78]/);
+
+    $x = Math::BigNum->new(335);
+    $x->bmod(Math::BigNum->new("-13.3"));
+    ok("$x" =~ /^-10\.[78]/);
+
     $x = Math::BigNum->new(-335) % Math::BigNum->new(-23);
+    is("$x", "-13");
+
+    $x = Math::BigNum->new(-335) % -23;
     is("$x", "-13");
 
     $x = Math::BigNum->new(335) % Math::BigNum->new(23);
     is("$x", "13");
 
+    $x = Math::BigNum->new(335) % 23;
+    is("$x", "13");
+
     $x = Math::BigNum->new(-335) % Math::BigNum->new(23);
+    is("$x", "10");
+
+    $x = Math::BigNum->new(-335) % 23;
     is("$x", "10");
 
     $x = Math::BigNum->new(335) % Math::BigNum->new(-23);
     is("$x", "-10");
+
+    $x = Math::BigNum->new(335) % -23;
+    is("$x", "-10");
+
+    $x = Math::BigNum->new(335);
+    $x->bmod(-23);
+    is("$x", "-10");
+
+    $x = Math::BigNum->new(335);
+    $x->bmod(Math::BigNum->new("-23"));
+    is("$x", "-10");
+
+    $x = Math::BigNum->new(35) % 5;
+    is("$x", "0");
+
+    $x = Math::BigNum->new(35) % Math::BigNum->new(5);
+    is("$x", "0");
+
+    $x = Math::BigNum->new(35);
+    $x->bmod(5);
+    is("$x", "0");
+
+    $x = Math::BigNum->new(35);
+    $x->bmod(Math::BigNum->new(5));
+    is("$x", "0");
 }
 
 # Comparisons
@@ -423,6 +508,7 @@ plan tests => 154;
 
     ++$y;
     is("$y", "1025");
+
     --$x;
     is("$x", "255");
 
