@@ -1,6 +1,6 @@
 package Math::BigNum;
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 
@@ -9,7 +9,7 @@ no warnings qw(qw);
 use Math::GMPq qw();
 use Math::GMPz qw();
 use Math::MPFR qw();
-use Math::BigRat qw(try GMP);
+use Math::BigRat qw(try GMP);   # would be nice to get rid of Math::BigRat
 
 use Class::Multimethods qw(multimethod);
 
@@ -46,30 +46,6 @@ BEGIN {
 use Math::BigNum::Inf qw();
 use Math::BigNum::Ninf qw();
 use Math::BigNum::Nan qw();
-
-# The reason for using subroutines instead of constants,
-# it's that the user may change the values of the constants
-# with the `b*` methods, resulting in very confusing behavior.
-#---------------------------------------------------------------
-# For example, let's say we return ZERO from method f():
-#   my $x = $i->f();
-#
-# Then the user says something like this:
-#   $x->badd(3)
-#
-# If we now call f() again, it will return 3, instead of 0, because
-# the returned constant ZERO was changed in-place, and this affects
-# all methods globally, therefore we can't use constants!
-#---------------------------------------------------------------
-
-#~ use constant {
-#~ NAN  => Math::BigNum::Nan->new,
-#~ INF  => Math::BigNum::Inf->new,
-#~ NINF => Math::BigNum::Ninf->new,
-#~ ONE  => bless(\Math::GMPq->new(1), __PACKAGE__),
-#~ ZERO => bless(\Math::GMPq->new(0), __PACKAGE__),
-#~ MONE => bless(\Math::GMPq->new(-1), __PACKAGE__),
-#~ };
 
 my $MONE = do {
     my $r = Math::GMPq::Rmpq_init();
@@ -112,8 +88,7 @@ sub MONE {
 }
 
 use Math::BigNum::Complex qw();
-use constant {i => Math::BigNum::Complex->new(0, 1)};    # I think this is safe to be a constant
-                                                         # as long as it's never returned from methods!
+use constant {i => Math::BigNum::Complex->new(0, 1)};
 
 use overload
   '""' => \&stringify,
@@ -351,6 +326,7 @@ sub _big2cplx {
     $x;
 }
 
+# TODO: find a better stringication method which doesn't involve Math::BigRat.
 sub stringify {
     my $v = Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
 

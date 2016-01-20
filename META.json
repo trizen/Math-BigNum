@@ -34,7 +34,7 @@
             "Math::GMPz" : "0",
             "Math::MPC" : "0",
             "Math::MPFR" : "3.29",
-            "perl" : "v5.10.0"
+            "perl" : "v5.14.0"
          }
       }
    },

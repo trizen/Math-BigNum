@@ -34,7 +34,7 @@ requires:
   Math::GMPz: '0'
   Math::MPC: '0'
   Math::MPFR: '3.29'
-  perl: v5.10.0
+  perl: v5.14.0
 resources:
   license: http://www.perlfoundation.org/artistic_license_2_0
 version: '0.01'

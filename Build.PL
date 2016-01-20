@@ -19,7 +19,7 @@ my $builder = Module::Build->new(
                                                     'Test::More' => 0,
                                                    },
                                  requires => {
-                                              'perl'           => '5.10.0',
+                                              'perl'           => '5.14.0',
                                               'Math::BigInt'   => 0,
                                               'Math::BigRat'   => 0,
                                               'Math::BigFloat' => 0,
