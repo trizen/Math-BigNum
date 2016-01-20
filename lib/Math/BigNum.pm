@@ -503,7 +503,7 @@ multimethod bnan => qw(Math::BigNum) => sub {
     $x->add(Inf)          # => Inf
     $x->add(Ninf)         # => Ninf
 
-Adds $x to $y and returns the result.
+Adds $y to $x and returns the result.
 
 =cut
 
@@ -542,7 +542,7 @@ multimethod add => qw(Math::BigNum Math::BigNum::Ninf) => sub {
     $x->badd(Inf)         # => Inf
     $x->badd(Ninf)        # => Ninf
 
-Add $y to $x by changing $x in-place.
+Adds $y to $x, changing $x in-place.
 
 =cut
 
@@ -568,6 +568,64 @@ multimethod badd => qw(Math::BigNum Math::BigNum::Ninf) => sub {
 
 multimethod badd => qw(Math::BigNum Math::BigNum::Nan) => sub {
     $_[0]->bnan;
+};
+
+=head2 iadd
+
+    $x->iadd(BigNum)        # => BigNum
+    $x->iadd(Scalar)        # => BigNum
+
+Integer addition of $y to $x. Both values
+are truncated to integers before addition.
+
+=cut
+
+multimethod iadd => qw(Math::BigNum Math::BigNum) => sub {
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_add($r, $r, _as_int($_[1]));
+    _mpz2rat($r);
+};
+
+multimethod iadd => qw(Math::BigNum $) => sub {
+    my $r = _as_int($_[0]);
+    my $y = CORE::int($_[1]);
+    if ($y < 0) {
+        Math::GMPz::Rmpz_sub_ui($r, $r, CORE::abs($y));
+    }
+    else {
+        Math::GMPz::Rmpz_add_ui($r, $r, $y);
+    }
+    _mpz2rat($r);
+};
+
+=head2 biadd
+
+    $x->biadd(BigNum)        # => BigNum
+    $x->biadd(Scalar)        # => BigNum
+
+Integer addition of $y from $x, changing $x in-place.
+Both values are truncated to integers before addition.
+
+=cut
+
+multimethod biadd => qw(Math::BigNum Math::BigNum) => sub {
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_add($r, $r, _as_int($_[1]));
+    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
+    $_[0];
+};
+
+multimethod biadd => qw(Math::BigNum $) => sub {
+    my $r = _as_int($_[0]);
+    my $y = CORE::int($_[1]);
+    if ($y < 0) {
+        Math::GMPz::Rmpz_sub_ui($r, $r, CORE::abs($y));
+    }
+    else {
+        Math::GMPz::Rmpz_add_ui($r, $r, $y);
+    }
+    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
+    $_[0];
 };
 
 =head2 sub
@@ -643,6 +701,64 @@ multimethod bsub => qw(Math::BigNum Math::BigNum::Ninf) => sub {
 
 multimethod bsub => qw(Math::BigNum Math::BigNum::Nan) => sub {
     $_[0]->bnan;
+};
+
+=head2 isub
+
+    $x->isub(BigNum)        # => BigNum
+    $x->isub(Scalar)        # => BigNum
+
+Integer subtraction of $y from $x. Both values
+are truncated to integers before subtraction.
+
+=cut
+
+multimethod isub => qw(Math::BigNum Math::BigNum) => sub {
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_sub($r, $r, _as_int($_[1]));
+    _mpz2rat($r);
+};
+
+multimethod isub => qw(Math::BigNum $) => sub {
+    my $r = _as_int($_[0]);
+    my $y = CORE::int($_[1]);
+    if ($y < 0) {
+        Math::GMPz::Rmpz_add_ui($r, $r, CORE::abs($y));
+    }
+    else {
+        Math::GMPz::Rmpz_sub_ui($r, $r, $y);
+    }
+    _mpz2rat($r);
+};
+
+=head2 bisub
+
+    $x->bisub(BigNum)        # => BigNum
+    $x->bisub(Scalar)        # => BigNum
+
+Integer subtraction of $y from $x, changing $x in-place.
+Both values are truncated to integers before subtraction.
+
+=cut
+
+multimethod bisub => qw(Math::BigNum Math::BigNum) => sub {
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_sub($r, $r, _as_int($_[1]));
+    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
+    $_[0];
+};
+
+multimethod bisub => qw(Math::BigNum $) => sub {
+    my $r = _as_int($_[0]);
+    my $y = CORE::int($_[1]);
+    if ($y < 0) {
+        Math::GMPz::Rmpz_add_ui($r, $r, CORE::abs($y));
+    }
+    else {
+        Math::GMPz::Rmpz_sub_ui($r, $r, $y);
+    }
+    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
+    $_[0];
 };
 
 =head2 mul
@@ -734,6 +850,64 @@ multimethod bmul => qw(Math::BigNum Math::BigNum::Ninf) => sub {
 
 multimethod bmul => qw(Math::BigNum Math::BigNum::Nan) => sub {
     $_[0]->bnan;
+};
+
+=head2 imul
+
+    $x->imul(BigNum)        # => BigNum
+    $x->imul(Scalar)        # => BigNum
+
+Integer multiplication of $x by $y. Both values
+are truncated to integers before multiplication.
+
+=cut
+
+multimethod imul => qw(Math::BigNum Math::BigNum) => sub {
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_mul($r, $r, _as_int($_[1]));
+    _mpz2rat($r);
+};
+
+multimethod imul => qw(Math::BigNum $) => sub {
+    my $r = _as_int($_[0]);
+    my $y = CORE::int($_[1]);
+    if ($y < 0) {
+        Math::GMPz::Rmpz_mul_si($r, $r, $y);
+    }
+    else {
+        Math::GMPz::Rmpz_mul_ui($r, $r, $y);
+    }
+    _mpz2rat($r);
+};
+
+=head2 bimul
+
+    $x->bimul(BigNum)        # => BigNum
+    $x->bimul(Scalar)        # => BigNum
+
+Integer multiplication of $x by $y, changing $x in-place.
+Both values are truncated to integers before multiplication.
+
+=cut
+
+multimethod bimul => qw(Math::BigNum Math::BigNum) => sub {
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_mul($r, $r, _as_int($_[1]));
+    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
+    $_[0];
+};
+
+multimethod bimul => qw(Math::BigNum $) => sub {
+    my $r = _as_int($_[0]);
+    my $y = CORE::int($_[1]);
+    if ($y < 0) {
+        Math::GMPz::Rmpz_mul_si($r, $r, $y);
+    }
+    else {
+        Math::GMPz::Rmpz_mul_ui($r, $r, $y);
+    }
+    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
+    $_[0];
 };
 
 =head2 div
@@ -2209,6 +2383,64 @@ multimethod bmod => qw(Math::BigNum $) => sub {
     }
 
     $x;
+};
+
+=head2 divmod
+
+    $x->divmod(BigNum)      # => (BigNum, BigNum) | (Nan, Nan)
+    $x->divmod(Scalar)      # => (BigNum, BigNum) | (Nan, Nan)
+
+Returns the quotient and the remainder from division of $x by $y,
+where both are integers. When $y is zero, it returns two Nan values.
+
+=cut
+
+multimethod divmod => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $r1 = _as_int($x);
+    my $r2 = _as_int($y);
+
+    return (NAN, NAN) if Math::GMPz::Rmpz_sgn($$y) == 0;
+
+    Math::GMPz::Rmpz_divmod($r1, $r2, $r1, $r2);
+    (_mpz2rat($r1), _mpz2rat($r2));
+};
+
+multimethod divmod => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    return (NAN, NAN) if CORE::int($y) == 0;
+
+    my $r1 = _as_int($x);
+    my $r2 = Math::GMPz::Rmpz_init();
+
+    Math::GMPz::Rmpz_divmod_ui($r1, $r2, $r1, CORE::int($y));
+    (_mpz2rat($r1), _mpz2rat($r2));
+};
+
+=head2 modinv
+
+    $x->modinv(BigNum)      # => BigNum | Nan
+    $x->divmod(Scalar)      # => BigNum | Nan
+
+Computes the inverse of $x modulo $y and returns the result.
+If an inverse doesn't exist the Nan value is returned.
+
+=cut
+
+multimethod modinv => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_invert($r, $r, _as_int($y)) || return NAN;
+    _mpz2rat($r);
+};
+
+multimethod modinv => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_invert($r, $r, _str2mpz($y)) || return NAN;
+    _mpz2rat($r);
 };
 
 #

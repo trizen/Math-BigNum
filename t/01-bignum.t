@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 178;
+plan tests => 202;
 
 # Initialization
 
@@ -307,6 +307,22 @@ plan tests => 178;
     $x = Math::BigNum->new(35);
     $x->bmod(Math::BigNum->new(5));
     is("$x", "0");
+
+    $x = Math::BigNum->new(1234);
+    my ($d, $m) = $x->divmod(Math::BigNum->new(15));
+    is("$d", "82");
+    is("$m", "4");
+
+    ($d, $m) = $x->divmod(17);
+    is("$d", "72");
+    is("$m", "10");
+
+    $x = Math::BigNum->new(42);
+    $m = $x->modinv(Math::BigNum->new(2017));
+    is("$m", "1969");
+
+    $m = $x->modinv(2017);
+    is("$m", "1969");
 }
 
 # Comparisons
@@ -436,6 +452,58 @@ plan tests => 178;
 
     $root = $y->iroot(5);
     is("$root", "-4");
+
+    my $r = $x->imul($y);
+    is("$r", "-51534");
+
+    $r = $x->imul(4.7);
+    is("$r", "168");
+
+    $x->bmul(9);
+    is("$x", "378");
+
+    $x->bmul($r);
+    is("$x", "63504");
+    is("$r", "168");
+
+    $r = $r->imul(-3);
+    is("$r", "-504");
+
+    $r->bimul(-5);
+    is("$r", "2520");
+
+    $r = $x->isub(1234);
+    is("$r", "62270");
+
+    $r = $x->isub(-42);
+    is("$r", "63546");
+
+    $r->bisub(Math::BigNum->new(12345));
+    is("$r", "51201");
+
+    $r->bisub(-5);
+    is("$r", "51206");
+
+    $r->bisub(51207);
+    is("$r", "-1");
+
+    $r = $x->iadd(42);
+    is("$r", "63546");
+
+    $r = $x->iadd(-10);
+    is("$r", "63494");
+
+    $r = $x->iadd(Math::BigNum->new(10));
+    is("$r", "63514");
+
+    $x->biadd(-60000);
+    is("$x", "3504");
+
+    $x->biadd(10);
+    is("$x", "3514");
+
+    $x->biadd(Math::BigNum->new(-3002));
+    is("$x", "512");
 }
 
 # b* methods
