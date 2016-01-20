@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 117;
+plan tests => 154;
 
 # Initialization
 
@@ -35,8 +35,8 @@ plan tests => 117;
 
     my $bigstr =
         "46663107721972076340849619428133350245357984132190810"
-      . "734296481947608799996614957804470731988078259143126848"
-      . "960413611879125592605458432000000000000000000000000.5";
+      . "73429648194760879999661495780447073198807825914312684"
+      . "8960413611879125592605458432000000000000000000000000.5";
 
     # Factorial
     my $fac = ((100->fac + 1) / 2);
@@ -180,6 +180,48 @@ plan tests => 117;
     $x->bdiv(Math::BigNum->new('5'));
     is("$x",    7);
     is("$copy", 35);
+
+    $x = $copy % 9;
+    is("$x", "8");
+
+    $x = $copy % -8;
+    is("$x", "-5");
+
+    $copy %= -7;
+    is("$copy", "0");
+
+    $x = Math::BigNum->new(335) % -13;
+    is("$x", "-3");
+
+    $x = Math::BigNum->new(335) % -5;
+    is("$x", "0");
+
+    $x = Math::BigNum->new(335) % Math::BigNum->new("-5.3");
+    ok("$x" =~ /^-4\.[12]/);
+
+    $x = Math::BigNum->new(-335) % Math::BigNum->new("-3.3");
+    ok("$x" =~ /^-1\.[67]/);
+
+    $x = Math::BigNum->new(335) % Math::BigNum->new("13.3");
+    ok("$x" =~ /^2\.[45]/);
+
+    $x = Math::BigNum->new(-335) % Math::BigNum->new("13.3");
+    ok("$x" =~ /^10\.[78]/);
+
+    $x = Math::BigNum->new(335) % Math::BigNum->new("-13.3");
+    ok("$x" =~ /^-10\.[78]/);
+
+    $x = Math::BigNum->new(-335) % Math::BigNum->new(-23);
+    is("$x", "-13");
+
+    $x = Math::BigNum->new(335) % Math::BigNum->new(23);
+    is("$x", "13");
+
+    $x = Math::BigNum->new(-335) % Math::BigNum->new(23);
+    is("$x", "10");
+
+    $x = Math::BigNum->new(335) % Math::BigNum->new(-23);
+    is("$x", "-10");
 }
 
 # Comparisons
@@ -331,4 +373,80 @@ plan tests => 117;
 
     $y->babs;
     is("$y", "2");
+}
+
+# op= operations
+{
+    use Math::BigNum;
+
+    my $x = Math::BigNum->new(10);
+    my $y = Math::BigNum->new(42);
+
+    $y += $x;
+    is("$y", "52");
+
+    $y -= $x;
+    is("$y", "42");
+
+    $y *= 2;
+    is("$y", "84");
+
+    $y -= 42;
+    is("$y", "42");
+
+    $y /= $x;
+    is("$y", "4.2");
+
+    $y += -0.2;
+    is("$y", "4");
+
+    $x**= 3;
+    is("$x", "1000");
+
+    $x /= 4;
+    is("$x", "250");
+
+    $y |= $x;
+    is("$y", "254");
+
+    $x ^= $y;
+    is("$x", "4");
+
+    $y &= $x;
+    is("$y", "4");
+
+    $x**= $y;
+    is("$x", "256");
+
+    $y *= $x;
+    is("$y", "1024");
+
+    ++$y;
+    is("$y", "1025");
+    --$x;
+    is("$x", "255");
+
+    $y %= $x;
+    is("$y", "5");
+
+    $x++;
+    is("$x", "256");
+
+    $y--;
+    is("$y", "4");
+
+    $x >>= $y;
+    is("$x", "16");
+
+    $y <<= $x;
+    is("$y", "262144");
+
+    $y >>= 16;
+    is("$y", "4");
+
+    $x <<= 2;
+    is("$x", "64");
+
+    $x %= 6;
+    is("$x", "4");
 }
