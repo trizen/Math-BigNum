@@ -71,25 +71,43 @@ use Math::BigNum::Nan qw();
 #~ MONE => bless(\Math::GMPq->new(-1), __PACKAGE__),
 #~ };
 
+my $MONE = do {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_si($r, -1, 1);
+    $r;
+};
+
+my $ZERO = do {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_ui($r, 0, 1);
+    $r;
+};
+
+my $ONE = do {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_ui($r, 1, 1);
+    $r;
+};
+
 sub NAN  { Math::BigNum::Nan->new }
 sub INF  { Math::BigNum::Inf->new }
 sub NINF { Math::BigNum::Ninf->new }
 
 sub ONE {
     my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set_ui($r, 1, 1);
+    Math::GMPq::Rmpq_set($r, $ONE);
     bless \$r, __PACKAGE__;
 }
 
 sub ZERO {
     my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set_ui($r, 0, 1);
+    Math::GMPq::Rmpq_set($r, $ZERO);
     bless \$r, __PACKAGE__;
 }
 
 sub MONE {
     my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set_si($r, -1, 1);
+    Math::GMPq::Rmpq_set($r, $MONE);
     bless \$r, __PACKAGE__;
 }
 
@@ -745,20 +763,21 @@ multimethod div => qw(Math::BigNum Math::BigNum) => sub {
     # Unsure optimization: set the numerator and denominator manually for integers.
     # Doing this, we get about the same performance as we would do integer division,
     # and this is because we prevent the expensive mpq_canonicalize() to get called,
-    # but this may have some other, nasty consequences. However, I haven't found any.
+    # but this may have some other, nasty consequences. So far, I haven't found any.
     # See also `Rational Arithmetic` on: https://gmplib.org/manual/Efficiency.html
+
     #~ if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
-    #~ my $num_z = Math::GMPz::Rmpz_init();
-    #~ my $den_z = Math::GMPz::Rmpz_init();
+    #~      my $num_z = Math::GMPz::Rmpz_init();
+    #~      my $den_z = Math::GMPz::Rmpz_init();
 
-    #~ Math::GMPq::Rmpq_numref($num_z, $$x);
-    #~ Math::GMPq::Rmpq_numref($den_z, $$y);
+    #~      Math::GMPq::Rmpq_numref($num_z, $$x);
+    #~      Math::GMPq::Rmpq_numref($den_z, $$y);
 
-    #~ my $r = Math::GMPq::Rmpq_init();
-    #~ Math::GMPq::Rmpq_set_num($r, $num_z);
-    #~ Math::GMPq::Rmpq_set_den($r, $den_z);
+    #~      my $r = Math::GMPq::Rmpq_init();
+    #~      Math::GMPq::Rmpq_set_num($r, $num_z);
+    #~      Math::GMPq::Rmpq_set_den($r, $den_z);
 
-    #~ return bless \$r, __PACKAGE__;
+    #~      return bless \$r, __PACKAGE__;
     #~ }
 
     my $r = Math::GMPq::Rmpq_init();
@@ -851,8 +870,8 @@ multimethod idiv => qw(Math::BigNum Math::BigNum) => sub {
         return (!$sign ? NAN : $sign > 0 ? INF : NINF);
     }
 
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_div($r, _as_int($x), _as_int($y));
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_div($r, $r, _as_int($y));
     _mpz2rat($r);
 };
 
@@ -865,13 +884,13 @@ multimethod idiv => qw(Math::BigNum $) => sub {
     }
 
     if (CORE::int($y) == $y and $y >= 0) {
-        my $r = Math::GMPz::Rmpz_init();
-        Math::GMPz::Rmpz_div_ui($r, _as_int($x), $y);
+        my $r = _as_int($x);
+        Math::GMPz::Rmpz_div_ui($r, $r, $y);
         return _mpz2rat($r);
     }
 
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_div($r, _as_int($x), _str2mpz($y));
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_div($r, $r, _str2mpz($y));
     _mpz2rat($r);
 };
 
@@ -897,8 +916,8 @@ multimethod bidiv => qw(Math::BigNum Math::BigNum) => sub {
           :             $x->bnan;
     }
 
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_div($r, _as_int($x), _as_int($y));
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_div($r, $r, _as_int($y));
     Math::GMPq::Rmpq_set_z($$x, $r);
     $x;
 };
@@ -915,14 +934,14 @@ multimethod bidiv => qw(Math::BigNum $) => sub {
     }
 
     if (CORE::int($y) == $y and $y >= 0) {
-        my $r = Math::GMPz::Rmpz_init();
-        Math::GMPz::Rmpz_div_ui($r, _as_int($x), $y);
+        my $r = _as_int($x);
+        Math::GMPz::Rmpz_div_ui($r, $r, $y);
         Math::GMPq::Rmpq_set_z($$x, $r);
         return $x;
     }
 
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_div($r, _as_int($x), _str2mpz($y));
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_div($r, $r, _str2mpz($y));
     Math::GMPq::Rmpq_set_z($$x, $r);
     $x;
 };
@@ -1037,8 +1056,8 @@ sub sqrt {
         return Math::BigNum::Complex->new($x)->sqrt;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_sqrt($r, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_sqrt($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1051,12 +1070,10 @@ Integer square root of $x. Returns a Complex number when $x is negative.
 =cut
 
 sub isqrt {
-    my ($x)    = @_;
-    my $r      = Math::GMPz::Rmpz_init();
-    my $z      = _as_int($x);
-    my $is_neg = Math::GMPz::Rmpz_sgn($z) < 0;
-    Math::GMPz::Rmpz_abs($z, $z) if $is_neg;
-    Math::GMPz::Rmpz_sqrt($r, $z);
+    my $r      = _as_int($_[0]);
+    my $is_neg = Math::GMPz::Rmpz_sgn($r) < 0;
+    Math::GMPz::Rmpz_abs($r, $r) if $is_neg;
+    Math::GMPz::Rmpz_sqrt($r, $r);
 
     $is_neg
       ? Math::BigNum::Complex->new(0, _mpz2rat($r))
@@ -1079,8 +1096,8 @@ sub cbrt {
         return Math::BigNum::Complex->new($x)->cbrt;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_cbrt($r, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_cbrt($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1183,18 +1200,18 @@ multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     if (Math::GMPq::Rmpq_sgn($$y) >= 0 and Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
-        my $z = Math::GMPz::Rmpz_init();
-        Math::GMPz::Rmpz_set_q($z, $$x);
-        Math::GMPz::Rmpz_pow_ui($z, $z, Math::GMPq::Rmpq_get_d($$y));
-        return _mpz2rat($z);
+        my $r = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_set_q($r, $$x);
+        Math::GMPz::Rmpz_pow_ui($r, $r, Math::GMPq::Rmpq_get_d($$y));
+        return _mpz2rat($r);
     }
 
     if (Math::GMPq::Rmpq_sgn($$x) < 0 and !Math::GMPq::Rmpq_integer_p($$y)) {
         return Math::BigNum::Complex->new($x)->pow($y);
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_pow($r, _as_float($x), _as_float($y), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_pow($r, $r, _as_float($y), $ROUND);
     _mpfr2rat($r);
 };
 
@@ -1211,7 +1228,7 @@ multimethod pow => qw($ Math::BigNum) => sub {
     Math::BigNum->new($_[0])->pow($_[1]);
 };
 
-multimethod pow => qw(Math::BigNum Math::BigNum::Inf)  => sub { $_[1] };
+multimethod pow => qw(Math::BigNum Math::BigNum::Inf)  => sub { INF };
 multimethod pow => qw(Math::BigNum Math::BigNum::Ninf) => sub { ZERO };
 multimethod pow => qw(Math::BigNum Math::BigNum::Nan)  => sub { NAN };
 
@@ -1243,8 +1260,8 @@ multimethod bpow => qw(Math::BigNum Math::BigNum) => sub {
         return $x;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_pow($r, _as_float($x), _as_float($y), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_pow($r, $r, _as_float($y), $ROUND);
     Math::MPFR::Rmpfr_get_q($$x, $r);
     $x;
 };
@@ -1255,10 +1272,10 @@ multimethod bpow => qw(Math::BigNum $) => sub {
     my $y_is_int = CORE::int($y) == $y;
 
     if ($y >= 0 and Math::GMPq::Rmpq_integer_p($$x) and $y_is_int) {
-        my $z = Math::GMPz::Rmpz_init();
-        Math::GMPz::Rmpz_set_q($z, $$x);
-        Math::GMPz::Rmpz_pow_ui($z, $z, $y);
-        Math::GMPq::Rmpq_set_z($$x, $z);
+        my $r = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_set_q($r, $$x);
+        Math::GMPz::Rmpz_pow_ui($r, $r, $y);
+        Math::GMPq::Rmpq_set_z($$x, $r);
         return $x;
     }
 
@@ -1268,17 +1285,17 @@ multimethod bpow => qw(Math::BigNum $) => sub {
         return $x;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    my $r = _as_float($x);
     if ($y_is_int) {
         if ($y >= 0) {
-            Math::MPFR::Rmpfr_pow_ui($r, _as_float($x), $y, $ROUND);
+            Math::MPFR::Rmpfr_pow_ui($r, $r, $y, $ROUND);
         }
         else {
-            Math::MPFR::Rmpfr_pow_ui($r, _as_float($x), $y, $ROUND);
+            Math::MPFR::Rmpfr_pow_si($r, $r, $y, $ROUND);
         }
     }
     else {
-        Math::MPFR::Rmpfr_pow($r, _as_float($x), _str2mpfr($y), $ROUND);
+        Math::MPFR::Rmpfr_pow($r, $r, _str2mpfr($y), $ROUND);
     }
 
     Math::MPFR::Rmpfr_get_q($$x, $r);
@@ -1300,8 +1317,8 @@ sub ln {
         return Math::BigNum::Complex->new($x)->ln;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_log($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1322,10 +1339,11 @@ multimethod log => qw(Math::BigNum Math::BigNum) => sub {
         return Math::BigNum::Complex->new($x)->log($y);
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
-    my $baseln = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_log($baseln, _as_float($y), $ROUND);
+    # log(x,base) = log(x)/log(base)
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_log($r, $r, $ROUND);
+    my $baseln = _as_float($y);
+    Math::MPFR::Rmpfr_log($baseln, $baseln, $ROUND);
     Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
 
     _mpfr2rat($r);
@@ -1338,18 +1356,18 @@ multimethod log => qw(Math::BigNum $) => sub {
         return Math::BigNum::Complex->new($x)->log($y);
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    my $r = _as_float($x);
 
     if ($y == 2) {
-        Math::MPFR::Rmpfr_log2($r, _as_float($x), $ROUND);
+        Math::MPFR::Rmpfr_log2($r, $r, $ROUND);
     }
     elsif ($y == 10) {
-        Math::MPFR::Rmpfr_log10($r, _as_float($x), $ROUND);
+        Math::MPFR::Rmpfr_log10($r, $r, $ROUND);
     }
     else {
-        Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
-        my $baseln = Math::MPFR::Rmpfr_init2($PREC);
-        Math::MPFR::Rmpfr_log($baseln, _str2mpfr($y), $ROUND);
+        Math::MPFR::Rmpfr_log($r, $r, $ROUND);
+        my $baseln = _str2mpfr($y);
+        Math::MPFR::Rmpfr_log($baseln, $baseln, $ROUND);
         Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
     }
 
@@ -1379,18 +1397,18 @@ multimethod blog => qw(Math::BigNum $) => sub {
         return _big2cplx($x, $z);
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    my $r = _as_float($x);
 
     if ($y == 2) {
-        Math::MPFR::Rmpfr_log2($r, _as_float($x), $ROUND);
+        Math::MPFR::Rmpfr_log2($r, $r, $ROUND);
     }
     elsif ($y == 10) {
-        Math::MPFR::Rmpfr_log10($r, _as_float($x), $ROUND);
+        Math::MPFR::Rmpfr_log10($r, $r, $ROUND);
     }
     else {
-        Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
-        my $baseln = Math::MPFR::Rmpfr_init2($PREC);
-        Math::MPFR::Rmpfr_log($baseln, _str2mpfr($y), $ROUND);
+        Math::MPFR::Rmpfr_log($r, $r, $ROUND);
+        my $baseln = _str2mpfr($y);
+        Math::MPFR::Rmpfr_log($baseln, $baseln, $ROUND);
         Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
     }
 
@@ -1406,8 +1424,8 @@ multimethod blog => qw(Math::BigNum) => sub {
         return _big2cplx($x, $z);
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_log($r, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_log($r, $r, $ROUND);
     Math::MPFR::Rmpfr_get_q($$x, $r);
 
     $x;
@@ -1428,8 +1446,8 @@ sub log2 {
         return Math::BigNum::Complex->new($x)->log2;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_log2($r, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_log2($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1448,8 +1466,8 @@ sub log10 {
         return Math::BigNum::Complex->new($x)->log10;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_log10($r, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_log10($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1462,9 +1480,8 @@ Exponential of $x in base e. (e**$x)
 =cut
 
 sub exp {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_exp($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_exp($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1477,9 +1494,8 @@ Exponential of $x in base 2. (2**$x)
 =cut
 
 sub exp2 {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_exp2($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_exp2($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1492,9 +1508,8 @@ Exponential of $x in base 10. (10**$x)
 =cut
 
 sub exp10 {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_exp10($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_exp10($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1503,9 +1518,8 @@ sub exp10 {
 #
 
 sub sin {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_sin($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_sin($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1517,29 +1531,26 @@ sub asin {
         return Math::BigNum::Complex->new($x)->asin;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_asin($r, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_asin($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub sinh {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_sinh($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_sinh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub asinh {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_asinh($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_asinh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub cos {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_cos($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_cos($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1551,15 +1562,14 @@ sub acos {
         return Math::BigNum::Complex->new($x)->acos;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_acos($r, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_acos($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub cosh {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_cosh($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_cosh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1571,29 +1581,26 @@ sub acosh {
         return Math::BigNum::Complex->new($x)->acosh;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_acosh($r, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_acosh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub tan {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_tan($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_tan($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub atan {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_atan($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_atan($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub tanh {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_tanh($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_tanh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1605,15 +1612,14 @@ sub atanh {
         return Math::BigNum::Complex->new($x)->atanh;
     }
 
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_atanh($r, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_atanh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub sec {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_sec($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_sec($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1629,16 +1635,15 @@ sub asec {
     }
 
     state $one = Math::MPFR->new(1);
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_acos($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub sech {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_sech($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_sech($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1654,16 +1659,15 @@ sub asech {
     }
 
     state $one = Math::MPFR->new(1);
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_acosh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub csc {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_csc($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_csc($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1679,16 +1683,15 @@ sub acsc {
     }
 
     state $one = Math::MPFR->new(1);
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_asin($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub csch {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_csch($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_csch($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1698,16 +1701,15 @@ sub csch {
 sub acsch {
     my ($x) = @_;
     state $one = Math::MPFR->new(1);
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_asinh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub cot {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_cot($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_cot($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1717,16 +1719,15 @@ sub cot {
 sub acot {
     my ($x) = @_;
     state $one = Math::MPFR->new(1);
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_atan($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
 sub coth {
-    my ($x) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_coth($r, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_coth($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
@@ -1734,10 +1735,9 @@ sub coth {
 ## acoth(x) = atanh(1/x)
 #
 sub acoth {
-    my ($x) = @_;
     state $one = Math::MPFR->new(1);
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_div($r, $one, _as_float($x), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_atanh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
@@ -1755,23 +1755,20 @@ Arctangent of $x and $y. When $y is Ninf returns PI when $x>=0 or -PI when $x < 
 =cut
 
 multimethod atan2 => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_atan2($r, _as_float($x), _as_float($y), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_atan2($r, $r, _as_float($_[1]), $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod atan2 => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_atan2($r, _as_float($x), _str2mpfr($y), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_atan2($r, $r, _str2mpfr($_[1]), $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod atan2 => qw($ Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_atan2($r, _str2mpfr($x), _as_float($y), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_atan2($r, $r, _as_float($_[1]), $ROUND);
     _mpfr2rat($r);
 };
 
@@ -2066,23 +2063,23 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
-        my $r      = Math::GMPz::Rmpz_init();
+        my $r      = _as_int($x);
         my $yz     = _as_int($y);
         my $sign_y = Math::GMPz::Rmpz_sgn($yz);
         return NAN if !$sign_y;
-        Math::GMPz::Rmpz_mod($r, _as_int($x), $yz);
+        Math::GMPz::Rmpz_mod($r, $r, $yz);
         Math::GMPz::Rmpz_add($r, $r, $yz) if ($sign_y < 0);
         _mpz2rat($r);
     }
     else {
-        my $r  = Math::MPFR::Rmpfr_init2($PREC);
+        my $r  = _as_float($x);
         my $yf = _as_float($y);
-        Math::MPFR::Rmpfr_fmod($r, _as_float($x), $yf, $ROUND);
+        Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
         my $sign = Math::MPFR::Rmpfr_sgn($r);
         if (!$sign) {
             return (ZERO);
         }
-        elsif (($sign > 0) ne (Math::MPFR::Rmpfr_sgn($yf) > 0)) {
+        elsif (($sign > 0) xor(Math::MPFR::Rmpfr_sgn($yf) > 0)) {
             Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
         }
         _mpfr2rat($r);
@@ -2119,9 +2116,9 @@ Returns a true value when $x is 1. By specifying the argument C<'-'>, will retur
 =cut
 
 sub is_one {
-    defined($_[1]) && $_[1] eq '-'
-      ? Math::GMPq::Rmpq_equal(${$_[0]}, ${(MONE)})
-      : Math::GMPq::Rmpq_equal(${$_[0]}, ${(ONE)});
+    exists($_[1]) && $_[1] eq '-'
+      ? Math::GMPq::Rmpq_equal(${$_[0]}, $MONE)
+      : Math::GMPq::Rmpq_equal(${$_[0]}, $ONE);
 }
 
 =head2 is_pos
@@ -2484,7 +2481,7 @@ Returns C<$x + 1>.
 sub inc {
     my ($x) = @_;
     my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_add($r, $$x, ${(ONE)});
+    Math::GMPq::Rmpq_add($r, $$x, $ONE);
     bless \$r, __PACKAGE__;
 }
 
@@ -2498,7 +2495,7 @@ Increments $x by 1 in-place.
 
 sub binc {
     my ($x) = @_;
-    Math::GMPq::Rmpq_add($$x, $$x, ${(ONE)});
+    Math::GMPq::Rmpq_add($$x, $$x, $ONE);
     $x;
 }
 
@@ -2513,7 +2510,7 @@ Returns C<$x - 1>.
 sub dec {
     my ($x) = @_;
     my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_sub($r, $$x, ${(ONE)});
+    Math::GMPq::Rmpq_sub($r, $$x, $ONE);
     bless \$r, __PACKAGE__;
 }
 
@@ -2527,7 +2524,7 @@ Decrements $x by 1 in-place.
 
 sub bdec {
     my ($x) = @_;
-    Math::GMPq::Rmpq_sub($$x, $$x, ${(ONE)});
+    Math::GMPq::Rmpq_sub($$x, $$x, $ONE);
     $x;
 }
 
@@ -2546,8 +2543,8 @@ Calculates C<($x ** $y) % $z>, where all three values are integers.
 # TODO: make `expmod` to also support scalars.
 multimethod expmod => qw(Math::BigNum Math::BigNum Math::BigNum) => sub {
     my ($x, $y, $z) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_powm($r, _as_int($x), _as_int($y), _as_int($z));
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_powm($r, $r, _as_int($y), _as_int($z));
     _mpz2rat($r);
 };
 
@@ -2562,23 +2559,20 @@ Integer logical-and operation.
 =cut
 
 multimethod and => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_and($r, _as_int($x), _as_int($y));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_and($r, $r, _as_int($_[1]));
     _mpz2rat($r);
 };
 
 multimethod and => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_and($r, _as_int($x), _str2mpz($y));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_and($r, $r, _str2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod and => qw($ Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_and($r, _str2mpz($x), _as_int($y));
+    my $r = _str2mpz($_[0]);
+    Math::GMPz::Rmpz_and($r, $r, _as_int($_[1]));
     _mpz2rat($r);
 };
 
@@ -2593,23 +2587,20 @@ Integer logical-or operation.
 =cut
 
 multimethod or => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_ior($r, _as_int($x), _as_int($y));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_ior($r, $r, _as_int($_[1]));
     _mpz2rat($r);
 };
 
 multimethod or => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_ior($r, _as_int($x), _str2mpz($y));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_ior($r, $r, _str2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod or => qw($ Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_ior($r, _str2mpz($x), _as_int($y));
+    my $r = _str2mpz($_[0]);
+    Math::GMPz::Rmpz_ior($r, $r, _as_int($_[1]));
     _mpz2rat($r);
 };
 
@@ -2624,23 +2615,20 @@ Integer logical-xor operation.
 =cut
 
 multimethod xor => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_xor($r, _as_int($x), _as_int($y));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_xor($r, $r, _as_int($_[1]));
     _mpz2rat($r);
 };
 
 multimethod xor => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_xor($r, _as_int($x), _str2mpz($y));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_xor($r, $r, _str2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod xor => qw($ Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_xor($r, _str2mpz($x), _as_int($y));
+    my $r = _str2mpz($_[0]);
+    Math::GMPz::Rmpz_xor($r, $r, _as_int($_[1]));
     _mpz2rat($r);
 };
 
@@ -2654,9 +2642,8 @@ Integer logical-not operation. (The one's complement of $x).
 =cut
 
 sub not {
-    my ($x) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_com($r, _as_int($x));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_com($r, $r);
     _mpz2rat($r);
 }
 
@@ -2673,15 +2660,14 @@ Integer left-shift operation. (C<$x * (2 ** $y)>)
 
 multimethod lsft => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_mul_2exp($r, _as_int($x), CORE::int(Math::GMPq::Rmpq_get_d($$y)));
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d($$y)));
     _mpz2rat($r);
 };
 
 multimethod lsft => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_mul_2exp($r, _as_int($x), CORE::int($y));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int($_[1]));
     _mpz2rat($r);
 };
 
@@ -2698,15 +2684,14 @@ Integer right-shift operation. (C<$x / (2 ** $y)>)
 
 multimethod rsft => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_div_2exp($r, _as_int($x), CORE::int(Math::GMPq::Rmpq_get_d($$y)));
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d($$y)));
     _mpz2rat($r);
 };
 
 multimethod rsft => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_div_2exp($r, _as_int($x), CORE::int($y));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int($_[1]));
     _mpz2rat($r);
 };
 
@@ -2819,15 +2804,14 @@ multimethod fib => qw($) => sub {
 
 multimethod binomial => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_bin_si($r, _as_int($x), CORE::int(Math::GMPq::Rmpq_get_d($$y)));
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_bin_si($r, $r, CORE::int(Math::GMPq::Rmpq_get_d($$y)));
     _mpz2rat($r);
 };
 
 multimethod binomial => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_bin_si($r, _as_int($x), CORE::int($y));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_bin_si($r, $r, CORE::int($_[1]));
     _mpz2rat($r);
 };
 
@@ -2846,20 +2830,20 @@ Arithmetic-geometric mean of $x and $y.
 =cut
 
 multimethod agm => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_agm($r, _as_float($_[0]), _as_float($_[1]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_agm($r, $r, _as_float($_[1]), $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod agm => qw(Math::BigNum $) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_agm($r, _as_float($_[0]), _str2mpfr($_[1]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_agm($r, $r, _str2mpfr($_[1]), $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod agm => qw($ $) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_agm($r, _str2mpfr($_[0]), _str2mpfr($_[1]), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_agm($r, $r, _str2mpfr($_[1]), $ROUND);
     _mpfr2rat($r);
 };
 
@@ -2874,20 +2858,20 @@ The value of the hypotenuse for catheti $x and $y. (C<sqrt($x**2 + $y**2)>)
 =cut
 
 multimethod hypot => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_hypot($r, _as_float($_[0]), _as_float($_[1]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_hypot($r, $r, _as_float($_[1]), $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod hypot => qw(Math::BigNum $) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_hypot($r, _as_float($_[0]), _str2mpfr($_[1]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_hypot($r, $r, _str2mpfr($_[1]), $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod hypot => qw($ $) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_hypot($r, _str2mpfr($_[0]), _str2mpfr($_[1]), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_hypot($r, $r, _str2mpfr($_[1]), $ROUND);
     _mpfr2rat($r);
 };
 
@@ -2901,14 +2885,14 @@ The Gamma function on $x. Returns Inf when $x is zero, and Nan when $x is negati
 =cut
 
 multimethod gamma => qw(Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_gamma($r, _as_float($_[0]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_gamma($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod gamma => qw($) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_gamma($r, _str2mpfr($_[0]), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_gamma($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
@@ -2923,14 +2907,14 @@ Returns Inf when $x is negative or equal with zero.
 =cut
 
 multimethod lngamma => qw(Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_lngamma($r, _as_float($_[0]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_lngamma($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod lngamma => qw($) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_lngamma($r, _str2mpfr($_[0]), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_lngamma($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
@@ -2945,14 +2929,14 @@ Returns Inf when $x is negative or equal with zero.
 =cut
 
 multimethod lgamma => qw(Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_lgamma($r, _as_float($_[0]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_lgamma($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod lgamma => qw($) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_lgamma($r, _str2mpfr($_[0]), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_lgamma($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
@@ -2967,14 +2951,14 @@ Returns Nan when $x is negative, and -Inf when $x is 0.
 =cut
 
 multimethod digamma => qw(Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_digamma($r, _as_float($_[0]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_digamma($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod digamma => qw($) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_digamma($r, _str2mpfr($_[0]), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_digamma($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
@@ -2988,14 +2972,14 @@ The zeta function on $x. Returns Inf when $x is 1.
 =cut
 
 multimethod zeta => qw(Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_zeta($r, _as_float($_[0]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_zeta($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod zeta => qw($) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_zeta($r, _str2mpfr($_[0]), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_zeta($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
@@ -3009,14 +2993,14 @@ The error function on $x.
 =cut
 
 multimethod erf => qw(Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_erf($r, _as_float($_[0]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_erf($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod erf => qw($) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_erf($r, _str2mpfr($_[0]), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_erf($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
@@ -3030,14 +3014,14 @@ Complementary error function on $x.
 =cut
 
 multimethod erfc => qw(Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_erfc($r, _as_float($_[0]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_erfc($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod erfc => qw($) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_erfc($r, _mpfr2rat($_[0]), $ROUND);
+    my $r = _mpfr2rat($_[0]);
+    Math::MPFR::Rmpfr_erfc($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
@@ -3051,14 +3035,14 @@ Exponential integral of $x. Returns Nan when $x is negative.
 =cut
 
 multimethod eint => qw(Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_eint($r, _as_float($_[0]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_eint($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod eint => qw($) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_eint($r, _str2mpfr($_[0]), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_eint($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
@@ -3072,14 +3056,14 @@ The dilogarithm function, defined as the integral of C<-log(1-t)/t> from 0 to $x
 =cut
 
 multimethod li2 => qw(Math::BigNum) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_li2($r, _as_float($_[0]), $ROUND);
+    my $r = _as_float($_[0]);
+    Math::MPFR::Rmpfr_li2($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
 multimethod li2 => qw($) => sub {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_li2($r, _str2mpfr($_[0]), $ROUND);
+    my $r = _str2mpfr($_[0]);
+    Math::MPFR::Rmpfr_li2($r, $r, $ROUND);
     _mpfr2rat($r);
 };
 
