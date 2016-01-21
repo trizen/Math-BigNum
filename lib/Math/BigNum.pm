@@ -2739,6 +2739,27 @@ sub as_hex {
     Math::GMPz::Rmpz_get_str($z, 16);
 }
 
+=head2 complex
+
+    $x->complex             # => Complex
+    $x->complex(BigNum)     # => Complex
+    $x->complex(Scalar)     # => Complex
+
+Creates a complex number with real part $x. When no
+argument is provided, the imaginary part is set to zero.
+
+=cut
+
+sub complex {
+    my ($x, $y) = @_;
+    if (defined $y) {
+        Math::BigNum::Complex->new($x, $y);
+    }
+    else {
+        Math::BigNum::Complex->new($x);
+    }
+}
+
 =head2 digits
 
     $x->digits      # => List of scalars
@@ -2769,6 +2790,42 @@ sub length {
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
     Math::GMPz::Rmpz_abs($z, $z);
     Math::GMPz::Rmpz_snprintf(my $buf, 0, "%Zd", $z, 0);
+}
+
+=head2 numerator
+
+    $x->numerator       # => BigNum
+
+Returns a copy of the numerator as signed BigNum.
+
+=cut
+
+sub numerator {
+    my ($x) = @_;
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_get_num($z, $$x);
+
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_z($r, $z);
+    bless \$r, __PACKAGE__;
+}
+
+=head2 denominator
+
+    $x->denominator     # => BigNum
+
+Returns a copy of the denominator as positive BigNum.
+
+=cut
+
+sub denominator {
+    my ($x) = @_;
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_get_den($z, $$x);
+
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_z($r, $z);
+    bless \$r, __PACKAGE__;
 }
 
 =head2 floor

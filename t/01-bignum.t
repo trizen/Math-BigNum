@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 202;
+plan tests => 208;
 
 # Initialization
 
@@ -32,6 +32,13 @@ plan tests => 202;
 
     # as_frac()
     is($x->as_frac, "1/3");
+
+    # numerator/denominator
+    my $nu = $x->numerator;
+    is("$nu", "1");
+
+    my $de = $x->denominator;
+    is("$de", "3");
 
     my $bigstr =
         "46663107721972076340849619428133350245357984132190810"
@@ -60,6 +67,9 @@ plan tests => 202;
     my $neg_n = -$n;
 
     is("$neg_n", "-42");
+
+    # Base conversion
+    is(10->in_base(2), "1010");
 }
 
 # Complex numbers
@@ -75,7 +85,17 @@ plan tests => 202;
     my $i = sqrt(-1);
     is("$i", 'i');
 
-    is(10->in_base(2), "1010");
+    $z = 10->complex;
+    is(ref($z), 'Math::BigNum::Complex');
+
+    my $re = $z->re;
+    is("$re", "10");
+
+    my $im = $z->im;
+    is("$im", "0");
+
+    $z = 3->complex(4);
+    is("$z", "3+4i");
 }
 
 # Float
