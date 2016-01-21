@@ -65,9 +65,43 @@ my $ONE = do {
     $r;
 };
 
-sub NAN  { Math::BigNum::Nan->new }
-sub INF  { Math::BigNum::Inf->new }
+=head2 NAN
+
+    BigNum->NAN        # => Nan
+
+Returns a new Nan object.
+
+=cut
+
+sub NAN { Math::BigNum::Nan->new }
+
+=head2 INF
+
+    BigNum->INF        # => Inf
+
+Returns a new Inf object.
+
+=cut
+
+sub INF { Math::BigNum::Inf->new }
+
+=head2 NINF
+
+    BigNum->NINF       # => Ninf
+
+Returns a new Ninf object.
+
+=cut
+
 sub NINF { Math::BigNum::Ninf->new }
+
+=head2 ONE
+
+    BigNum->ONE       # => BigNum
+
+Returns a BigNum object containing the value C<1>.
+
+=cut
 
 sub ONE {
     my $r = Math::GMPq::Rmpq_init();
@@ -75,11 +109,27 @@ sub ONE {
     bless \$r, __PACKAGE__;
 }
 
+=head2 ZERO
+
+    BigNum->ZERO        # => BigNum
+
+Returns a BigNum object containing the value C<0>.
+
+=cut
+
 sub ZERO {
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_set($r, $ZERO);
     bless \$r, __PACKAGE__;
 }
+
+=head2 MONE
+
+    BigNum->MONE        # => BigNum
+
+Returns a BigNum object containing the value C<-1>.
+
+=cut
 
 sub MONE {
     my $r = Math::GMPq::Rmpq_init();
@@ -88,6 +138,16 @@ sub MONE {
 }
 
 use Math::BigNum::Complex qw();
+
+=head2 i
+
+    BigNum::i           # => Complex
+
+Returns the number C<i>, which is the square root of C<-1>.
+The returned value is a constant object and must NOT be changed in-place.
+
+=cut
+
 use constant {i => Math::BigNum::Complex->new(0, 1)};
 
 use overload
@@ -180,6 +240,27 @@ sub _new_uint {
     bless \$r, __PACKAGE__;
 }
 
+=head2 new
+
+    BigNum->new(Scalar)              # => BigNum
+    BigNum->new(Scalar, Scalar)      # => BigNum
+
+Returns a new BigNum object with the value specified in the first argument,
+which can be a Perl numerical value, a string representing a number in a
+rational form, such as C<"1/2">, a string holding a floating-point number,
+such as C<"0.5">, or a string holding an integer, such as C<"255">.
+
+The second argument specifies the base of the number, which can range from 2
+to 36 inclusive and defaults to 10.
+
+For setting an hexadecimal number, we can say:
+
+    my $x = Math::BigNum->new("deadbeef", 16);
+
+B<NOTE:> no prefix, such as C<"0x"> or C<"0b">, is allowed in front of the number.
+
+=cut
+
 multimethod new => qw($ Math::BigNum) => sub {
     $_[1]->copy;
 };
@@ -211,8 +292,9 @@ multimethod new => qw($ # #) => sub {
 multimethod new => qw($ $ $) => sub {
     my $r = Math::GMPq::Rmpq_init();
     if ($_[2] == 10) {
-        Math::GMPq::Rmpq_set_str($r, _str2rat($_[1]), 10);
-        Math::GMPq::Rmpq_canonicalize($r);
+        my $rat = _str2rat($_[1]);
+        Math::GMPq::Rmpq_set_str($r, $rat, 10);
+        Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
     }
     else {
         Math::GMPq::Rmpq_set_str($r, $_[1], $_[2]);
@@ -347,6 +429,15 @@ sub _big2cplx {
     $x;
 }
 
+=head2 stringify
+
+    $x->stringify       # => Scalar
+
+Returns a string representing the value of $x, either as an integer
+or as a floating-point number. For C<$x=1/2>, it returns C<"0.5">.
+
+=cut
+
 # TODO: find a better stringication method which doesn't involve Math::BigRat.
 sub stringify {
     my $v = Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
@@ -361,17 +452,41 @@ sub stringify {
     }
 }
 
+=head2 numify
+
+    $x->numify      # => Scalar
+
+Returns a Perl numerical scalar with the value of $x, truncated if needed.
+
+=cut
+
 sub numify {
     Math::GMPq::Rmpq_get_d(${$_[0]});
 }
+
+=head2 boolify
+
+    $x->boolify     # => Bool
+
+Returns a true value when the number is not zero. False otherwise.
+
+=cut
 
 sub boolify {
     !!Math::GMPq::Rmpq_sgn(${$_[0]});
 }
 
-sub as_frac {
-    Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
-}
+=head2 in_base
+
+    $x->in_base(BigNum)     # => Scalar
+    $x->in_base(Scalar)     # => Scalar
+
+Returns a string with the value of $x in a given base,
+where the base can range from 2 to 36 inclusive. If $x
+is not an integer, the result is returned in rationalized
+form.
+
+=cut
 
 multimethod in_base => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
@@ -387,6 +502,14 @@ multimethod in_base => qw(Math::BigNum Math::BigNum) => sub {
     $_[0]->in_base(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
 };
 
+=head2 copy
+
+    $x->copy        # => BigNum
+
+Returns a deep copy of $x.
+
+=cut
+
 sub copy {
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_set($r, ${$_[0]});
@@ -397,11 +520,27 @@ sub copy {
 ## Constants
 #
 
+=head2 pi
+
+    BigNum->pi      # => BigNum
+
+Returns the number PI, which is 3.1415...
+
+=cut
+
 sub pi {
     my $pi = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_const_pi($pi, $ROUND);
     _mpfr2rat($pi);
 }
+
+=head2 tau
+
+    BigNum->tau      # => BigNum
+
+Returns the number TAU, which is 2*PI.
+
+=cut
 
 sub tau {
     my $tau = Math::MPFR::Rmpfr_init2($PREC);
@@ -410,11 +549,27 @@ sub tau {
     _mpfr2rat($tau);
 }
 
+=head2 ln2
+
+    BigNum->ln2      # => BigNum
+
+Returns the natural logarithm of 2.
+
+=cut
+
 sub ln2 {
     my $ln2 = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_const_log2($ln2, $ROUND);
     _mpfr2rat($ln2);
 }
+
+=head2 Y
+
+    BigNum->Y       # => BigNum
+
+Returns the Euler-Mascheroni constant, which is 0.57721...
+
+=cut
 
 sub Y {
     my $euler = Math::MPFR::Rmpfr_init2($PREC);
@@ -422,11 +577,28 @@ sub Y {
     _mpfr2rat($euler);
 }
 
+=head2 G
+
+    BigNum->G       # => BigNum
+
+Returns the value of Catalan's constant, also known
+as Beta(2) or G, and starts as: 0.91596...
+
+=cut
+
 sub G {
     my $catalan = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_const_catalan($catalan, $ROUND);
     _mpfr2rat($catalan);
 }
+
+=head2 e
+
+    BigNum->e      # => BigNum
+
+Returns the e mathematical constant, which is 2.718...
+
+=cut
 
 sub e {
     state $one_f = (Math::MPFR::Rmpfr_init_set_ui(1, $ROUND))[0];
@@ -434,6 +606,14 @@ sub e {
     Math::MPFR::Rmpfr_exp($e, $one_f, $ROUND);
     _mpfr2rat($e);
 }
+
+=head2 phi
+
+    BigNum->phi     # => BigNum
+
+Returns the value of the golden ratio, which is 1.61803...
+
+=cut
 
 sub phi {
     state $one_f  = (Math::MPFR::Rmpfr_init_set_ui(1, $ROUND))[0];
@@ -451,6 +631,16 @@ sub phi {
 #
 ## Special values
 #
+
+=head2 binf
+
+    $x->binf              # => Inf
+    $x->binf(Scalar)      # => Inf | Ninf
+
+Changes $x in-place to positive or negative Infinity. If an argument
+is provided, it must be "+", or "-", signifying the type of Infinity.
+
+=cut
 
 multimethod binf => qw(Math::BigNum) => sub {
     my ($x) = @_;
@@ -477,12 +667,28 @@ multimethod binf => qw(Math::BigNum $) => sub {
     $x;
 };
 
+=head2 bninf
+
+    $x->bninf       # => Ninf
+
+Changes $x in-place to negative Infinity.
+
+=cut
+
 multimethod bninf => qw(Math::BigNum) => sub {
     my ($x) = @_;
     Math::GMPq::Rmpq_set_si($$x, -1, 0);
     bless $x, 'Math::BigNum::Ninf';
     $x;
 };
+
+=head2 bnan
+
+    $x->bnan        # => Nan
+
+Changes $x in-place to the special Not-A-Number value. (NaN)
+
+=cut
 
 multimethod bnan => qw(Math::BigNum) => sub {
     my ($x) = @_;
@@ -1697,17 +1903,34 @@ sub exp10 {
 ## Trigonometric functions
 #
 
+=head2 sin
+
+    $x->sin       # => BigNum
+
+Returns the sine of $x.
+
+=cut
+
 sub sin {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_sin($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
+=head2 asin
+
+    $x->asin       # => BigNum | Complex
+
+Returns the inverse sine of $x.
+Returns a Complex number for $x < -1 or $ > 1.
+
+=cut
+
 sub asin {
     my ($x) = @_;
 
     # Return a complex number for x < -1 or x > 1
-    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) > 0 or Math::GMPq::Rmpq_cmp_si($$x, -1, 1) < 0) {
+    if (Math::GMPq::Rmpq_cmp($$x, $ONE) > 0 or Math::GMPq::Rmpq_cmp($$x, $MONE) < 0) {
         return Math::BigNum::Complex->new($x)->asin;
     }
 
@@ -1716,11 +1939,27 @@ sub asin {
     _mpfr2rat($r);
 }
 
+=head2 sinh
+
+    $x->sinh       # => BigNum
+
+Returns the hyperbolic sine of $x.
+
+=cut
+
 sub sinh {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_sinh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
+
+=head2 asinh
+
+    $x->asinh       # => BigNum
+
+Returns the inverse hyperbolic sine of $x.
+
+=cut
 
 sub asinh {
     my $r = _as_float($_[0]);
@@ -1728,17 +1967,34 @@ sub asinh {
     _mpfr2rat($r);
 }
 
+=head2 cos
+
+    $x->cos       # => BigNum
+
+Returns the cosine of $x.
+
+=cut
+
 sub cos {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_cos($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
+=head2 acos
+
+    $x->acos       # => BigNum | Complex
+
+Returns the inverse cosine of $x.
+Returns a Complex number for $x < -1 or $x > 1.
+
+=cut
+
 sub acos {
     my ($x) = @_;
 
     # Return a complex number for x < -1 or x > 1
-    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) > 0 or Math::GMPq::Rmpq_cmp_si($$x, -1, 1) < 0) {
+    if (Math::GMPq::Rmpq_cmp($$x, $ONE) > 0 or Math::GMPq::Rmpq_cmp($$x, $MONE) < 0) {
         return Math::BigNum::Complex->new($x)->acos;
     }
 
@@ -1747,17 +2003,34 @@ sub acos {
     _mpfr2rat($r);
 }
 
+=head2 cosh
+
+    $x->cosh       # => BigNum
+
+Returns the hyperbolic cosine of $x.
+
+=cut
+
 sub cosh {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_cosh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
+=head2 acosh
+
+    $x->acosh       # => BigNum | Complex
+
+Returns the inverse hyperbolic cosine of $x.
+Returns a Complex number for $x < 1.
+
+=cut
+
 sub acosh {
     my ($x) = @_;
 
     # Return a complex number for x < 1
-    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) < 0) {
+    if (Math::GMPq::Rmpq_cmp($$x, $ONE) < 0) {
         return Math::BigNum::Complex->new($x)->acosh;
     }
 
@@ -1766,11 +2039,27 @@ sub acosh {
     _mpfr2rat($r);
 }
 
+=head2 tan
+
+    $x->tan       # => BigNum
+
+Returns the tangent of $x.
+
+=cut
+
 sub tan {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_tan($r, $r, $ROUND);
     _mpfr2rat($r);
 }
+
+=head2 atan
+
+    $x->atan       # => BigNum
+
+Returns the inverse tangent of $x.
+
+=cut
 
 sub atan {
     my $r = _as_float($_[0]);
@@ -1778,17 +2067,34 @@ sub atan {
     _mpfr2rat($r);
 }
 
+=head2 tanh
+
+    $x->tanh       # => BigNum
+
+Returns the hyperbolic tangent of $x.
+
+=cut
+
 sub tanh {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_tanh($r, $r, $ROUND);
     _mpfr2rat($r);
 }
 
+=head2 atanh
+
+    $x->atanh       # => BigNum | Complex
+
+Returns the inverse hyperbolic tangent of $x.
+Returns a Complex number for $x <= -1 or $x >= 1.
+
+=cut
+
 sub atanh {
     my ($x) = @_;
 
     # Return a complex number for x <= -1 or x >= 1
-    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) >= 0 or Math::GMPq::Rmpq_cmp_si($$x, -1, 1) <= 0) {
+    if (Math::GMPq::Rmpq_cmp($$x, $ONE) >= 0 or Math::GMPq::Rmpq_cmp($$x, $MONE) <= 0) {
         return Math::BigNum::Complex->new($x)->atanh;
     }
 
@@ -1797,11 +2103,28 @@ sub atanh {
     _mpfr2rat($r);
 }
 
+=head2 sec
+
+    $x->sec       # => BigNum
+
+Returns the secant of $x.
+
+=cut
+
 sub sec {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_sec($r, $r, $ROUND);
     _mpfr2rat($r);
 }
+
+=head2 asec
+
+    $x->asec       # => BigNum | Complex
+
+Returns the inverse secant of $x.
+Returns a Complex number for $x > -1 and $x < 1.
+
+=cut
 
 #
 ## asec(x) = acos(1/x)
@@ -1810,7 +2133,7 @@ sub asec {
     my ($x) = @_;
 
     # Return a complex number for x > -1 and x < 1
-    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) < 0 and Math::GMPq::Rmpq_cmp_si($$x, -1, 1) > 0) {
+    if (Math::GMPq::Rmpq_cmp($$x, $ONE) < 0 and Math::GMPq::Rmpq_cmp($$x, $MONE) > 0) {
         return Math::BigNum::Complex->new($x)->asec;
     }
 
@@ -1821,11 +2144,28 @@ sub asec {
     _mpfr2rat($r);
 }
 
+=head2 sech
+
+    $x->sech       # => BigNum
+
+Returns the hyperbolic secant of $x.
+
+=cut
+
 sub sech {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_sech($r, $r, $ROUND);
     _mpfr2rat($r);
 }
+
+=head2 asech
+
+    $x->asech       # => BigNum | Complex
+
+Returns the inverse hyperbolic secant of $x.
+Returns a Complex number for $x < 0 or $x > 1.
+
+=cut
 
 #
 ## asech(x) = acosh(1/x)
@@ -1834,7 +2174,7 @@ sub asech {
     my ($x) = @_;
 
     # Return a complex number for x < 0 or x > 1
-    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) > 0 or Math::GMPq::Rmpq_cmp_ui($$x, 0, 1) < 0) {
+    if (Math::GMPq::Rmpq_cmp($$x, $ONE) > 0 or Math::GMPq::Rmpq_sgn($$x) < 0) {
         return Math::BigNum::Complex->new($x)->asech;
     }
 
@@ -1845,11 +2185,27 @@ sub asech {
     _mpfr2rat($r);
 }
 
+=head2 csc
+
+    $x->csc       # => BigNum
+
+Returns the cosecant of $x.
+
+=cut
+
 sub csc {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_csc($r, $r, $ROUND);
     _mpfr2rat($r);
 }
+
+=head2 acsc
+
+    $x->acsc       # => BigNum | Complex
+
+Returns the inverse cosecant of $x. Returns a Complex number for $x > -1 and $x < 1.
+
+=cut
 
 #
 ## acsc(x) = asin(1/x)
@@ -1858,7 +2214,7 @@ sub acsc {
     my ($x) = @_;
 
     # Return a complex number for x > -1 and x < 1
-    if (Math::GMPq::Rmpq_cmp_ui($$x, 1, 1) < 0 and Math::GMPq::Rmpq_cmp_si($$x, -1, 1) > 0) {
+    if (Math::GMPq::Rmpq_cmp($$x, $ONE) < 0 and Math::GMPq::Rmpq_cmp($$x, $MONE) > 0) {
         return Math::BigNum::Complex->new($x)->acsc;
     }
 
@@ -1869,11 +2225,27 @@ sub acsc {
     _mpfr2rat($r);
 }
 
+=head2 csch
+
+    $x->csch       # => BigNum
+
+Returns the hyperbolic cosecant of $x.
+
+=cut
+
 sub csch {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_csch($r, $r, $ROUND);
     _mpfr2rat($r);
 }
+
+=head2 acsch
+
+    $x->acsch       # => BigNum
+
+Returns the inverse hyperbolic cosecant of $x.
+
+=cut
 
 #
 ## acsch(x) = asinh(1/x)
@@ -1887,11 +2259,27 @@ sub acsch {
     _mpfr2rat($r);
 }
 
+=head2 cot
+
+    $x->cot       # => BigNum
+
+Returns the cotangent of $x.
+
+=cut
+
 sub cot {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_cot($r, $r, $ROUND);
     _mpfr2rat($r);
 }
+
+=head2 acot
+
+    $x->acot       # => BigNum
+
+Returns the inverse cotangent of $x.
+
+=cut
 
 #
 ## acot(x) = atan(1/x)
@@ -1905,11 +2293,27 @@ sub acot {
     _mpfr2rat($r);
 }
 
+=head2 coth
+
+    $x->coth       # => BigNum
+
+Returns the hyperbolic cotangent of $x.
+
+=cut
+
 sub coth {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_coth($r, $r, $ROUND);
     _mpfr2rat($r);
 }
+
+=head2 acoth
+
+    $x->acoth       # => BigNum
+
+Returns the inverse hyperbolic cotangent of $x.
+
+=cut
 
 #
 ## acoth(x) = atanh(1/x)
@@ -2172,7 +2576,7 @@ multimethod cmp => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     if (CORE::int($y) == $y) {
-        $y > 0
+        $y >= 0
           ? Math::GMPq::Rmpq_cmp_ui($$x, $y, 1)
           : Math::GMPq::Rmpq_cmp_si($$x, $y, 1);
     }
@@ -2186,7 +2590,7 @@ multimethod cmp => qw($ Math::BigNum) => sub {
 
     if (CORE::int($x) == $x) {
         my $cmp =
-          $x > 0
+          $x >= 0
           ? Math::GMPq::Rmpq_cmp_ui($$y, $x, 1)
           : Math::GMPq::Rmpq_cmp_si($$y, $x, 1);
         $cmp < 0 ? 1 : $cmp > 0 ? -1 : 0;
@@ -2634,6 +3038,7 @@ multimethod min => qw(Math::BigNum Math::BigNum) => sub {
 =head2 int
 
     $x->int         # => BigNum
+    int($x)         # => BigNum
 
 Returns a truncated integer from the value of $x.
 
@@ -2644,8 +3049,6 @@ sub int {
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
     _mpz2rat($z);
 }
-
-*as_int = \&int;
 
 =head2 bint
 
@@ -2678,20 +3081,32 @@ sub float {
     _mpfr2rat($f);
 }
 
-*as_float = \&float;
+=head2 as_frac
+
+    $x->as_frac       # => Scalar
+
+Returns a string representing the number as a fraction.
+For C<$x=0.5>, it returns C<"1/2">. For C<$x=3>, it returns C<"3/1">.
+
+=cut
+
+sub as_frac {
+    my $rat = Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
+    index($rat, '/') == -1 ? "$rat/1" : $rat;
+}
 
 =head2 as_rat
 
-    $x->float       # => Scalar
+    $x->as_rat     # => Scalar
 
-Returns a string representing the number as a fraction.
-For C<$x=0.5>, it returns C<"1/2">.
+Almost the same as C<as_frac()>, except that integers are returned as they are,
+without adding the "1" denominator. For C<$x=0.5>, it returns C<"1/2">. For
+C<$x=3>, it simply returns C<"3">.
 
 =cut
 
 sub as_rat {
-    my $rat = Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
-    index($rat, '/') == -1 ? "$rat/1" : $rat;
+    Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
 }
 
 =head2 as_bin
