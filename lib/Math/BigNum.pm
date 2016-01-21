@@ -1968,7 +1968,7 @@ multimethod atan2 => qw(Math::BigNum Math::BigNum::Ninf) => sub {
 
     $x->eq($y)
 
-Equality check: returns true when $x and $y are equal.
+Equality check: returns a true value when $x and $y are equal.
 
 =cut
 
@@ -1994,7 +1994,7 @@ multimethod eq => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
 
     $x->ne($y)
 
-Inequality check: returns true when $x and $y are not equal.
+Inequality check: returns a true value when $x and $y are not equal.
 
 =cut
 
@@ -2990,13 +2990,12 @@ multimethod and => qw($ Math::BigNum) => sub {
 
 =head2 band
 
-    $x->and(BigNum)         # => BigNum
-    $x->and(Scalar)         # => BigNum
-    BigNum & BigNum         # => BigNum
-    BigNum & Scalar         # => BigNum
-    Scalar & BigNum         # => BigNum
+    $x->band(BigNum)        # => BigNum
+    $x->band(Scalar)        # => BigNum
+    BigNum &= BigNum        # => BigNum
+    BigNum &= Scalar        # => BigNum
 
-Integer logical-and operation.
+Integer logical-and operation, changing $x in-place.
 
 =cut
 
@@ -3010,13 +3009,6 @@ multimethod band => qw(Math::BigNum Math::BigNum) => sub {
 multimethod band => qw(Math::BigNum $) => sub {
     my $r = _as_int($_[0]);
     Math::GMPz::Rmpz_and($r, $r, _str2mpz($_[1]));
-    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
-    $_[0];
-};
-
-multimethod band => qw($ Math::BigNum) => sub {
-    my $r = _str2mpz($_[0]);
-    Math::GMPz::Rmpz_and($r, $r, _as_int($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
@@ -3076,13 +3068,6 @@ multimethod bior => qw(Math::BigNum $) => sub {
     $_[0];
 };
 
-multimethod bior => qw($ Math::BigNum) => sub {
-    my $r = _str2mpz($_[0]);
-    Math::GMPz::Rmpz_ior($r, $r, _as_int($_[1]));
-    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
-    $_[0];
-};
-
 =head2 xor
 
     $x->xor(BigNum)         # => BigNum
@@ -3138,13 +3123,6 @@ multimethod bxor => qw(Math::BigNum $) => sub {
     $_[0];
 };
 
-multimethod bxor => qw($ Math::BigNum) => sub {
-    my $r = _str2mpz($_[0]);
-    Math::GMPz::Rmpz_xor($r, $r, _as_int($_[1]));
-    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
-    $_[0];
-};
-
 =head2 not
 
     $x->not         # => BigNum
@@ -3166,21 +3144,27 @@ sub not {
     $x->lsft(Scalar)         # => BigNum
     BigNum << BigNum         # => BigNum
     BigNum << Scalar         # => BigNum
+    Scalar << BigNum         # => BigNum
 
 Integer left-shift operation. (C<$x * (2 ** $y)>)
 
 =cut
 
 multimethod lsft => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = _as_int($x);
-    Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d($$y)));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
     _mpz2rat($r);
 };
 
 multimethod lsft => qw(Math::BigNum $) => sub {
     my $r = _as_int($_[0]);
     Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int($_[1]));
+    _mpz2rat($r);
+};
+
+multimethod lsft => qw($ Math::BigNum) => sub {
+    my $r = _str2mpz($_[0]);
+    Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
     _mpz2rat($r);
 };
 
@@ -3196,11 +3180,10 @@ Integer left-shift operation, changing $x in-place. (C<$x * (2 ** $y)>)
 =cut
 
 multimethod blsft => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = _as_int($x);
-    Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d($$y)));
-    Math::GMPq::Rmpq_set_z($$x, $r);
-    $x;
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
+    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
+    $_[0];
 };
 
 multimethod blsft => qw(Math::BigNum $) => sub {
@@ -3222,15 +3205,20 @@ Integer right-shift operation. (C<$x / (2 ** $y)>)
 =cut
 
 multimethod rsft => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = _as_int($x);
-    Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d($$y)));
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
     _mpz2rat($r);
 };
 
 multimethod rsft => qw(Math::BigNum $) => sub {
     my $r = _as_int($_[0]);
     Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int($_[1]));
+    _mpz2rat($r);
+};
+
+multimethod rsft => qw($ Math::BigNum) => sub {
+    my $r = _str2mpz($_[0]);
+    Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
     _mpz2rat($r);
 };
 
@@ -3246,11 +3234,10 @@ Integer right-shift operation. (C<$x / (2 ** $y)>)
 =cut
 
 multimethod brsft => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-    my $r = _as_int($x);
-    Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d($$y)));
-    Math::GMPq::Rmpq_set_z($$x, $r);
-    $x;
+    my $r = _as_int($_[0]);
+    Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
+    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
+    $_[0];
 };
 
 multimethod brsft => qw(Math::BigNum $) => sub {
