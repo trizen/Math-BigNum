@@ -13,6 +13,8 @@ use Math::BigRat qw(try GMP);    # would be nice to get rid of Math::BigRat
 
 use Class::Multimethods qw(multimethod);
 
+=encoding utf8
+
 =head1 NAME
 
 Math::BigNum - Arbitrary size precision for integer, complex and floating-point numbers
@@ -2964,11 +2966,7 @@ Returns a true value when $x is divisible by 2. Returns C<undef> if $x is NOT an
 
 sub is_even {
     my ($x) = @_;
-
-    if (!Math::GMPq::Rmpq_integer_p($$x)) {
-        return;
-    }
-
+    Math::GMPq::Rmpq_integer_p($$x) || return;
     my $nz = Math::GMPz::Rmpz_init();
     Math::GMPq::Rmpq_get_num($nz, $$x);
     Math::GMPz::Rmpz_even_p($nz);
@@ -2984,14 +2982,79 @@ Returns a true value when $x is NOT divisible by 2. Returns C<undef> if $x is NO
 
 sub is_odd {
     my ($x) = @_;
-
-    if (!Math::GMPq::Rmpq_integer_p($$x)) {
-        return;
-    }
-
+    Math::GMPq::Rmpq_integer_p($$x) || return;
     my $nz = Math::GMPz::Rmpz_init();
     Math::GMPq::Rmpq_get_num($nz, $$x);
     Math::GMPz::Rmpz_odd_p($nz);
+}
+
+=head2 is_div
+
+    $x->is_div(BigNum)      # => Bool
+    $x->is_div(Scalar)      # => Bool
+
+Returns a true value if $x is divisible by $y. False otherwise.
+If $y is zero, returns C<undef>.
+
+=cut
+
+multimethod is_div => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    Math::GMPq::Rmpq_sgn($$y) || return;
+    my $q = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_div($q, $$x, $$y);
+    Math::GMPq::Rmpq_integer_p($q);
+};
+
+multimethod is_div => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    $y == 0 and return;
+
+    # Use a faster method when both $x and $y are integers
+    if ($y > 0 and CORE::int($y) == $y and Math::GMPq::Rmpq_integer_p($$x)) {
+        Math::GMPz::Rmpz_divisible_ui_p(_as_int($x), $y);
+    }
+
+    # Otherwise, do the division and check the result
+    else {
+        my $q = Math::GMPq::Rmpq_init();
+        Math::GMPq::Rmpq_div($q, $$x, _str2mpq($y));
+        Math::GMPq::Rmpq_integer_p($q);
+    }
+};
+
+=head2 is_psqr
+
+    $n->is_psqr         # => Bool
+
+Returns a true value when $n is a perfect square. False otherwise.
+When $n is not an integer, returns C<undef>.
+
+=cut
+
+sub is_psqr {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_integer_p($$x) || return;
+    my $nz = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_get_num($nz, $$x);
+    Math::GMPz::Rmpz_perfect_square_p($nz);
+}
+
+=head2 is_ppow
+
+    $n->is_ppow         # => Bool
+
+Returns a true value when $n is a perfect power. False otherwise.
+When $n is not an integer, returns C<undef>.
+
+=cut
+
+sub is_ppow {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_integer_p($$x) || return;
+    my $nz = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_get_num($nz, $$x);
+    Math::GMPz::Rmpz_perfect_power_p($nz);
 }
 
 =head2 sign
@@ -3033,6 +3096,38 @@ Returns the minimum value between $x and $y.
 multimethod min => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     Math::GMPq::Rmpq_cmp($$x, $$y) < 0 ? $x : $y;
+};
+
+=head2 gcd
+
+    $x->gcd(BigNum)         # => BigNum
+
+The greatest common divisor of $x and $y.
+
+=cut
+
+# TODO: add multimethods that handle scalars and +/-Inf
+multimethod gcd => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_gcd($r, $r, _as_int($y));
+    _mpz2rat($r);
+};
+
+=head2 lcm
+
+    $x->lcd(BigNum)         # => BigNum
+
+The least common multiple of $x and $y.
+
+=cut
+
+# TODO: add multimethods that handle scalars and +/-Inf
+multimethod lcm => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_lcm($r, $r, _as_int($y));
+    _mpz2rat($r);
 };
 
 =head2 int
@@ -3762,10 +3857,42 @@ multimethod fib => qw($) => sub {
     _mpz2rat($r);
 };
 
+=head2 lucas
+
+    $n->lucas        # => BigNum | Nan
+    lucas(Scalar)    # => BigNum | Nan
+
+The $n'th Lucas number. Returns Nan when $n is negative.
+
+=cut
+
+multimethod lucas => qw(Math::BigNum) => sub {
+    my ($x) = @_;
+    return NAN if Math::GMPq::Rmpq_sgn($$x) < 0;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_lucnum_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
+    _mpz2rat($r);
+};
+
+multimethod lucas => qw($) => sub {
+    my ($x) = @_;
+    return NAN if $x < 0;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_lucnum_ui($r, CORE::int($x));
+    _mpz2rat($r);
+};
+
 =head2 binomial
 
     $n->binomial(BigNum)    # => BigNum
     $n->binomial(Scalar)    # => BigNum
+
+Calculates the binomial coefficient n over k, also called the
+"choose" function. The result is equivalent to:
+
+           ( n )       n!
+           |   |  = -------
+           ( k )    k!(n-k)!
 
 =cut
 
@@ -3781,6 +3908,50 @@ multimethod binomial => qw(Math::BigNum $) => sub {
     Math::GMPz::Rmpz_bin_si($r, $r, CORE::int($_[1]));
     _mpz2rat($r);
 };
+
+=head2 is_prime
+
+    $n->is_prime                # => Scalar
+    $x->is_prime(BigNum)        # => Scalar
+    $n->is_prime(Scalar)        # => Scalar
+
+Returns 2 if $n is definitely prime, 1 if $n is probably prime (without
+being certain), or 0 if $n is definitely composite. This method does some
+trial divisions, then some Miller-Rabin probabilistic primality tests. It
+also accepts an optional argument for specifying the accuracy of the test.
+By default, it uses an accuracy value of 12, which guarantees correctness
+up to C<2**78>.
+
+See also: L<https://en.wikipedia.org/wiki/Miller–Rabin_primality_test>
+
+=cut
+
+multimethod is_prime => qw(Math::BigNum) => sub {
+    Math::GMPz::Rmpz_probab_prime_p(_as_int($_[0]), 12);
+};
+
+multimethod is_prime => qw(Math::BigNum $) => sub {
+    Math::GMPz::Rmpz_probab_prime_p(_as_int($_[0]), CORE::abs(CORE::int($_[1])));
+};
+
+multimethod is_prime => qw(Math::BigNum Math::BigNum) => sub {
+    Math::GMPz::Rmpz_probab_prime_p(_as_int($_[0]), CORE::abs(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]}))));
+};
+
+=head2 next_prime
+
+    $n->next_prime      # => BigNum
+
+Returns the next prime after $n.
+
+=cut
+
+sub next_prime {
+    my ($x) = @_;
+    my $r = _as_int($x);
+    Math::GMPz::Rmpz_nextprime($r, $r);
+    _mpz2rat($r);
+}
 
 #
 ## Special methods
