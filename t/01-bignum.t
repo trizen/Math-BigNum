@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 208;
+plan tests => 219;
 
 # Initialization
 
@@ -343,6 +343,40 @@ plan tests => 208;
 
     $m = $x->modinv(2017);
     is("$m", "1969");
+
+    $x = Math::BigNum->new(16);
+    $y = 2 * $x;
+    is("$y", "32");
+
+    $y = 2 + $x;
+    is("$y", "18");
+
+    $y = 2 - $x;
+    is("$y", "-14");
+
+    $y = 2 / $x;
+    is("$y", "0.125");
+
+    $y = 2**$x;
+    is("$y", "65536");
+
+    $y = 134 % $x;
+    is("$y", "6");
+
+    $y = 2 << $x;
+    is("$y", "131072");
+
+    $y = 131072 >> $x;
+    is("$y", "2");
+
+    $y = 2 | $x;
+    is("$y", "18");
+
+    $y = 31 & $x;
+    is("$y", "16");
+
+    $y = 42 ^ $x;
+    is("$y", "58");
 }
 
 # Comparisons
