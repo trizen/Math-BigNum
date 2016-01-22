@@ -50,11 +50,9 @@ use overload
   abs  => sub { $_[0]->abs },
   sqrt => sub { $_[0]->sqrt };
 
-use constant {
-              NAN  => Math::BigNum::NAN,
-              INF  => Math::BigNum::INF,
-              NINF => Math::BigNum::NINF,
-             };
+#*nan = \&Math::BigNum::nan;
+#*inf = \&Math::BigNum::inf;
+#*ninf = \&Math::BigNum::ninf;
 
 sub new {
     my (undef, $x, $y) = @_;
