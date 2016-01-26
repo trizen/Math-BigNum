@@ -3546,6 +3546,74 @@ sub ceil {
     }
 }
 
+=head2 roundf
+
+    $x->roundf(BigNum)      # => BigNum
+    $x->roundf(Scalar)      # => BigNum
+
+Round the number to nth places. A negative argument rounds that many digits
+after the decimal point, while a positive argument rounds before the decimal point.
+This method uses the "round half to even" algorithm, which is the default rounding
+mode used in IEEE 754 computing functions and operators.
+
+=cut
+
+multimethod roundf => qw(Math::BigNum $) => sub {
+    my ($x, $prec) = @_;
+
+    my $nth = -CORE::int($prec);
+    my $sgn = Math::GMPq::Rmpq_sgn($$x);
+
+    my $n = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set($n, $$x);
+    Math::GMPq::Rmpq_abs($n, $n) if $sgn < 0;
+
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_ui_pow_ui($z, 10, CORE::abs($nth));
+
+    my $p = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_z($p, $z);
+
+    if ($nth < 0) {
+        Math::GMPq::Rmpq_div($n, $n, $p);
+    }
+    else {
+        Math::GMPq::Rmpq_mul($n, $n, $p);
+    }
+
+    state $half = do {
+        my $q = Math::GMPq::Rmpq_init();
+        Math::GMPq::Rmpq_set_ui($q, 1, 2);
+        $q;
+    };
+
+    Math::GMPq::Rmpq_add($n, $n, $half);
+    Math::GMPz::Rmpz_set_q($z, $n);
+
+    if (Math::GMPz::Rmpz_odd_p($z) and Math::GMPq::Rmpq_integer_p($n)) {
+        Math::GMPz::Rmpz_sub_ui($z, $z, 1);
+    }
+
+    Math::GMPq::Rmpq_set_z($n, $z);
+
+    if ($nth < 0) {
+        Math::GMPq::Rmpq_mul($n, $n, $p);
+    }
+    else {
+        Math::GMPq::Rmpq_div($n, $n, $p);
+    }
+
+    if ($sgn < 0) {
+        Math::GMPq::Rmpq_neg($n, $n);
+    }
+
+    bless \$n, __PACKAGE__;
+};
+
+multimethod roundf => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->roundf(Math::GMPq::Rmpq_get_d(${$_[1]}));
+};
+
 =head2 inc
 
     $x->inc     # => BigNum

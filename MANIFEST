@@ -1,5 +1,6 @@
 Build.PL
 Changes
+examples/arithmetic_coding.pl
 ignore.txt
 lib/Math/BigNum.pm
 lib/Math/BigNum/Complex.pm
@@ -15,6 +16,7 @@ README.md
 t/00-load.t
 t/01-bignum.t
 t/02-complex.t
+t/03-roundf.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
