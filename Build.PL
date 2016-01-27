@@ -20,9 +20,6 @@ my $builder = Module::Build->new(
                                                    },
                                  requires => {
                                               'perl'           => '5.14.0',
-                                              'Math::BigInt'   => 0,
-                                              'Math::BigRat'   => 0,
-                                              'Math::BigFloat' => 0,
                                               'Math::MPFR'     => 3.29,
                                               'Math::MPC'      => 0,
                                               'Math::GMPq'     => 0.39,

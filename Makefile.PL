@@ -7,9 +7,6 @@ WriteMakefile
   'VERSION_FROM' => 'lib/Math/BigNum.pm',
   'PREREQ_PM' => {
                    'Class::Multimethods' => 0,
-                   'Math::BigFloat' => 0,
-                   'Math::BigInt' => 0,
-                   'Math::BigRat' => 0,
                    'Math::GMPq' => '0.39',
                    'Math::GMPz' => 0,
                    'Math::MPC' => 0,

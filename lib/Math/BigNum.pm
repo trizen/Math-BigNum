@@ -9,7 +9,6 @@ no warnings qw(qw);
 use Math::GMPq qw();
 use Math::GMPz qw();
 use Math::MPFR qw();
-use Math::BigRat qw(try GMP);    # would be nice to get rid of Math::BigRat
 
 use Class::Multimethods qw(multimethod);
 
@@ -440,14 +439,92 @@ or as a floating-point number. For C<$x=1/2>, it returns C<"0.5">.
 
 =cut
 
-# TODO: find a better stringication method which doesn't involve Math::BigRat.
 sub stringify {
     my $v = Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
 
     if (index($v, '/') != -1) {
-        my $br = Math::BigRat->new($v);
-        local $Math::BigFloat::precision = -CORE::int(CORE::int($PREC) / 3.321923);
-        $br->as_float->bstr =~ s/0+$//r;
+        my ($x) = @_;
+        $PREC = "$$PREC" if ref($PREC);    # make sure $PREC is not a BigNum
+
+        my $prec = CORE::int($PREC / 4);        # the exact value should be 3.3...?
+        my $sgn  = Math::GMPq::Rmpq_sgn($$x);
+
+        my $n = Math::GMPq::Rmpq_init();
+        Math::GMPq::Rmpq_set($n, $$x);
+        Math::GMPq::Rmpq_abs($n, $n) if $sgn < 0;
+
+        my $z = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_ui_pow_ui($z, 10, CORE::abs($prec));
+
+        my $p = Math::GMPq::Rmpq_init();
+        Math::GMPq::Rmpq_set_z($p, $z);
+
+        if ($prec < 0) {
+            Math::GMPq::Rmpq_div($n, $n, $p);
+        }
+        else {
+            Math::GMPq::Rmpq_mul($n, $n, $p);
+        }
+
+        state $half = do {
+            my $q = Math::GMPq::Rmpq_init();
+            Math::GMPq::Rmpq_set_ui($q, 1, 2);
+            $q;
+        };
+
+        Math::GMPq::Rmpq_add($n, $n, $half);
+        Math::GMPz::Rmpz_set_q($z, $n);
+
+        if (Math::GMPz::Rmpz_odd_p($z) and Math::GMPq::Rmpq_integer_p($n)) {
+            Math::GMPz::Rmpz_sub_ui($z, $z, 1);
+        }
+
+        Math::GMPq::Rmpq_set_z($n, $z);
+
+        if ($prec < 0) {
+            Math::GMPq::Rmpq_mul($n, $n, $p);
+        }
+        else {
+            Math::GMPq::Rmpq_div($n, $n, $p);
+        }
+
+        my $num = Math::GMPz::Rmpz_init();
+        my $den = Math::GMPz::Rmpz_init();
+
+        Math::GMPq::Rmpq_get_num($num, $n);
+        Math::GMPq::Rmpq_get_den($den, $n);
+
+        my @r;
+        my $c = 0;
+        my $divisible;
+
+        while (1) {
+            $divisible = Math::GMPz::Rmpz_divisible_p($num, $den);
+
+            Math::GMPz::Rmpz_div($z, $num, $den);
+            push @r, Math::GMPz::Rmpz_get_str($z, 10);
+
+            Math::GMPz::Rmpz_mul($z, $z, $den);
+            Math::GMPz::Rmpz_sub($num, $num, $z);
+
+            last if $divisible;
+
+            my $s = -1;
+            while (Math::GMPz::Rmpz_cmp($den, $num) > 0) {
+                last if !Math::GMPz::Rmpz_sgn($num);
+                Math::GMPz::Rmpz_mul_ui($num, $num, 10);
+                ++$s;
+            }
+
+            push(@r, '0' x $s) if ($s > 0);
+        }
+
+        my $before = shift(@r);      # before the decimal point
+        my $after = join('', @r);    # after the decimal point
+        $after =~ s/0+$//;           # remove trailing zeros
+
+        # Maybe we should return "$before.0" when $after eq ''?
+        ($sgn < 0 ? "-" : '') . ($after eq '' ? $before : "$before.$after");
     }
     else {
         $v;
