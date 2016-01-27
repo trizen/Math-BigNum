@@ -496,18 +496,15 @@ sub stringify {
 
         my @r;
         my $c = 0;
-        my $divisible;
 
         while (1) {
-            $divisible = Math::GMPz::Rmpz_divisible_p($num, $den);
 
             Math::GMPz::Rmpz_div($z, $num, $den);
             push @r, Math::GMPz::Rmpz_get_str($z, 10);
 
             Math::GMPz::Rmpz_mul($z, $z, $den);
+            last if Math::GMPz::Rmpz_divisible_p($num, $den);
             Math::GMPz::Rmpz_sub($num, $num, $z);
-
-            last if $divisible;
 
             my $s = -1;
             while (Math::GMPz::Rmpz_cmp($den, $num) > 0) {
