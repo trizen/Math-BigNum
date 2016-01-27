@@ -305,6 +305,7 @@ multimethod new => qw($ $ $) => sub {
 };
 
 # TODO: find a better solution (maybe)
+# This solution is very slow for literals with absolute big exponents, such as: "1e-10000000"
 sub _str2rat {
     my $str = lc($_[0]);
 
@@ -334,7 +335,7 @@ sub _str2rat {
         }
 
         my $numerator   = "$before$after";
-        my $denominator = 1;
+        my $denominator = "1";
 
         if ($exp < 1) {
             $denominator .= '0' x (abs($exp) + length($after));
@@ -361,7 +362,7 @@ sub _str2rat {
         $sign . ("$before$after/1" =~ s/^0+//r) . ('0' x length($after));
     }
     else {
-        $sign . $str;
+        "$sign$str";
     }
 }
 
