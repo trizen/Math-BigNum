@@ -304,7 +304,7 @@ multimethod new => qw($ $ $) => sub {
     bless(\$r, $_[0]);
 };
 
-# TODO: find a better solution
+# TODO: find a better solution (maybe)
 sub _str2rat {
     my ($str) = @_;
 
@@ -323,9 +323,14 @@ sub _str2rat {
 
         my $exp = substr($str, $i + 1);
         my ($before, $after) = split(/\./, substr($str, 0, $i));
-        my $numerator = $before . $after;
 
+        if (not defined $after) {    # return faster for numbers like "13e2"
+            return ("$sign$before" . ('0' x $exp));
+        }
+
+        my $numerator   = "$before$after";
         my $denominator = 1;
+
         if ($exp < 1) {
             $denominator .= '0' x (abs($exp) + length($after));
         }
@@ -335,7 +340,7 @@ sub _str2rat {
                 $numerator .= '0' x $diff;
             }
             else {
-                my $s = $before . $after;
+                my $s = "$before$after";
                 substr($s, $exp + length($before), 0, '.');
                 return _str2rat("$sign$s");
             }
