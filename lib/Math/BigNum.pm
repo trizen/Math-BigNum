@@ -3458,6 +3458,72 @@ sub as_rat {
     Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
 }
 
+=head2 as_float
+
+    $x->as_float                # => Scalar
+    $x->as_float(Scalar)        # => Scalar
+    $x->as_float(BigNum)        # => Scalar
+
+Returns the self-number as a floating-point scalar. The method also accepts
+an optional argument for precision after the decimal point. When no argument
+is provided, it uses the default precision.
+
+Example for C<$x = 1/3>:
+
+    $x->as_float(4);        # returns "0.3333"
+
+If the self number is an integer, it will be returned as it is.
+
+=cut
+
+multimethod as_float => qw(Math::BigNum) => sub {
+    $_[0]->stringify;
+};
+
+multimethod as_float => qw(Math::BigNum $) => sub {
+    local $Math::BigNum::PREC = 4 * $_[1];
+    $_[0]->stringify;
+};
+
+multimethod as_float => qw(Math::BigNum Math::BigNum) => sub {
+    local $Math::BigNum::PREC = 4 * Math::GMPq::Rmpq_get_d(${$_[1]});
+    $_[0]->stringify;
+};
+
+=head2 as_int
+
+    $x->as_int                # => Scalar
+    $x->as_int(Scalar)        # => Scalar
+    $x->as_int(BigNum)        # => Scalar
+
+Returns the self-number as an integer in a given base. When the base is omitted, it
+defaults to 10.
+
+Example for C<$x = 255>:
+
+    $x->as_int          # returns: "255"
+    $x->as_int(16)      # returns: "ff"
+
+=cut
+
+multimethod as_int => qw(Math::BigNum) => sub {
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_set_q($z, ${$_[0]});
+    Math::GMPz::Rmpz_get_str($z, 10);
+};
+
+multimethod as_int => qw(Math::BigNum $) => sub {
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_set_q($z, ${$_[0]});
+    Math::GMPz::Rmpz_get_str($z, CORE::int($_[1]));
+};
+
+multimethod as_int => qw(Math::BigNum Math::BigNum) => sub {
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_set_q($z, ${$_[0]});
+    Math::GMPz::Rmpz_get_str($z, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
+};
+
 =head2 as_bin
 
     $x->as_bin      # => Scalar

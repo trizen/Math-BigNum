@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 219;
+plan tests => 225;
 
 # Initialization
 
@@ -138,6 +138,14 @@ plan tests => 219;
     # Root
     $z = 125->root(3);
     ok("$z" =~ /^5(?:\.000|\z)/);
+
+    # as_float() / as_int()
+    is($x->as_float,      "1.2");
+    is($x->as_float(0),   "1");
+    is($y->as_float("1"), "3.6");
+    is($z->as_int,        "5");
+    is($z->as_int(2),     "101");
+    is($y->as_int(10),    "3");
 }
 
 # Power
