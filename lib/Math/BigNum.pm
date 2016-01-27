@@ -306,7 +306,7 @@ multimethod new => qw($ $ $) => sub {
 
 # TODO: find a better solution (maybe)
 sub _str2rat {
-    my ($str) = @_;
+    my $str = lc($_[0]);
 
     my $sign = substr($str, 0, 1);
     if ($sign eq '-') {
@@ -324,8 +324,13 @@ sub _str2rat {
         my $exp = substr($str, $i + 1);
         my ($before, $after) = split(/\./, substr($str, 0, $i));
 
-        if (not defined $after) {    # return faster for numbers like "13e2"
-            return ("$sign$before" . ('0' x $exp));
+        if (not defined($after)) {    # return faster for numbers like "13e2"
+            if ($exp >= 0) {
+                return ("$sign$before" . ('0' x $exp));
+            }
+            else {
+                $after = '';
+            }
         }
 
         my $numerator   = "$before$after";
