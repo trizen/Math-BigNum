@@ -223,7 +223,8 @@ sub import {
             *{caller(0) . '::' . 'i'} = \&i;
         }
         else {
-            die "unknown import: $name";
+            require Carp;
+            Carp::croak("unknown import: $name");
         }
     }
     return;
@@ -586,7 +587,8 @@ multimethod in_base => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     if ($y < 2 or $y > 36) {
-        die "base must be between 2 and 36, got $y";
+        require Carp;
+        Carp::croak("base must be between 2 and 36, got $y");
     }
 
     Math::GMPq::Rmpq_get_str(${$_[0]}, $y);
@@ -3515,13 +3517,18 @@ multimethod as_int => qw(Math::BigNum) => sub {
 multimethod as_int => qw(Math::BigNum $) => sub {
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
-    Math::GMPz::Rmpz_get_str($z, CORE::int($_[1]));
+
+    my $base = CORE::int($_[1]);
+    if ($base < 2 or $base > 36) {
+        require Carp;
+        Carp::croak("base must be between 2 and 36, got $base");
+    }
+
+    Math::GMPz::Rmpz_get_str($z, $base);
 };
 
 multimethod as_int => qw(Math::BigNum Math::BigNum) => sub {
-    my $z = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_set_q($z, ${$_[0]});
-    Math::GMPz::Rmpz_get_str($z, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
+    $_[0]->as_int(Math::GMPq::Rmpq_get_d(${$_[1]}));
 };
 
 =head2 as_bin

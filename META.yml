@@ -26,6 +26,7 @@ provides:
   Math::BigNum::Ninf:
     file: lib/Math/BigNum/Ninf.pm
 requires:
+  Carp: '0'
   Class::Multimethods: '0'
   Math::GMPq: '0.39'
   Math::GMPz: '0'
