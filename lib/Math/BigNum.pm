@@ -45,7 +45,6 @@ BEGIN {
 }
 
 use Math::BigNum::Inf qw();
-use Math::BigNum::Ninf qw();
 use Math::BigNum::Nan qw();
 
 my $MONE = do {
@@ -80,7 +79,7 @@ sub nan { Math::BigNum::Nan->new }
 
     BigNum->inf        # => Inf
 
-Returns a new Inf object.
+Returns a new Inf object to represent positive Infinity.
 
 =cut
 
@@ -90,11 +89,11 @@ sub inf { Math::BigNum::Inf->new }
 
     BigNum->ninf       # => Ninf
 
-Returns a new Ninf object.
+Returns an Inf object to represent negative Infinity.
 
 =cut
 
-sub ninf { Math::BigNum::Ninf->new }
+sub ninf { Math::BigNum::Inf->new('-') }
 
 =head2 ONE
 
@@ -439,6 +438,21 @@ sub _big2cplx {
     my ($x, $z) = @_;
     $$x = $$z;
     bless $x, 'Math::BigNum::Complex';
+    $x;
+}
+
+sub _big2inf {
+    my ($x, $y) = @_;
+    Math::GMPq::Rmpq_set($$x, $$y);
+    bless $x, 'Math::BigNum::Inf';
+    $x;
+}
+
+sub _big2ninf {
+    my ($x, $y) = @_;
+    Math::GMPq::Rmpq_set($$x, $$y);
+    Math::GMPq::Rmpq_neg($$x, $$x);
+    bless $x, 'Math::BigNum::Inf';
     $x;
 }
 
@@ -796,7 +810,7 @@ Changes C<$x> in-place to negative Infinity.
 sub bninf {
     my ($x) = @_;
     Math::GMPq::Rmpq_set_si($$x, -1, 0);
-    bless $x, 'Math::BigNum::Ninf';
+    bless $x, 'Math::BigNum::Inf';
     $x;
 }
 
@@ -825,7 +839,6 @@ sub bnan {
     $x->add(Scalar)       # => BigNum
     $x->add(Complex)      # => Complex
     $x->add(Inf)          # => Inf
-    $x->add(Ninf)         # => Ninf
     $x->add(Nan)          # => Nan
 
     BigNum + BigNum       # => BigNum
@@ -854,16 +867,14 @@ multimethod add => qw(Math::BigNum Math::BigNum::Complex) => sub {
     Math::BigNum::Complex->new($_[0])->add($_[1]);
 };
 
-multimethod add => qw(Math::BigNum Math::BigNum::Inf)  => \&inf;
-multimethod add => qw(Math::BigNum Math::BigNum::Ninf) => \&ninf;
-multimethod add => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod add => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->copy };
+multimethod add => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 badd
 
     $x->badd(BigNum)      # => BigNum
     $x->badd(Scalar)      # => BigNum
     $x->badd(Inf)         # => Inf
-    $x->badd(Ninf)        # => Ninf
     $x->badd(Nan)         # => Nan
 
     BigNum += BigNum      # => BigNum
@@ -885,9 +896,8 @@ multimethod badd => qw(Math::BigNum $) => sub {
     $x;
 };
 
-multimethod badd => qw(Math::BigNum Math::BigNum::Inf)  => \&binf;
-multimethod badd => qw(Math::BigNum Math::BigNum::Ninf) => \&bninf;
-multimethod badd => qw(Math::BigNum Math::BigNum::Nan)  => \&bnan;
+multimethod badd => qw(Math::BigNum Math::BigNum::Inf) => \&_big2inf;
+multimethod badd => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 iadd
 
@@ -917,9 +927,8 @@ multimethod iadd => qw(Math::BigNum $) => sub {
     _mpz2rat($r);
 };
 
-multimethod iadd => qw(Math::BigNum Math::BigNum::Inf)  => \&inf;
-multimethod iadd => qw(Math::BigNum Math::BigNum::Ninf) => \&ninf;
-multimethod iadd => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod iadd => qw(Math::BigNum Math::BigNum::Inf) => \&_big2inf;
+multimethod iadd => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 biadd
 
@@ -951,9 +960,8 @@ multimethod biadd => qw(Math::BigNum $) => sub {
     $_[0];
 };
 
-multimethod biadd => qw(Math::BigNum Math::BigNum::Inf)  => \&binf;
-multimethod biadd => qw(Math::BigNum Math::BigNum::Ninf) => \&bninf;
-multimethod biadd => qw(Math::BigNum Math::BigNum::Nan)  => \&bnan;
+multimethod biadd => qw(Math::BigNum Math::BigNum::Inf) => \&_big2inf;
+multimethod biadd => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 sub
 
@@ -996,9 +1004,8 @@ multimethod sub => qw(Math::BigNum Math::BigNum::Complex) => sub {
     Math::BigNum::Complex->new($_[0])->sub($_[1]);
 };
 
-multimethod sub => qw(Math::BigNum Math::BigNum::Inf)  => \&ninf;
-multimethod sub => qw(Math::BigNum Math::BigNum::Ninf) => \&inf;
-multimethod sub => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod sub => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->neg };
+multimethod sub => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bsub
 
@@ -1026,16 +1033,14 @@ multimethod bsub => qw(Math::BigNum $) => sub {
     $x;
 };
 
-multimethod bsub => qw(Math::BigNum Math::BigNum::Inf)  => \&bninf;
-multimethod bsub => qw(Math::BigNum Math::BigNum::Ninf) => \&binf;
-multimethod bsub => qw(Math::BigNum Math::BigNum::Nan)  => \&bnan;
+multimethod bsub => qw(Math::BigNum Math::BigNum::Inf) => \&_big2ninf;
+multimethod bsub => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 isub
 
     $x->isub(BigNum)        # => BigNum
     $x->isub(Scalar)        # => BigNum
-    $x->isub(Inf)           # => Ninf
-    $x->isub(Ninf)          # => Inf
+    $x->isub(Inf)           # => -Inf
     $x->isub(Nan)           # => Nan
 
 Integer subtraction of C<$y> from C<$x>. Both values
@@ -1058,9 +1063,10 @@ multimethod isub => qw(Math::BigNum $) => sub {
     _mpz2rat($r);
 };
 
-multimethod isub => qw(Math::BigNum Math::BigNum::Inf)  => \&ninf;
-multimethod isub => qw(Math::BigNum Math::BigNum::Ninf) => \&inf;
-multimethod isub => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod isub => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[1]->neg;
+};
+multimethod isub => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bisub
 
@@ -1089,9 +1095,8 @@ multimethod bisub => qw(Math::BigNum $) => sub {
     $_[0];
 };
 
-multimethod bisub => qw(Math::BigNum Math::BigNum::Inf)  => \&bninf;
-multimethod bisub => qw(Math::BigNum Math::BigNum::Ninf) => \&binf;
-multimethod bisub => qw(Math::BigNum Math::BigNum::Nan)  => \&bnan;
+multimethod bisub => qw(Math::BigNum Math::BigNum::Inf) => \&_big2ninf;
+multimethod bisub => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 mul
 
@@ -1133,19 +1138,14 @@ multimethod mul => qw(Math::BigNum Math::BigNum::Inf) => sub {
     $sign < 0 ? ninf : $sign > 0 ? inf : nan;
 };
 
-multimethod mul => qw(Math::BigNum Math::BigNum::Ninf) => sub {
-    my $sign = Math::GMPq::Rmpq_sgn(${$_[0]});
-    $sign < 0 ? inf : $sign > 0 ? ninf : nan;
-};
-
 multimethod mul => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bmul
 
     $x->bmul(BigNum)        # => BigNum
     $x->bmul(Scalar)        # => BigNum
-    $x->bmul(Inf)           # => Inf | Ninf | Nan
-    $x->bmul(Ninf)          # => Inf | Ninf | Nan
+    $x->bmul(Inf)           # => Inf | Nan
+    $x->bmul(Ninf)          # => Inf | Nan
     $x->bmul(Nan)           # => Nan
 
     BigNum *= BigNum        # => BigNum
@@ -1171,17 +1171,8 @@ multimethod bmul => qw(Math::BigNum Math::BigNum::Inf) => sub {
     my ($x) = @_;
     my $sign = Math::GMPq::Rmpq_sgn($$x);
 
-        $sign < 0 ? $x->bninf
-      : $sign > 0 ? $x->binf
-      :             $x->bnan;
-};
-
-multimethod bmul => qw(Math::BigNum Math::BigNum::Ninf) => sub {
-    my ($x) = @_;
-    my $sign = Math::GMPq::Rmpq_sgn($$x);
-
-        $sign > 0 ? $x->bninf
-      : $sign < 0 ? $x->binf
+        $sign < 0 ? _big2ninf(@_)
+      : $sign > 0 ? _big2inf(@_)
       :             $x->bnan;
 };
 
@@ -1191,8 +1182,8 @@ multimethod bmul => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
     $x->imul(BigNum)        # => BigNum
     $x->imul(Scalar)        # => BigNum
-    $x->imul(Inf)           # => Inf | Ninf | Nan
-    $x->imul(Ninf)          # => Inf | Ninf | Nan
+    $x->imul(Inf)           # => Inf | Nan
+    $x->imul(Ninf)          # => Inf | Nan
 
 Integer multiplication of C<$x> by C<$y>. Both values
 are truncated to integers before multiplication.
@@ -1216,12 +1207,7 @@ multimethod imul => qw(Math::BigNum $) => sub {
 
 multimethod imul => qw(Math::BigNum Math::BigNum::Inf) => sub {
     my $sign = Math::GMPq::Rmpq_sgn(${$_[0]});
-    $sign < 0 ? ninf : $sign > 0 ? inf : nan;
-};
-
-multimethod imul => qw(Math::BigNum Math::BigNum::Ninf) => sub {
-    my $sign = Math::GMPq::Rmpq_sgn(${$_[0]});
-    $sign < 0 ? inf : $sign > 0 ? ninf : nan;
+    $sign < 0 ? $_[1]->neg : $sign > 0 ? $_[1]->copy : nan;
 };
 
 multimethod imul => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
@@ -1230,8 +1216,7 @@ multimethod imul => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
     $x->bimul(BigNum)        # => BigNum
     $x->bimul(Scalar)        # => BigNum
-    $x->bimul(Inf)           # => Inf | Ninf | Nan
-    $x->bimul(Ninf)          # => Inf | Ninf | Nan
+    $x->bimul(Inf)           # => Inf | Nan
     $x->bimul(Nan)           # => Nan
 
 Integer multiplication of C<$x> by C<$y>, changing C<$x> in-place.
@@ -1259,35 +1244,22 @@ multimethod bimul => qw(Math::BigNum $) => sub {
 multimethod bimul => qw(Math::BigNum Math::BigNum::Inf) => sub {
     my ($x) = @_;
     my $sign = Math::GMPq::Rmpq_sgn($$x);
-
-        $sign < 0 ? $x->bninf
-      : $sign > 0 ? $x->binf
-      :             $x->bnan;
-};
-
-multimethod bimul => qw(Math::BigNum Math::BigNum::Ninf) => sub {
-    my ($x) = @_;
-    my $sign = Math::GMPq::Rmpq_sgn($$x);
-
-        $sign > 0 ? $x->bninf
-      : $sign < 0 ? $x->binf
-      :             $x->bnan;
+    $sign < 0 ? _big2ninf(@_) : $sign > 0 ? _big2inf(@_) : $x->bnan;
 };
 
 multimethod bimul => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 div
 
-    $x->div(BigNum)       # => BigNum | Inf | Ninf | Nan
-    $x->div(Scalar)       # => BigNum | Inf | Ninf | Nan
+    $x->div(BigNum)       # => BigNum | Inf | Nan
+    $x->div(Scalar)       # => BigNum | Inf | Nan
     $x->div(Complex)      # => Complex
     $x->div(Inf)          # => BigNum(0)
-    $x->div(Ninf)         # => BigNum(0)
     $x->div(Nan)          # => Nan
 
-    BigNum / BigNum       # => BigNum | Inf | Ninf | Nan
-    BigNum / Scalar       # => BigNum | Inf | Ninf | Nan
-    Scalar / BigNum       # => BigNum | Inf | Ninf | Nan
+    BigNum / BigNum       # => BigNum | Inf | Nan
+    BigNum / Scalar       # => BigNum | Inf | Nan
+    Scalar / BigNum       # => BigNum | Inf | Nan
 
 Divides C<$x> by C<$y> and returns the result. Returns Nan when C<$x> and C<$y> are 0,
 Inf when C<$y> is $zero and C<$x> is positive, Ninf when C<$y> is zero and C<$x> is negative.
@@ -1355,16 +1327,14 @@ multimethod div => qw(Math::BigNum Math::BigNum::Complex) => sub {
     Math::BigNum::Complex->new($_[0])->div($_[1]);
 };
 
-multimethod div => qw(Math::BigNum Math::BigNum::Inf)  => \&ZERO;
-multimethod div => qw(Math::BigNum Math::BigNum::Ninf) => \&ZERO;
-multimethod div => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod div => qw(Math::BigNum Math::BigNum::Inf) => \&ZERO;
+multimethod div => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bdiv
 
     $x->bdiv(BigNum)        # => BigNum | Nan | Inf | Ninf
     $x->bdiv(Scalar)        # => BigNum | Nan | Inf | Ninf
     $x->bdiv(Inf)           # => BigNum(0)
-    $x->bdiv(Ninf)          # => BigNum(0)
     $x->bdiv(Nan)           # => Nan
 
     BigNum /= BigNum        # => BigNum | Nan | Inf | Ninf
@@ -1404,9 +1374,8 @@ multimethod bdiv => qw(Math::BigNum $) => sub {
     $x;
 };
 
-multimethod bdiv => qw(Math::BigNum Math::BigNum::Inf)  => \&bzero;
-multimethod bdiv => qw(Math::BigNum Math::BigNum::Ninf) => \&bzero;
-multimethod bdiv => qw(Math::BigNum Math::BigNum::Nan)  => \&bnan;
+multimethod bdiv => qw(Math::BigNum Math::BigNum::Inf) => \&bzero;
+multimethod bdiv => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 idiv
 
@@ -1458,10 +1427,9 @@ multimethod idiv => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
 
 =head2 bidiv
 
-    $x->bidiv(BigNum)       # => BigNum | Nan | Inf | Ninf
-    $x->bidiv(Scalar)       # => BigNum | Nan | Inf | Ninf
+    $x->bidiv(BigNum)       # => BigNum | Nan | Inf
+    $x->bidiv(Scalar)       # => BigNum | Nan | Inf
     $x->bidiv(Inf)          # => BigNum(0)
-    $x->bidiv(Ninf)         # => BigNum(0)
 
 Integer division of C<$x> by C<$y>, changing C<$x> in-place.
 
@@ -1508,9 +1476,8 @@ multimethod bidiv => qw(Math::BigNum $) => sub {
     $x;
 };
 
-multimethod bidiv => qw(Math::BigNum Math::BigNum::Inf)  => \&bzero;
-multimethod bidiv => qw(Math::BigNum Math::BigNum::Ninf) => \&bzero;
-multimethod bidiv => qw(Math::BigNum Math::BigNum::Nan)  => \&bnan;
+multimethod bidiv => qw(Math::BigNum Math::BigNum::Inf) => \&bzero;
+multimethod bidiv => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 neg
 
@@ -1675,7 +1642,6 @@ sub cbrt {
     $x->root(BigNum)      # => BigNum | Complex
     $x->root(Complex)     # => Complex
     $x->root(Inf)         # => BigNum(1)
-    $x->root(Ninf)        # => BigNum(1)
 
 Nth root of C<$x>. Returns a Complex number when is C<$x> is negative.
 
@@ -1693,9 +1659,8 @@ multimethod root => qw(Math::BigNum $) => sub {
     $_[0]->root(Math::BigNum->new($_[1]));
 };
 
-multimethod root => qw(Math::BigNum Math::BigNum::Inf)  => \&ONE;
-multimethod root => qw(Math::BigNum Math::BigNum::Ninf) => \&ONE;
-multimethod root => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod root => qw(Math::BigNum Math::BigNum::Inf) => \&ONE;
+multimethod root => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 iroot
 
@@ -1738,16 +1703,14 @@ multimethod iroot => qw(Math::BigNum $) => sub {
       : _mpz2rat($z);
 };
 
-multimethod iroot => qw(Math::BigNum Math::BigNum::Inf)  => \&ONE;
-multimethod iroot => qw(Math::BigNum Math::BigNum::Ninf) => \&ONE;
-multimethod iroot => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod iroot => qw(Math::BigNum Math::BigNum::Inf) => \&ONE;
+multimethod iroot => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 pow
 
     $x->pow(BigNum)     # => BigNum | Complex
     $x->pow(Complex)    # => Complex
     $x->pow(Inf)        # => Inf
-    $x->pow(Ninf)       # => BigNum(0)
 
     BigNum ** BigNum    # => BigNum | Complex
     BigNum ** Scalar    # => BigNum | Complex
@@ -1800,16 +1763,16 @@ multimethod pow => qw($ Math::BigNum) => sub {
     Math::BigNum->new($_[0])->pow($_[1]);
 };
 
-multimethod pow => qw(Math::BigNum Math::BigNum::Inf)  => \&inf;
-multimethod pow => qw(Math::BigNum Math::BigNum::Ninf) => \&ZERO;
-multimethod pow => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod pow => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[1]->is_neg ? ZERO : inf;
+};
+multimethod pow => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bpow
 
     $x->bpow(BigNum)     # => BigNum | Complex
     $x->bpow(Complex)    # => Complex
     $x->bpow(Inf)        # => Inf
-    $x->bpow(Ninf)       # => BigNum(0)
 
 Raise C<$x> to power C<$y>, changing C<$x> in-place.
 
@@ -1879,6 +1842,8 @@ multimethod bpow => qw(Math::BigNum $) => sub {
     Math::MPFR::Rmpfr_get_q($$x, $r);
     $x;
 };
+
+# TODO: add more multimethods for bpow.
 
 =head2 ln
 
@@ -2521,7 +2486,6 @@ sub acoth {
 
     $x->atan2(BigNum)           # => BigNum
     $x->atan2(Inf)              # => BigNum(0)
-    $x->atan2(Ninf)             # => BigNum
     $x->atan2(Scalar)           # => BigNum
 
     atan2(BigNum, BigNum)       # => BigNum
@@ -2550,11 +2514,11 @@ multimethod atan2 => qw($ Math::BigNum) => sub {
     _mpfr2rat($r);
 };
 
-multimethod atan2 => qw(Math::BigNum Math::BigNum::Ninf) => sub {
-    (Math::GMPq::Rmpq_sgn(${$_[0]}) >= 0) ? pi() : (pi()->neg);
+multimethod atan2 => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[1]->is_neg
+      ? ((Math::GMPq::Rmpq_sgn(${$_[0]}) >= 0) ? pi() : (pi()->neg))
+      : ZERO;
 };
-
-multimethod atan2 => qw(Math::BigNum Math::BigNum::Inf) => \&ZERO;
 multimethod atan2 => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 #
@@ -2567,7 +2531,6 @@ multimethod atan2 => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
     $x->eq(Scalar)       # => Bool
     $x->eq(Complex)      # => Bool
     $x->eq(Inf)          # => Bool
-    $x->eq(Ninf)         # => Bool
     $x->eq(Nan)          # => Bool
 
     $x == $y             # => Bool
@@ -2590,9 +2553,8 @@ multimethod eq => qw(Math::BigNum Math::BigNum::Complex) => sub {
     $y->im->is_zero && Math::GMPq::Rmpq_equal($$x, ${$y->re});
 };
 
-multimethod eq => qw(Math::BigNum Math::BigNum::Inf)  => sub { 0 };
-multimethod eq => qw(Math::BigNum Math::BigNum::Ninf) => sub { 0 };
-multimethod eq => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+multimethod eq => qw(Math::BigNum Math::BigNum::Inf) => sub { 0 };
+multimethod eq => qw(Math::BigNum Math::BigNum::Nan) => sub { };
 
 =head2 ne
 
@@ -2600,7 +2562,6 @@ multimethod eq => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
     $x->ne(Scalar)       # => Bool
     $x->ne(Complex)      # => Bool
     $x->ne(Inf)          # => Bool
-    $x->ne(Ninf)         # => Bool
     $x->ne(Nan)          # => Bool
 
     $x != $y             # => Bool
@@ -2623,9 +2584,8 @@ multimethod ne => qw(Math::BigNum Math::BigNum::Complex) => sub {
     !($y->im->is_zero && Math::GMPq::Rmpq_equal($$x, ${$y->re}));
 };
 
-multimethod ne => qw(Math::BigNum Math::BigNum::Inf)  => sub { 1 };
-multimethod ne => qw(Math::BigNum Math::BigNum::Ninf) => sub { 1 };
-multimethod ne => qw(Math::BigNum Math::BigNum::Nan)  => sub { 1 };
+multimethod ne => qw(Math::BigNum Math::BigNum::Inf) => sub { 1 };
+multimethod ne => qw(Math::BigNum Math::BigNum::Nan) => sub { 1 };
 
 =head2 gt
 
@@ -2657,9 +2617,8 @@ multimethod gt => qw(Math::BigNum Math::BigNum::Complex) => sub {
     $_[1]->lt($_[0]);
 };
 
-multimethod gt => qw(Math::BigNum Math::BigNum::Inf)  => sub { 0 };
-multimethod gt => qw(Math::BigNum Math::BigNum::Ninf) => sub { 1 };
-multimethod gt => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+multimethod gt => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->is_neg };
+multimethod gt => qw(Math::BigNum Math::BigNum::Nan) => sub { };
 
 =head2 ge
 
@@ -2691,9 +2650,8 @@ multimethod ge => qw(Math::BigNum Math::BigNum::Complex) => sub {
     $_[1]->le($_[0]);
 };
 
-multimethod ge => qw(Math::BigNum Math::BigNum::Inf)  => sub { 0 };
-multimethod ge => qw(Math::BigNum Math::BigNum::Ninf) => sub { 1 };
-multimethod ge => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+multimethod ge => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->is_neg };
+multimethod ge => qw(Math::BigNum Math::BigNum::Nan) => sub { };
 
 =head2 lt
 
@@ -2725,9 +2683,8 @@ multimethod lt => qw(Math::BigNum Math::BigNum::Complex) => sub {
     $_[1]->gt($_[0]);
 };
 
-multimethod lt => qw(Math::BigNum Math::BigNum::Inf)  => sub { 1 };
-multimethod lt => qw(Math::BigNum Math::BigNum::Ninf) => sub { 0 };
-multimethod lt => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+multimethod lt => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->is_pos };
+multimethod lt => qw(Math::BigNum Math::BigNum::Nan) => sub { };
 
 =head2 le
 
@@ -2759,9 +2716,8 @@ multimethod le => qw(Math::BigNum Math::BigNum::Complex) => sub {
     $_[1]->ge($_[0]);
 };
 
-multimethod le => qw(Math::BigNum Math::BigNum::Inf)  => sub { 1 };
-multimethod le => qw(Math::BigNum Math::BigNum::Ninf) => sub { 0 };
-multimethod le => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+multimethod le => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->is_pos };
+multimethod le => qw(Math::BigNum Math::BigNum::Nan) => sub { };
 
 =head2 cmp
 
@@ -2782,9 +2738,8 @@ multimethod cmp => qw(Math::BigNum Math::BigNum) => sub {
     Math::GMPq::Rmpq_cmp(${$_[0]}, ${$_[1]});
 };
 
-multimethod cmp => qw(Math::BigNum Math::BigNum::Inf)  => sub { -1 };
-multimethod cmp => qw(Math::BigNum Math::BigNum::Ninf) => sub { 1 };
-multimethod cmp => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+multimethod cmp => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->is_pos ? -1 : 1 };
+multimethod cmp => qw(Math::BigNum Math::BigNum::Nan) => sub { };
 
 multimethod cmp => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
@@ -2912,7 +2867,6 @@ Example:
 
     $x->mod(BigNum)      # => BigNum | Nan
     $x->mod(Inf)         # => Nan
-    $x->mod(Ninf)        # => Nan
     $x->mod(Nan)         # => Nan
     BigNum % BigNum      # => BigNum | Nan
     BigNum % Scalar      # => BigNum | Nan
@@ -2992,15 +2946,13 @@ multimethod mod => qw($ Math::BigNum) => sub {
     Math::BigNum->new($_[0])->mod($_[1]);
 };
 
-multimethod mod => qw(Math::BigNum Math::BigNum::Inf)  => \&nan;
-multimethod mod => qw(Math::BigNum Math::BigNum::Ninf) => \&nan;
-multimethod mod => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod mod => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
+multimethod mod => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bmod
 
     $x->bmod(BigNum)      # => BigNum | Nan
     $x->bmod(Inf)         # => Nan
-    $x->bmod(Ninf)        # => Nan
     $x->bmod(Nan)         # => Nan
     BigNum %= BigNum      # => BigNum | Nan
     BigNum %= Scalar      # => BigNum | Nan
@@ -3074,9 +3026,8 @@ multimethod bmod => qw(Math::BigNum $) => sub {
     $x;
 };
 
-multimethod bmod => qw(Math::BigNum Math::BigNum::Inf)  => \&bnan;
-multimethod bmod => qw(Math::BigNum Math::BigNum::Ninf) => \&bnan;
-multimethod bmod => qw(Math::BigNum Math::BigNum::Nan)  => \&bnan;
+multimethod bmod => qw(Math::BigNum Math::BigNum::Inf) => \&bnan;
+multimethod bmod => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 divmod
 
@@ -3216,7 +3167,7 @@ sub is_int {
 
     $x->is_real         # => Bool
 
-Always returns a true value when invoked on Math::BigNum objects.
+Always returns a true value when invoked on a Math::BigNum object.
 
 =cut
 
@@ -3226,7 +3177,7 @@ sub is_real { 1 }
 
     $x->is_inf          # => Bool
 
-Always returns a false value when invoked on Math::BigNum objects.
+Always returns a false value when invoked on a Math::BigNum object.
 
 =cut
 
@@ -3236,7 +3187,7 @@ sub is_inf { 0 }
 
     $x->is_nan          # => Bool
 
-Always returns a false value when invoked on Math::BigNum objects.
+Always returns a false value when invoked on a Math::BigNum object.
 
 =cut
 
@@ -3246,7 +3197,7 @@ sub is_nan { 0 }
 
     $x->is_ninf          # => Bool
 
-Always returns a false value when invoked on Math::BigNum objects.
+Always returns a false value when invoked on a Math::BigNum object.
 
 =cut
 
@@ -3289,7 +3240,6 @@ sub is_odd {
     $x->is_div(BigNum)      # => Bool
     $x->is_div(Scalar)      # => Bool
     $x->is_div(Inf)         # => undef
-    $x->is_div(Ninf)        # => undef
     $x->is_div(Nan)         # => undef
 
 Returns a true value if C<$x> is divisible by C<$y>. False otherwise.
@@ -3322,16 +3272,15 @@ multimethod is_div => qw(Math::BigNum $) => sub {
     }
 };
 
-multimethod is_div => qw(Math::BigNum Math::BigNum::Inf)  => sub { };
-multimethod is_div => qw(Math::BigNum Math::BigNum::Ninf) => sub { };
-multimethod is_div => qw(Math::BigNum Math::BigNum::Nan)  => sub { };
+multimethod is_div => qw(Math::BigNum Math::BigNum::Inf) => sub { };
+multimethod is_div => qw(Math::BigNum Math::BigNum::Nan) => sub { };
 
 =head2 is_psqr
 
     $n->is_psqr         # => Bool
 
-Returns a true value when $n is a perfect square. False otherwise.
-When $n is not an integer, returns C<undef>.
+Returns a true value when C<$n> is a perfect square. False otherwise.
+When C<$n> is not an integer, returns C<undef>.
 
 =cut
 
@@ -3347,8 +3296,8 @@ sub is_psqr {
 
     $n->is_ppow         # => Bool
 
-Returns a true value when $n is a perfect power. False otherwise.
-When $n is not an integer, returns C<undef>.
+Returns a true value when C<$n> is a perfect power. False otherwise.
+When C<$n> is not an integer, returns C<undef>.
 
 =cut
 
@@ -3377,10 +3326,9 @@ sub sign {
 
     $x->max(BigNum)         # => BigNum
     $x->max(Inf)            # => Inf
-    $x->max(Ninf)           # => BigNum
     $x->max(Nan)            # => Nan
 
-Returns the maximum value between C<$x> and C<$y>.
+Returns C<$x> if C<$x> is greater than C<$y>. Returns C<$y> otherwise.
 
 =cut
 
@@ -3389,9 +3337,8 @@ multimethod max => qw(Math::BigNum Math::BigNum) => sub {
     Math::GMPq::Rmpq_cmp($$x, $$y) > 0 ? $x : $y;
 };
 
-multimethod max => qw(Math::BigNum Math::BigNum::Inf)  => sub { $_[1] };
-multimethod max => qw(Math::BigNum Math::BigNum::Ninf) => sub { $_[0] };
-multimethod max => qw(Math::BigNum Math::BigNum::Nan)  => sub { $_[1] };
+multimethod max => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->is_pos ? $_[1] : $_[0] };
+multimethod max => qw(Math::BigNum Math::BigNum::Nan) => sub { $_[1] };
 
 =head2 min
 
@@ -3400,7 +3347,7 @@ multimethod max => qw(Math::BigNum Math::BigNum::Nan)  => sub { $_[1] };
     $x->min(Ninf)           # => Ninf
     $x->min(Nan)            # => Nan
 
-Returns the minimum value between C<$x> and C<$y>.
+Returns C<$x> if C<$x> is lower than C<$y>. Returns C<$y> otherwise.
 
 =cut
 
@@ -3409,9 +3356,8 @@ multimethod min => qw(Math::BigNum Math::BigNum) => sub {
     Math::GMPq::Rmpq_cmp($$x, $$y) < 0 ? $x : $y;
 };
 
-multimethod min => qw(Math::BigNum Math::BigNum::Inf)  => sub { $_[0] };
-multimethod min => qw(Math::BigNum Math::BigNum::Ninf) => sub { $_[1] };
-multimethod min => qw(Math::BigNum Math::BigNum::Nan)  => sub { $_[1] };
+multimethod min => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->is_pos ? $_[0] : $_[1] };
+multimethod min => qw(Math::BigNum Math::BigNum::Nan) => sub { $_[1] };
 
 =head2 gcd
 
@@ -4555,8 +4501,8 @@ multimethod lgamma => qw($) => sub {
 
 =head2 digamma
 
-    $x->digamma          # => BigNum | Ninf | Nan
-    digamma(Scalar)      # => BigNum | Ninf | Nan
+    $x->digamma          # => BigNum | -Inf | Nan
+    digamma(Scalar)      # => BigNum | -Inf | Nan
 
 The Digamma function (sometimes also called Psi).
 Returns Nan when C<$x> is negative, and -Inf when C<$x> is 0.
