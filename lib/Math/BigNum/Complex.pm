@@ -31,11 +31,11 @@ use overload
   '|'  => sub { $_[0]->or($_[1]) },
   '^'  => sub { $_[0]->xor($_[1]) },
 
-  '>'   => sub { Math::BigNum::gt($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
-  '>='  => sub { Math::BigNum::ge($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
-  '<'   => sub { Math::BigNum::lt($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
-  '<='  => sub { Math::BigNum::le($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
-  '<=>' => sub { Math::BigNum::cmp($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '>'   => sub { Math::BigNum::Complex::gt($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '>='  => sub { Math::BigNum::Complex::ge($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<'   => sub { Math::BigNum::Complex::lt($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<='  => sub { Math::BigNum::Complex::le($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<=>' => sub { Math::BigNum::Complex::cmp($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
   '**'  => sub { Math::BigNum::Complex::pow($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '-'   => sub { Math::BigNum::Complex::sub($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
@@ -53,6 +53,37 @@ use overload
 #*nan = \&Math::BigNum::nan;
 #*inf = \&Math::BigNum::inf;
 #*ninf = \&Math::BigNum::ninf;
+
+# Needed by boolify()
+my $ZERO = do {
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_set_ui($r, 0, $ROUND);
+    $r;
+};
+
+=head2 new
+
+    Complex->new(Scalar)              # => Complex
+    Complex->new(Scalar, Scalar)      # => Complex
+
+Returns a new Complex object with the value specified in the first argument,
+which can be a Perl numerical value, a string representing a complex number in
+a standard form, such as C<"2+3i">, one or two strings holding a floating-point
+number, such as C<"0.5">, or one or two strings holding an integer, such as C<"255">.
+
+If the second argument is omitted, the imaginary part will be set to zero.
+
+Example for creating a complex number:
+
+    my $z = Math::BigNum::Complex->new(2, 3);
+
+which is equivalent with:
+
+    my $z = Math::BigNum::Complex->new("2+3i");
+
+B<NOTE:> no space is allowed as part of a string provided to C<new()>.
+
+=cut
 
 sub new {
     my (undef, $x, $y) = @_;
@@ -168,6 +199,15 @@ sub new {
     bless \$r, __PACKAGE__;
 }
 
+=head2 stringify
+
+    $z->stringify       # => Scalar
+
+Returns a string representing the value of $z, either as an integer,
+a floating-point, or a complex number.
+
+=cut
+
 sub stringify {
     my $re = $_[0]->re;
     my $im = $_[0]->im;
@@ -187,11 +227,54 @@ sub stringify {
     $re eq '0' ? $sign eq '+' ? "${im}i" : "$sign${im}i" : "$re$sign${im}i";
 }
 
+=head2 boolify
+
+    $z->boolify         # => Bool
+
+Returns true when the real part or the imaginary part is non-zero.
+
+=cut
+
+sub boolify {
+    Math::MPC::Rmpc_cmp(${$_[0]}, $ZERO) != 0;
+}
+
+=head2 numify
+
+    $z->numify      # => Scalar
+
+Returns a Perl numerical scalar with the absolute value of C<$z>, truncated if needed.
+
+=cut
+
+sub numify {
+    my ($x) = @_;
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPC::Rmpc_abs($r, $$x, $ROUND);
+    Math::MPFR::Rmpfr_get_d($r, $ROUND);
+}
+
+=head2 re
+
+    $z->re      # => BigNum | Inf | Ninf | Nan
+
+Returns the real part of C<$z>.
+
+=cut
+
 sub re {
     my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPC::RMPC_RE($mpfr, ${$_[0]});
     Math::BigNum::_mpfr2rat($mpfr);
 }
+
+=head2 im
+
+    $z->im      # => BigNum | Inf | Ninf | Nan
+
+Returns the imaginary part of C<$z>.
+
+=cut
 
 sub im {
     my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
@@ -205,8 +288,8 @@ sub im {
 
 =head2 add
 
-    $x->add(Complex)        # Complex
-    $x->add(BigNum)         # Complex
+    $x->add(Complex)        # => Complex
+    $x->add(BigNum)         # => Complex
 
 Adds $x to $y and returns the result.
 
@@ -232,8 +315,8 @@ multimethod add => qw(Math::BigNum::Complex Math::BigNum) => sub {
 
 =head2 sub
 
-    $x->sub(Complex)        # Complex
-    $x->sub(BigNum)         # Complex
+    $x->sub(Complex)        # => Complex
+    $x->sub(BigNum)         # => Complex
 
 Subtracts $y from $x and returns the result.
 
@@ -259,8 +342,8 @@ multimethod sub => qw(Math::BigNum::Complex Math::BigNum) => sub {
 
 =head2 mul
 
-    $x->mul(Complex)        # Complex
-    $x->mul(BigNum)         # Complex
+    $x->mul(Complex)        # => Complex
+    $x->mul(BigNum)         # => Complex
 
 Multiplies $x by $y and returns the result.
 
@@ -286,8 +369,8 @@ multimethod mul => qw(Math::BigNum::Complex Math::BigNum) => sub {
 
 =head2 div
 
-    $x->div(Complex)        # Complex
-    $x->div(BigNum)         # Complex
+    $x->div(Complex)        # => Complex
+    $x->div(BigNum)         # => Complex
 
 Divides $x by $y and returns the result.
 
@@ -430,7 +513,7 @@ sub exp2 {
     bless(\$r, __PACKAGE__);
 }
 
-=head2 exp2
+=head2 exp10
 
     $x->exp10     # => Complex
 
@@ -482,12 +565,28 @@ sub inc {
 ## Trigonometric
 #
 
+=head2 sin
+
+    $z->sin       # => Complex
+
+Returns the sine of C<$z>.
+
+=cut
+
 sub sin {
     my ($x) = @_;
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_sin($r, $$x, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 asin
+
+    $z->asin       # => Complex
+
+Returns the inverse sine of C<$z>.
+
+=cut
 
 sub asin {
     my ($x) = @_;
@@ -496,12 +595,28 @@ sub asin {
     bless(\$r, __PACKAGE__);
 }
 
+=head2 sinh
+
+    $z->sinh       # => Complex
+
+Returns the hyperbolic sine of C<$z>.
+
+=cut
+
 sub sinh {
     my ($x) = @_;
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_sinh($r, $$x, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 asinh
+
+    $z->asinh       # => Complex
+
+Returns the inverse hyperbolic sine of C<$z>.
+
+=cut
 
 sub asinh {
     my ($x) = @_;
@@ -510,12 +625,28 @@ sub asinh {
     bless(\$r, __PACKAGE__);
 }
 
+=head2 cos
+
+    $z->cos       # => Complex
+
+Returns the cosine of C<$z>.
+
+=cut
+
 sub cos {
     my ($x) = @_;
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_cos($r, $$x, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 acos
+
+    $z->acos       # => Complex
+
+Returns the inverse cosine of C<$z>.
+
+=cut
 
 sub acos {
     my ($x) = @_;
@@ -524,12 +655,28 @@ sub acos {
     bless(\$r, __PACKAGE__);
 }
 
+=head2 cosh
+
+    $z->cosh       # => Complex
+
+Returns the hyperbolic cosine of C<$z>.
+
+=cut
+
 sub cosh {
     my ($x) = @_;
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_cosh($r, $$x, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 acosh
+
+    $z->acosh       # => Complex
+
+Returns the inverse hyperbolic cosine of C<$z>.
+
+=cut
 
 sub acosh {
     my ($x) = @_;
@@ -538,12 +685,28 @@ sub acosh {
     bless(\$r, __PACKAGE__);
 }
 
+=head2 tan
+
+    $z->tan       # => Complex
+
+Returns the tangent of C<$z>.
+
+=cut
+
 sub tan {
     my ($x) = @_;
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_tan($r, $$x, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 atan
+
+    $z->atan       # => Complex
+
+Returns the inverse tangent of C<$z>.
+
+=cut
 
 sub atan {
     my ($x) = @_;
@@ -552,12 +715,28 @@ sub atan {
     bless(\$r, __PACKAGE__);
 }
 
+=head2 tanh
+
+    $z->tanh       # => Complex
+
+Returns the hyperbolic tangent of C<$z>.
+
+=cut
+
 sub tanh {
     my ($x) = @_;
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_tanh($r, $$x, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 atanh
+
+    $z->atanh       # => Complex
+
+Returns the inverse hyperbolic tangent of C<$z>.
+
+=cut
 
 sub atanh {
     my ($x) = @_;
@@ -566,53 +745,13 @@ sub atanh {
     bless(\$r, __PACKAGE__);
 }
 
-#
-## csc(x) = 1/sin(x)
-#
-sub csc {
-    my ($x) = @_;
-    state $one = Math::MPC->new(1);
-    my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_sin($r, $$x, $ROUND);
-    Math::MPC::Rmpc_div($r, $one, $r, $ROUND);
-    bless(\$r, __PACKAGE__);
-}
+=head2 sec
 
-#
-## acsc(x) = asin(1/x)
-#
-sub acsc {
-    my ($x) = @_;
-    state $one = Math::MPC->new(1);
-    my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_div($r, $one, $$x, $ROUND);
-    Math::MPC::Rmpc_asin($r, $r, $ROUND);
-    bless(\$r, __PACKAGE__);
-}
+    $z->sec       # => Complex
 
-#
-## csch(x) = 1/sinh(x)
-#
-sub csch {
-    my ($x) = @_;
-    state $one = Math::MPC->new(1);
-    my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_sinh($r, $$x, $ROUND);
-    Math::MPC::Rmpc_div($r, $one, $r, $ROUND);
-    bless(\$r, __PACKAGE__);
-}
+Returns the secant of C<$z>, which is 1/cos(z).
 
-#
-## acsch(x) = asinh(1/x)
-#
-sub acsch {
-    my ($x) = @_;
-    state $one = Math::MPC->new(1);
-    my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_div($r, $one, $$x, $ROUND);
-    Math::MPC::Rmpc_asinh($r, $r, $ROUND);
-    bless(\$r, __PACKAGE__);
-}
+=cut
 
 #
 ## sec(x) = 1/cos(x)
@@ -626,6 +765,14 @@ sub sec {
     bless(\$r, __PACKAGE__);
 }
 
+=head2 asec
+
+    $z->asec       # => Complex
+
+Returns the inverse secant of C<$z>, which is acos(1/z).
+
+=cut
+
 #
 ## asec(x) = acos(1/x)
 #
@@ -637,6 +784,14 @@ sub asec {
     Math::MPC::Rmpc_acos($r, $r, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 sech
+
+    $z->sech       # => Complex
+
+Returns the hyperbolic secant of C<$z>, which is 1/cosh(z).
+
+=cut
 
 #
 ## sech(x) = 1/cosh(x)
@@ -650,6 +805,14 @@ sub sech {
     bless(\$r, __PACKAGE__);
 }
 
+=head2 asech
+
+    $z->asech       # => Complex
+
+Returns the inverse hyperbolic secant of C<$x>, which is acosh(1/z).
+
+=cut
+
 #
 ## asech(x) = acosh(1/x)
 #
@@ -661,6 +824,94 @@ sub asech {
     Math::MPC::Rmpc_acosh($r, $r, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 csc
+
+    $z->csc       # => Complex
+
+Returns the cosecant of C<$z>, which is 1/sin(z).
+
+=cut
+
+#
+## csc(x) = 1/sin(x)
+#
+sub csc {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_sin($r, $$x, $ROUND);
+    Math::MPC::Rmpc_div($r, $one, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 acsc
+
+    $z->acsc       # => Complex
+
+Returns the inverse cosecant of C<$z>, which is asin(1/z).
+
+=cut
+
+#
+## acsc(x) = asin(1/x)
+#
+sub acsc {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div($r, $one, $$x, $ROUND);
+    Math::MPC::Rmpc_asin($r, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 csch
+
+    $z->csch       # => Complex
+
+Returns the hyperbolic cosecant of C<$z>, which is 1/sinh(z).
+
+=cut
+
+#
+## csch(x) = 1/sinh(x)
+#
+sub csch {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_sinh($r, $$x, $ROUND);
+    Math::MPC::Rmpc_div($r, $one, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 acsch
+
+    $z->acsch       # => Complex
+
+Returns the inverse hyperbolic cosecant of C<$z>, which is asinh(1/x).
+
+=cut
+
+#
+## acsch(x) = asinh(1/x)
+#
+sub acsch {
+    my ($x) = @_;
+    state $one = Math::MPC->new(1);
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_div($r, $one, $$x, $ROUND);
+    Math::MPC::Rmpc_asinh($r, $r, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 cot
+
+    $z->cot       # => Complex
+
+Returns the cotangent of C<$z>, which is 1/tan(z).
+
+=cut
 
 #
 ## cot(x) = 1/tan(x)
@@ -674,6 +925,14 @@ sub cot {
     bless(\$r, __PACKAGE__);
 }
 
+=head2 acot
+
+    $z->acot       # => Complex
+
+Returns the inverse cotangent of C<$z>, which is atan(1/z).
+
+=cut
+
 #
 ## acot(x) = atan(1/x)
 #
@@ -685,6 +944,14 @@ sub acot {
     Math::MPC::Rmpc_atan($r, $r, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 coth
+
+    $z->coth       # => Complex
+
+Returns the hyperbolic cotangent of C<$z>, which is 1/tanh(z).
+
+=cut
 
 #
 ## coth(x) = 1/tanh(x)
@@ -698,6 +965,14 @@ sub coth {
     bless(\$r, __PACKAGE__);
 }
 
+=head2 acoth
+
+    $z->acoth       # => Complex
+
+Returns the inverse hyperbolic cotangent of C<$z>, which is atanh(1/z).
+
+=cut
+
 #
 ## acoth(x) = atanh(1/x)
 #
@@ -709,6 +984,23 @@ sub acoth {
     Math::MPC::Rmpc_atanh($r, $r, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 atan2
+
+    $z->atan2(Complex)          # => Complex
+    $z->atan2(BigNum)           # => Complex
+    $z->atan2(Inf)              # => Complex(0)
+    $z->atan2(Ninf)             # => Complex
+    $z->atan2(Scalar)           # => Complex
+
+    atan2(Complex, Complex)     # => Complex
+    atan2(Complex, BigNum)      # => Complex
+    atan2(Complex, Scalar)      # => Complex
+    atan2(Scalar, Complex)      # => Complex
+
+Arctangent of C<$z> and C<$z'>. If C<$z'> is Ninf returns PI when C<<$z >= 0>>, or -PI when C<<$z < 0>>.
+
+=cut
 
 #
 ## atan2(x, y) = atan(x/y)
@@ -731,19 +1023,62 @@ multimethod atan2 => qw(Math::BigNum::Complex Math::BigNum) => sub {
     bless(\$r, __PACKAGE__);
 };
 
+# TODO: add more multimethods for atan2()
+
 #
 ## Comparisons
 #
+
+=head2 eq
+
+    $z->eq(Complex)   # => Bool
+    $z1 == $z2        # => Bool
+
+Equality check: returns a true value when C<$z1> and C<$z2> are equal.
+
+=cut
 
 multimethod eq => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
     my ($x, $y) = @_;
     Math::MPC::Rmpc_cmp($$x, $$y) == 0;
 };
 
+# TODO: add more multimethods for eq()
+
+=head2 ne
+
+    $z->ne(Complex)      # => Bool
+    $z1 != $z2           # => Bool
+
+Inequality check: returns a true value C<$z1> and C<$z2> are not equal.
+
+=cut
+
 multimethod ne => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
     my ($x, $y) = @_;
     Math::MPC::Rmpc_cmp($$x, $$y) != 0;
 };
+
+# TODO: add more multimethods for ne()
+
+=head2 cmp
+
+    $z->cmp(BigNum)              # => Scalar
+    $z->cmp(Complex)             # => Scalar
+    $z->cmp(Scalar)              # => Scalar
+
+    BigNum <=> BigNum            # => Scalar
+    BigNum <=> Scalar            # => Scalar
+    Scalar <=> BigNum            # => Scalar
+
+Compares C<$z1> to C<$z2> and returns a negative value when the real part of
+C<$z1> is less than the real part of C<$z2>. When the real parts are equal,
+it check the imaginary part and returns a negative value when the imaginary
+part of C<$z1> is less than the imaginary part of C<$z2>.
+
+For C<Math::BigNum> objects, the imaginary part is considered to be zero.
+
+=cut
 
 multimethod cmp => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
     my ($x, $y) = @_;
@@ -765,5 +1100,7 @@ multimethod cmp => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
 
     Math::MPFR::Rmpfr_cmp($x_re, $y_re);
 };
+
+# TODO: add more multimethods for cmp()
 
 1;
