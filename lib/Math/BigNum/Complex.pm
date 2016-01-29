@@ -12,6 +12,32 @@ use Math::BigNum qw();
 
 use Class::Multimethods qw(multimethod);
 
+=encoding utf8
+
+=head1 NAME
+
+Math::BigNum::Complex - Arbitrary size precision for complex numbers.
+
+=head1 VERSION
+
+Version 0.01
+
+=head1 SYNOPSIS
+
+    use Math::BigNum qw(:constant i);
+    say 3 + 4*i;        # => "3+4i"
+
+    my $z = Math::BigNum::Complex->new(3, 4);
+    say sqrt($z);       # => "2+i"
+
+=head1 DESCRIPTION
+
+Math::BigNum::Complex provides a transparent interface to Math::MPC.
+
+=head1 SUBROUTINES/METHODS
+
+=cut
+
 our $ROUND = Math::MPC::MPC_RNDNN();
 
 our ($PREC);

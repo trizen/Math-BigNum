@@ -14,23 +14,23 @@ use Math::BigNum qw(:constant);
 
 # Big numbers
 say ((100->fac + 1) / 2);
-  # prints: 466631077219720763408496194281333502453579841321908107 \
-  #         342964819476087999966149578044707319880782591431268489 \
-  #         60413611879125592605458432000000000000000000000000.5
+  # => 466631077219720763408496194281333502453579841321908107 \
+  #    342964819476087999966149578044707319880782591431268489 \
+  #    60413611879125592605458432000000000000000000000000.5
 
 # Small numbers
-say sqrt(1 / 100->fac);     # prints: 1.0351378111756264713204945916572e-79
+say sqrt(1 / 100->fac);     # => 1.0351378111756264713204945916572e-79
 
 # Rational numbers
 my $x = 2/3;
-say $x*3;                   # prints: 2
-say 2/$x;                   # prints: 3
+say $x*3;                   # => 2
+say 2/$x;                   # => 3
 
 # Floating-point numbers
-say "correct" if (1.1 + 2.2 == 3.3);     # prints: "correct"
+say "equal" if (1.1 + 2.2 == 3.3);     # => "equal"
 
 # Complex numbers
-say sqrt(-1);               # prints: i
+say sqrt(-1);               # => i
 ```
 
 Importing the `i` constant to explicitly create complex numbers:
@@ -39,8 +39,9 @@ Importing the `i` constant to explicitly create complex numbers:
 use Math::BigNum qw(:constant i);
 
 my $z = 3 + 4*i;
-say $z;              # prints: "3+4i"
-say $z + 2;          # prints: "5+4i"
+say $z;              # => "3+4i"
+say $z + 2;          # => "5+4i"
+say sqrt($z);        # => "2+i"
 ```
 
 # INSTALLATION
