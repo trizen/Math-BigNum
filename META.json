@@ -49,9 +49,6 @@
       },
       "Math::BigNum::Nan" : {
          "file" : "lib/Math/BigNum/Nan.pm"
-      },
-      "Math::BigNum::Ninf" : {
-         "file" : "lib/Math/BigNum/Ninf.pm"
       }
    },
    "release_status" : "unstable",

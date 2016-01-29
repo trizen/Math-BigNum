@@ -87,7 +87,7 @@ sub inf { Math::BigNum::Inf->new }
 
 =head2 ninf
 
-    BigNum->ninf       # => Ninf
+    BigNum->ninf       # => -Inf
 
 Returns an Inf object to represent negative Infinity.
 
@@ -801,7 +801,7 @@ sub binf {
 
 =head2 bninf
 
-    $x->bninf       # => Ninf
+    $x->bninf       # => -Inf
 
 Changes C<$x> in-place to negative Infinity.
 
@@ -904,7 +904,6 @@ multimethod badd => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
     $x->iadd(BigNum)        # => BigNum
     $x->iadd(Scalar)        # => BigNum
     $x->iadd(Inf)           # => Inf
-    $x->iadd(Ninf)          # => Ninf
     $x->iadd(Nan)           # => Nan
 
 Integer addition of C<$y> to C<$x>. Both values
@@ -935,7 +934,6 @@ multimethod iadd => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
     $x->biadd(BigNum)        # => BigNum
     $x->biadd(Scalar)        # => BigNum
     $x->biadd(Inf)           # => Inf
-    $x->biadd(Ninf)          # => Ninf
     $x->biadd(Nan)           # => Nan
 
 Integer addition of C<$y> from C<$x>, changing C<$x> in-place.
@@ -968,8 +966,7 @@ multimethod biadd => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
     $x->sub(BigNum)       # => BigNum
     $x->sub(Scalar)       # => BigNum
     $x->sub(Complex)      # => Complex
-    $x->sub(Inf)          # => Ninf
-    $x->sub(Ninf)         # => Inf
+    $x->sub(Inf)          # => Inf
 
     BigNum - BigNum       # => BigNum
     BigNum - Scalar       # => BigNum
@@ -1011,8 +1008,7 @@ multimethod sub => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
     $x->bsub(BigNum)      # => BigNum
     $x->bsub(Scalar)      # => BigNum
-    $x->bsub(Inf)         # => Ninf
-    $x->bsub(Ninf)        # => Inf
+    $x->bsub(Inf)         # => Inf
 
     BigNum -= BigNum      # => BigNum
     BigNum -= Scalar      # => BigNum
@@ -1103,8 +1099,7 @@ multimethod bisub => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
     $x->mul(BigNum)       # => BigNum
     $x->mul(Scalar)       # => BigNum
     $x->mul(Complex)      # => Complex
-    $x->mul(Inf)          # => Ninf | Inf | Nan
-    $x->mul(Ninf)         # => Ninf | Inf | Nan
+    $x->mul(Inf)          # => Inf | Nan
     $x->mul(Nan)          # => Nan
 
     BigNum * BigNum       # => BigNum
@@ -1145,7 +1140,6 @@ multimethod mul => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
     $x->bmul(BigNum)        # => BigNum
     $x->bmul(Scalar)        # => BigNum
     $x->bmul(Inf)           # => Inf | Nan
-    $x->bmul(Ninf)          # => Inf | Nan
     $x->bmul(Nan)           # => Nan
 
     BigNum *= BigNum        # => BigNum
@@ -1183,7 +1177,6 @@ multimethod bmul => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
     $x->imul(BigNum)        # => BigNum
     $x->imul(Scalar)        # => BigNum
     $x->imul(Inf)           # => Inf | Nan
-    $x->imul(Ninf)          # => Inf | Nan
 
 Integer multiplication of C<$x> by C<$y>. Both values
 are truncated to integers before multiplication.
@@ -1262,7 +1255,7 @@ multimethod bimul => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
     Scalar / BigNum       # => BigNum | Inf | Nan
 
 Divides C<$x> by C<$y> and returns the result. Returns Nan when C<$x> and C<$y> are 0,
-Inf when C<$y> is $zero and C<$x> is positive, Ninf when C<$y> is zero and C<$x> is negative.
+Inf when C<$y> is $zero and C<$x> is positive, -Inf when C<$y> is zero and C<$x> is negative.
 
 =cut
 
@@ -1332,13 +1325,13 @@ multimethod div => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bdiv
 
-    $x->bdiv(BigNum)        # => BigNum | Nan | Inf | Ninf
-    $x->bdiv(Scalar)        # => BigNum | Nan | Inf | Ninf
+    $x->bdiv(BigNum)        # => BigNum | Nan | Inf
+    $x->bdiv(Scalar)        # => BigNum | Nan | Inf
     $x->bdiv(Inf)           # => BigNum(0)
     $x->bdiv(Nan)           # => Nan
 
-    BigNum /= BigNum        # => BigNum | Nan | Inf | Ninf
-    BigNum /= Scalar        # => BigNum | Nan | Inf | Ninf
+    BigNum /= BigNum        # => BigNum | Nan | Inf
+    BigNum /= Scalar        # => BigNum | Nan | Inf
 
 Divide C<$x> by C<$y>, changing C<$x> in-place. The return values are the same as for C<div()>.
 
@@ -1379,10 +1372,9 @@ multimethod bdiv => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 idiv
 
-    $x->idiv(BigNum)        # => BigNum | Nan | Inf | Ninf
-    $x->idiv(Scalar)        # => BigNum | Nan | Inf | Ninf
+    $x->idiv(BigNum)        # => BigNum | Nan | Inf
+    $x->idiv(Scalar)        # => BigNum | Nan | Inf
     $x->idiv(Inf)           # => BigNum(0)
-    $x->idiv(Ninf)          # => BigNum(0)
     $x->idiv(Nan)           # => Nan
 
 Integer division of C<$x> by C<$y>.
@@ -1422,7 +1414,6 @@ multimethod idiv => qw(Math::BigNum $) => sub {
 };
 
 multimethod idiv => qw(Math::BigNum Math::BigNum::Inf)  => \&ZERO;
-multimethod idiv => qw(Math::BigNum Math::BigNum::Ninf) => \&ZERO;
 multimethod idiv => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
 
 =head2 bidiv
@@ -2492,7 +2483,7 @@ sub acoth {
     atan2(BigNum, Scalar)       # => BigNum
     atan2(Scalar, BigNum)       # => BigNum
 
-Arctangent of C<$x> and C<$y>. When C<$y> is Ninf returns PI when C<<$x >= 0>>, or C<-PI> when C<<$x < 0>>.
+Arctangent of C<$x> and C<$y>. When C<$y> is -Inf returns PI when C<<$x >= 0>>, or C<-PI> when C<<$x < 0>>.
 
 =cut
 
@@ -3343,8 +3334,7 @@ multimethod max => qw(Math::BigNum Math::BigNum::Nan) => sub { $_[1] };
 =head2 min
 
     $x->min(BigNum)         # => BigNum
-    $x->min(Inf)            # => BigNum
-    $x->min(Ninf)           # => Ninf
+    $x->min(Inf)            # => BigNum | -Inf
     $x->min(Nan)            # => Nan
 
 Returns C<$x> if C<$x> is lower than C<$y>. Returns C<$y> otherwise.
@@ -3363,7 +3353,6 @@ multimethod min => qw(Math::BigNum Math::BigNum::Nan) => sub { $_[1] };
 
     $x->gcd(BigNum)         # => BigNum
     $x->gcd(Inf)            # => Nan
-    $x->gcd(Ninf)           # => Nan
     $x->gcd(Nan)            # => Nan
 
 The greatest common divisor of C<$x> and C<$y>.
@@ -3378,14 +3367,12 @@ multimethod gcd => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 multimethod gcd => qw(Math::BigNum Math::BigNum::Inf)  => \&nan;
-multimethod gcd => qw(Math::BigNum Math::BigNum::Ninf) => \&nan;
 multimethod gcd => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
 
 =head2 lcm
 
     $x->lcd(BigNum)         # => BigNum
     $x->lcm(Inf)            # => Nan
-    $x->lcm(Ninf)           # => Nan
     $x->lcm(Nan)            # => Nan
 
 The least common multiple of C<$x> and C<$y>.
@@ -3400,7 +3387,6 @@ multimethod lcm => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 multimethod lcm => qw(Math::BigNum Math::BigNum::Inf)  => \&nan;
-multimethod lcm => qw(Math::BigNum Math::BigNum::Ninf) => \&nan;
 multimethod lcm => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
 
 =head2 int

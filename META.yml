@@ -23,8 +23,6 @@ provides:
     file: lib/Math/BigNum/Inf.pm
   Math::BigNum::Nan:
     file: lib/Math/BigNum/Nan.pm
-  Math::BigNum::Ninf:
-    file: lib/Math/BigNum/Ninf.pm
 requires:
   Carp: '0'
   Class::Multimethods: '0'

@@ -282,7 +282,7 @@ sub numify {
 
 =head2 re
 
-    $z->re      # => BigNum | Inf | Ninf | Nan
+    $z->re      # => BigNum | Inf | Nan
 
 Returns the real part of C<$z>.
 
@@ -296,7 +296,7 @@ sub re {
 
 =head2 im
 
-    $z->im      # => BigNum | Inf | Ninf | Nan
+    $z->im      # => BigNum | Inf | Nan
 
 Returns the imaginary part of C<$z>.
 
@@ -1016,7 +1016,6 @@ sub acoth {
     $z->atan2(Complex)          # => Complex
     $z->atan2(BigNum)           # => Complex
     $z->atan2(Inf)              # => Complex(0)
-    $z->atan2(Ninf)             # => Complex
     $z->atan2(Scalar)           # => Complex
 
     atan2(Complex, Complex)     # => Complex
@@ -1024,7 +1023,7 @@ sub acoth {
     atan2(Complex, Scalar)      # => Complex
     atan2(Scalar, Complex)      # => Complex
 
-Arctangent of C<$z> and C<$z'>. If C<$z'> is Ninf returns PI when C<<$z >= 0>>, or -PI when C<<$z < 0>>.
+Arctangent of C<$z> and C<$z'>. If C<$z'> is -Inf returns PI when C<<$z >= 0>>, or -PI when C<<$z < 0>>.
 
 =cut
 
