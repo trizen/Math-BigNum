@@ -9,19 +9,28 @@ Math::BigNum provides a correct, intuitive and transparent interface to the GMP,
 # SYNOPSIS
 
 ```perl
-use 5.010;
+use 5.014;
 use Math::BigNum qw(:constant);
 
-# Integers and floating-points
+# Big numbers
 say ((100->fac + 1) / 2);
-  # prints: 46663107721972076340849619428133350245357984132190810734296481947608799996614957804470731988078259143126848960413611879125592605458432000000000000000000000000.5
+  # prints: 466631077219720763408496194281333502453579841321908107 \
+  #         342964819476087999966149578044707319880782591431268489 \
+  #         60413611879125592605458432000000000000000000000000.5
+
+# Small numbers
+say sqrt(1 / 100->fac);     # prints: 1.0351378111756264713204945916572e-79
 
 # Rational numbers
-my $x = 1/3;
-say $x*3;         # prints: 1
+my $x = 2/3;
+say $x*3;                   # prints: 2
+say 2/$x;                   # prints: 3
+
+# Floating-point numbers
+say "correct" if (1.1 + 2.2 == 3.3);     # prints: "correct"
 
 # Complex numbers
-say sqrt(-1);     # prints: i
+say sqrt(-1);               # prints: i
 ```
 
 Importing the `i` constant to explicitly create complex numbers:
