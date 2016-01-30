@@ -1,7 +1,9 @@
 Build.PL
 Changes
 examples/arithmetic_coding.pl
+examples/coin_change.pl
 examples/faulhaber_s_formula.pl
+examples/prime_count_approx.pl
 examples/zeta_2n.pl
 ignore.txt
 lib/Math/BigNum.pm
