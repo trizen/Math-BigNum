@@ -1,6 +1,7 @@
 Build.PL
 Changes
 examples/arithmetic_coding.pl
+examples/binary_arithmetic_coding.pl
 examples/coin_change.pl
 examples/faulhaber_s_formula.pl
 examples/prime_count_approx.pl
