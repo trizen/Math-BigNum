@@ -49,8 +49,7 @@ sub arithmethic_coding {
     my %cf = cumulative_freq(\%freq);
 
     # Limit and base
-    my $lim  = Math::BigNum->new($#chars);
-    my $base = $lim + 1;
+    my $base = scalar @chars;
 
     # Lower bound
     my $L = Math::BigNum->new(0);
@@ -60,10 +59,9 @@ sub arithmethic_coding {
 
     # Each term is multiplied by the product of the
     # frequencies of all previously occurring symbols
-    for (my $i = 0 ; $i < $base ; $i++) {
-        my $x = $cf{$chars[$i]} * $base**($lim - $i);
-        $L->badd($x * $pf);
-        $pf->bmul($freq{$chars[$i]});
+    for my $c (@chars) {
+        $L->bmul($base)->badd($cf{$c} * $pf);
+        $pf->bmul($freq{$c});
     }
 
     # Upper bound

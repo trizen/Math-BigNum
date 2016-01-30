@@ -59,9 +59,10 @@ sub arithmethic_coding {
 
     my $pf = Math::BigNum->new(1);
     my $L  = Math::BigNum->new(0);
-    for (my $i = 0 ; $i < $len ; $i++) {
-        $L->badd($pf->mul($cf{$chars[$i]}));
-        $pf->bmul($p{$chars[$i]});
+
+    for my $c (@chars) {
+        $L->badd($pf->mul($cf{$c}));
+        $pf->bmul($p{$c});
     }
 
     my $U = $L + $pf;

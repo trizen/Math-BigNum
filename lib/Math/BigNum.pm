@@ -1478,6 +1478,8 @@ Negative value of C<$x>. Returns C<abs($x)> when C<$x> is negative, and C<-$x> w
 
 =cut
 
+# TODO: add the muladd() method? (maybe)
+
 sub neg {
     my ($x) = @_;
     my $r = Math::GMPq::Rmpq_init();
