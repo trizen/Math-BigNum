@@ -3,6 +3,7 @@ Changes
 examples/arithmetic_coding.pl
 examples/binary_arithmetic_coding.pl
 examples/binradix_arithmetic_coding.pl
+examples/closed_form_fib.pl
 examples/coin_change.pl
 examples/faulhaber_s_formula.pl
 examples/fibonacci_validation.pl
@@ -25,6 +26,7 @@ t/02-complex.t
 t/03-round.t
 t/04-rand.t
 t/05-inf.t
+t/06-fib.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
