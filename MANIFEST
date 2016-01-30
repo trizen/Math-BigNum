@@ -2,6 +2,7 @@ Build.PL
 Changes
 examples/arithmetic_coding.pl
 examples/faulhaber_s_formula.pl
+examples/zeta_2n.pl
 ignore.txt
 lib/Math/BigNum.pm
 lib/Math/BigNum/Complex.pm

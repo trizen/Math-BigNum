@@ -42,7 +42,7 @@ sub bernoulli_number {
 # See: https://en.wikipedia.org/wiki/Binomial_coefficient
 sub nok {
     my ($n, $k) = @_;
-    Math::BigNum->new($n)->binomial($k);
+    $n->binomial($k);
 }
 
 # The Faulhaber's formula
