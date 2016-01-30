@@ -62,7 +62,7 @@ my @tests = (
 
 foreach my $group (@tests) {
     my ($orig, $expected, $places) = @{$group};
-    my $rounded = $orig->roundf($places);
+    my $rounded = $orig->round($places);
     is("$rounded", "$expected");
     ok($rounded == $expected);
 }

@@ -1,6 +1,7 @@
 Build.PL
 Changes
 examples/arithmetic_coding.pl
+examples/faulhaber_s_formula.pl
 ignore.txt
 lib/Math/BigNum.pm
 lib/Math/BigNum/Complex.pm
@@ -15,8 +16,9 @@ README.md
 t/00-load.t
 t/01-bignum.t
 t/02-complex.t
-t/03-roundf.t
+t/03-round.t
 t/04-rand.t
+t/05-inf.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t

@@ -818,7 +818,7 @@ sub bninf {
 
     $x->bnan        # => Nan
 
-Changes C<$x> in-place to the special Not-A-Number value. (NaN)
+Changes C<$x> in-place to the special Not-A-Number value.
 
 =cut
 
@@ -1413,8 +1413,8 @@ multimethod idiv => qw(Math::BigNum $) => sub {
     _mpz2rat($r);
 };
 
-multimethod idiv => qw(Math::BigNum Math::BigNum::Inf)  => \&ZERO;
-multimethod idiv => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod idiv => qw(Math::BigNum Math::BigNum::Inf) => \&ZERO;
+multimethod idiv => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bidiv
 
@@ -3366,8 +3366,8 @@ multimethod gcd => qw(Math::BigNum Math::BigNum) => sub {
     _mpz2rat($r);
 };
 
-multimethod gcd => qw(Math::BigNum Math::BigNum::Inf)  => \&nan;
-multimethod gcd => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod gcd => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
+multimethod gcd => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 lcm
 
@@ -3386,8 +3386,8 @@ multimethod lcm => qw(Math::BigNum Math::BigNum) => sub {
     _mpz2rat($r);
 };
 
-multimethod lcm => qw(Math::BigNum Math::BigNum::Inf)  => \&nan;
-multimethod lcm => qw(Math::BigNum Math::BigNum::Nan)  => \&nan;
+multimethod lcm => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
+multimethod lcm => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 int
 
@@ -3714,26 +3714,42 @@ sub ceil {
     }
 }
 
-=head2 roundf
+=head2 round
 
-    $x->roundf(BigNum)      # => BigNum
-    $x->roundf(Scalar)      # => BigNum
+    $x->round(BigNum)      # => BigNum
+    $x->round(Scalar)      # => BigNum
 
-Round the number to nth places. A negative argument rounds that many digits
-after the decimal point, while a positive argument rounds before the decimal point.
-This method uses the "round half to even" algorithm, which is the default rounding
-mode used in IEEE 754 computing functions and operators.
+Rounds C<$x> to nth places. A negative argument rounds that many digits after
+the decimal point, while a positive argument rounds before the decimal point.
+This method uses the "round half to even" algorithm, which is the default
+rounding mode used in IEEE 754 computing functions and operators.
 
 =cut
 
-multimethod roundf => qw(Math::BigNum $) => sub {
+multimethod round => qw(Math::BigNum $) => sub {
+    $_[0]->copy->bround($_[1]);
+};
+
+multimethod round => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->copy->bround(Math::GMPq::Rmpq_get_d(${$_[1]}));
+};
+
+=head2 bround
+
+    $x->bround(BigNum)      # => BigNum
+    $x->bround(Scalar)      # => BigNum
+
+Rounds C<$x> in-place to nth places.
+
+=cut
+
+multimethod bround => qw(Math::BigNum $) => sub {
     my ($x, $prec) = @_;
 
+    my $n   = $$x;
     my $nth = -CORE::int($prec);
-    my $sgn = Math::GMPq::Rmpq_sgn($$x);
+    my $sgn = Math::GMPq::Rmpq_sgn($n);
 
-    my $n = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set($n, $$x);
     Math::GMPq::Rmpq_abs($n, $n) if $sgn < 0;
 
     my $z = Math::GMPz::Rmpz_init();
@@ -3775,11 +3791,11 @@ multimethod roundf => qw(Math::BigNum $) => sub {
         Math::GMPq::Rmpq_neg($n, $n);
     }
 
-    bless \$n, __PACKAGE__;
+    $x;
 };
 
-multimethod roundf => qw(Math::BigNum Math::BigNum) => sub {
-    $_[0]->roundf(Math::GMPq::Rmpq_get_d(${$_[1]}));
+multimethod bround => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->bround(Math::GMPq::Rmpq_get_d(${$_[1]}));
 };
 
 =head2 inc
