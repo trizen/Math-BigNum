@@ -30,13 +30,10 @@ sub change {
         return;
     }
 
-    (
-        change($n, $pos + 1, $solution),
-        change($n, $pos, [@$solution, $denominations[$pos]]),
-    )
+    (change($n, $pos + 1, $solution), change($n, $pos, [@$solution, $denominations[$pos]]),);
 }
 
-my $amount = 0.26;               # the amount of money
+my $amount = 0.26;           # the amount of money
 
 my @solutions = change($amount, 0, []);
 print("All the possible solutions for $amount, are:\n");
