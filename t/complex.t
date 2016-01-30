@@ -34,8 +34,8 @@ plan tests => 6;
 {
     use Math::BigNum qw(:constant i);
 
-    my $x = atan2(4+5*i, 3+0*i);
-    my $y = atan2(4+5*i, 3);
+    my $x = atan2(4 + 5 * i, 3 + 0 * i);
+    my $y = atan2(4 + 5 * i, 3);
 
     ok($x == $y);
 }

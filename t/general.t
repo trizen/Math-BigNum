@@ -1,0 +1,416 @@
+#!perl
+
+###############################################################################
+
+use strict;
+use warnings;
+
+use Test::More tests => 123;
+use Math::BigNum;
+
+###############################################################################
+# general tests
+
+my $mbn = 'Math::BigNum';
+
+{    ## Some tests doesn't pass, yet.
+    my $x = $mbn->new(1234);
+    is($x, 1234, qq|\$x = $mbn->new(1234)|);
+
+    $x = $mbn->new("1234/1");
+    is($x, 1234, qq|\$x = $mbn->new("1234/1")|);
+
+    $x = $mbn->new("1234/2");
+    is($x, 617, qq|\$x = $mbn->new("1234/2")|);
+
+    #$x = $mbn->new("100/1.0");
+    #is($x, 100, qq|\$x = $mbn->new("100/1.0")|);
+
+    #$x = $mbn->new("10.0/1.0");
+    #is($x, 10, qq|\$x = $mbn->new("10.0/1.0")|);
+
+    #$x = $mbn->new("0.1/10");
+    #is($x, "1/100", qq|\$x = $mbn->new("0.1/10")|);
+
+    #$x = $mbn->new("0.1/0.1");
+    #is($x, "1", qq|\$x = $mbn->new("0.1/0.1")|);
+
+    #$x = $mbn->new("1e2/10");
+    #is($x, 10, qq|\$x = $mbn->new("1e2/10")|);
+
+    #$x = $mbn->new("5/1e2");
+    #is($x, "1/20", qq|\$x = $mbn->new("5/1e2")|);
+
+    #$x = $mbn->new("1e2/1e1");
+    #is($x, 10, qq|\$x = $mbn->new("1e2/1e1")|);
+
+    $x = $mbn->new("1 / 3");
+    is($x->as_rat, "1/3", qq|\$x = $mbn->new("1 / 3")|);
+
+    $x = $mbn->new("-1 / 3");
+    is($x->as_rat, "-1/3", qq|\$x = $mbn->new("-1 / 3")|);
+
+    #$x = $mbn->new("NaN");
+    #is($x, "NaN", qq|\$x = $mbn->new("NaN")|);
+
+    #$x = $mbn->new("inf");
+    #is($x, "inf", qq|\$x = $mbn->new("inf")|);
+
+    #$x = $mbn->new("-inf");
+    #is($x, "-inf", qq|\$x = $mbn->new("-inf")|);
+
+    #$x = $mbn->new("1/");
+    #is($x, "NaN", qq|\$x = $mbn->new("1/")|);
+
+    #$x = $mbn->new("7e", 16);
+    #is($x, 126, qq|\$x = $mbn->new("0x7e")|);
+
+    #$x = $mbn->new("1/1.2");
+    #is($x, "5/6", qq|\$x = $mbn->new("1/1.2")|);
+
+    #$x = $mbn->new("1.3/1.2");
+    #is($x, "13/12", qq|\$x = $mbn->new("1.3/1.2")|);
+
+    #$x = $mbn->new("1.2/1");
+    #is($x, "6/5", qq|\$x = $mbn->new("1.2/1")|);
+}
+
+###############################################################################
+# general tests
+
+{
+    use Math::BigNum qw(:constant);
+
+    # see if rational constant works
+    is((1 / 3)->as_rat,         '1/3',  qq|1/3 = '1/3'|);
+    is((1 / 4 + 1 / 3)->as_rat, '7/12', qq|1/4+1/3 = '7/12'|);
+    is((5 / 7 + 3 / 7)->as_rat, '8/7',  qq|5/7+3/7 = '8/7'|);
+
+    is((3 / 7 + 1)->as_rat,     '10/7',   qq|3/7+1 = '10/7'|);
+    is((3 / 7 + 1.1)->as_rat,   '107/70', qq|3/7+1.1 = '107/70'|);
+    is((3 / 7 + 3 / 7)->as_rat, '6/7',    qq|3/7+3/7 = '6/7'|);
+
+    is((3 / 7 - 1)->as_rat,     '-4/7',   qq|3/7-1 = '-4/7'|);
+    is((3 / 7 - 1.1)->as_rat,   '-47/70', qq|3/7-1.1 = '-47/70'|);
+    is((3 / 7 - 2 / 7)->as_rat, '1/7',    qq|3/7-2/7 = '1/7'|);
+
+    is((1 + 3 / 7)->as_rat, '10/7', qq|1+3/7 = '10/7'|);
+
+    is((1.1 + 3 / 7)->as_rat,   '107/70', qq|1.1+3/7 = '107/70'|);
+    is((3 / 7 * 5 / 7)->as_rat, '15/49',  qq|3/7*5/7 = '15/49'|);
+    is((3 / 7 / (5 / 7))->as_rat, '3/5', qq|3/7 / (5/7) = '3/5'|);
+    is((3 / 7 / 1)->as_rat,   '3/7', qq|3/7 / 1 = '3/7'|);
+    is((3 / 7 / 1.5)->as_rat, '2/7', qq|3/7 / 1.5 = '2/7'|);
+}
+
+##############################################################################
+
+my ($x, $y, $z);
+
+$x = $mbn->new('1/4');
+$y = $mbn->new('1/3');
+
+is(($x + $y)->as_rat, '7/12');
+is(($x * $y)->as_rat, '1/12');
+is(($x / $y)->as_rat, '3/4');
+
+$x = $mbn->new('7/5');
+$x *= '3/2';
+is($x->as_rat, '21/10');
+$x -= '0.1';
+is($x, '2');
+
+$x = $mbn->new('2/3');
+$y = $mbn->new('3/2');
+ok(!($x > $y));
+ok($x < $y);
+ok(!($x == $y));
+
+$x = $mbn->new('-2/3');
+$y = $mbn->new('3/2');
+ok(!($x > $y));
+ok($x < $y);
+ok(!($x == $y));
+
+$x = $mbn->new('-2/3');
+$y = $mbn->new('-2/3');
+ok(!($x > $y));
+ok(!($x < $y));
+ok($x == $y);
+
+$x = $mbn->new('-2/3');
+$y = $mbn->new('-1/3');
+ok(!($x > $y));
+ok($x < $y);
+ok(!($x == $y));
+
+$x = $mbn->new('-124');
+$y = $mbn->new('-122');
+is($x->acmp($y), 1);
+
+$x = $mbn->new('-124');
+$y = $mbn->new('-122');
+is($x->cmp($y), -1);
+
+$x = $mbn->new('3/7');
+$y = $mbn->new('5/7');
+is(($x + $y)->as_rat, '8/7');
+
+$x = $mbn->new('3/7');
+$y = $mbn->new('5/7');
+is(($x * $y)->as_rat, '15/49');
+
+$x = $mbn->new('3/5');
+$y = $mbn->new('5/7');
+is(($x * $y)->as_rat, '3/7');
+
+$x = $mbn->new('3/5');
+$y = $mbn->new('5/7');
+is(($x / $y)->as_rat, '21/25');
+
+$x = $mbn->new('7/4');
+$y = $mbn->new('1');
+is(($x % $y)->as_rat, '3/4');
+
+## Not exact, yet.
+#$x = $mbn->new('7/4');
+#$y = $mbn->new('5/13');
+#is(($x % $y)->as_rat, '11/52');
+
+## Not exact, yet.
+#$x = $mbn->new('7/4');
+#$y = $mbn->new('5/9');
+#is(($x % $y)->as_rat, '1/12');
+
+$x = $mbn->new('-144/9')->bsqrt();
+is("$x", '4i');
+
+$x = $mbn->new('144/9')->bsqrt();
+is($x, '4');
+
+$x = $mbn->new('3/4');
+
+my $n = 'numerator';
+my $d = 'denominator';
+
+my $num = $x->$n;
+my $den = $x->$d;
+
+is($num, 3);
+is($den, 4);
+
+##############################################################################
+# mixed arguments
+
+is($mbn->new('3/7')->badd(1)->as_rat,                 '10/7');
+is($mbn->new('3/10')->badd(1.1)->as_rat,              '7/5');
+is($mbn->new('3/7')->badd($mbn->new(1))->as_rat,      '10/7');
+is($mbn->new('3/10')->badd($mbn->new('1.1'))->as_rat, '7/5');
+
+is($mbn->new('3/7')->bsub(1)->as_rat,                 '-4/7');
+is($mbn->new('3/10')->bsub(1.1)->as_rat,              '-4/5');
+is($mbn->new('3/7')->bsub($mbn->new(1))->as_rat,      '-4/7');
+is($mbn->new('3/10')->bsub($mbn->new('1.1'))->as_rat, '-4/5');
+
+is($mbn->new('3/7')->bmul(1)->as_rat,                 '3/7');
+is($mbn->new('3/10')->bmul(1.1)->as_rat,              '33/100');
+is($mbn->new('3/7')->bmul($mbn->new(1))->as_rat,      '3/7');
+is($mbn->new('3/10')->bmul($mbn->new('1.1'))->as_rat, '33/100');
+
+is($mbn->new('3/7')->bdiv(1)->as_rat,                 '3/7');
+is($mbn->new('3/10')->bdiv(1.1)->as_rat,              '3/11');
+is($mbn->new('3/7')->bdiv($mbn->new(1))->as_rat,      '3/7');
+is($mbn->new('3/10')->bdiv($mbn->new('1.1'))->as_rat, '3/11');
+
+##############################################################################
+# bpow
+
+$x = $mbn->new('2/1');
+$z = $x->bpow('3');
+is($x, '8');
+
+$x = $mbn->new('1/2');
+$z = $x->bpow('3');
+is($x, '0.125');    # 1/8
+
+$x = $mbn->new('1/3');
+$z = $x->bpow('4');
+is($x, $mbn->new(81)->inv);    # 1/81
+
+$x = $mbn->new('2/3');
+$z = $x->bpow('4');
+like($x, qr/^0\.1975308641975308641/);    # 16/81
+
+$x = $mbn->new('2/3');
+$z = $x->bpow($mbn->new('5/3'));
+like("$z", qr/^0\.50876188557925/);
+
+##############################################################################
+# fac
+
+$x = $mbn->new('1');
+$x->fac();
+is($x, '1');
+
+my @fac = qw(1 1 2 6 24 120);
+
+for (my $i = 0 ; $i < 6 ; $i++) {
+    $x = $mbn->new("$i/1")->fac();
+    is($x, $fac[$i]);
+}
+
+# test for $self->bnan() vs. $x->bnan();
+$x = $mbn->new('-1');
+$x = $x->fac();         # TODO: add bfac()
+is("$x", 'NaN');
+
+##############################################################################
+# binc/bdec
+
+$x = $mbn->new('3/2');
+is($x->binc()->as_rat, '5/2');
+$x = $mbn->new('15/6');
+is($x->bdec()->as_rat, '3/2');
+
+##############################################################################
+# bsqrt
+
+$x = $mbn->new('144');
+is($x->bsqrt(), '12', 'bsqrt(144)');
+
+$x = $mbn->new('144/16');
+is($x->bsqrt(), '3', 'bsqrt(144/16)');
+
+##############################################################################
+# floor/ceil
+
+$x = $mbn->new('-7/7');
+is($x->$n(), '-1');
+is($x->$d(), '1');
+$x = $mbn->new('-7/7')->floor();
+is($x->$n(), '-1');
+is($x->$d(), '1');
+
+$x = $mbn->new('49/4');
+is($x->floor(), '12', 'floor(49/4)');
+
+$x = $mbn->new('49/4');
+is($x->ceil(), '13', 'ceil(49/4)');
+
+##############################################################################
+# broot(), blog(), bmodpow() and bmodinv()
+
+$x = $mbn->new(2)**32;
+$y = $mbn->new(4);
+$z = $mbn->new(3);
+
+is($x->copy()->broot($y),      2**8);
+is(ref($x->copy()->broot($y)), $mbn);
+
+is($x->expmod($y, $z), 1);
+is(ref($x->expmod($y, $z)), $mbn);
+
+$x = $mbn->new(8);
+$y = $mbn->new(5033);
+$z = $mbn->new(4404);
+
+is($x->modinv($y),      $z);
+is(ref($x->modinv($y)), $mbn);
+
+# square root with exact result
+$x = $mbn->new('1.44');
+is($x->copy()->broot(2), "1.2");
+is(ref($x->root(2)),     $mbn);
+
+# log with exact result
+$x = $mbn->new('256.1');
+like($x->copy()->blog(2), qr/^8.0005634/);
+is(ref($x->copy()->blog(2)), $mbn);
+
+$x = $mbn->new(144);
+is($x->copy()->broot('2'), 12, 'v/144 = 12');
+
+$x = $mbn->new(12 * 12 * 12);
+is($x->copy()->broot('3'), 12, '(12*12*12) ** 1/3 = 12');
+
+##############################################################################
+# as_float()
+
+$x = $mbn->new('1/2');
+my $f = $x->as_float();
+
+is($x->as_rat, '1/2', '$x unmodified');
+is($f,         '0.5', 'as_float(0.5)');
+
+$x = $mbn->new('2/3');
+$f = $x->as_float(5);
+
+is($x->as_rat, '2/3',     '$x unmodified');
+is($f,         '0.66667', 'as_float(2/3, 5)');
+
+##############################################################################
+# int()
+
+$x = $mbn->new('5/2');
+is(int($x), '2', '5/2 converted to integer');
+
+$x = $mbn->new('-1/2');
+is(int($x), '0', '-1/2 converted to integer');
+
+##############################################################################
+# as_hex(), as_bin(), as_oct()
+
+$x = $mbn->new('8/8');
+is($x->as_hex(), '1');
+is($x->as_bin(), '1');
+is($x->as_oct(), '1');
+
+$x = $mbn->new('80/8');
+is($x->as_hex(), 'a');
+is($x->as_bin(), '1010');
+is($x->as_oct(), '12');
+
+##############################################################################
+# numify()
+
+my @array = qw/1 2 3 4 5 6 7 8 9/;
+$x = $mbn->new('8/8');
+is($array[$x], 2);
+
+$x = $mbn->new('16/8');
+is($array[$x], 3);
+
+$x = $mbn->new('17/8');
+is($array[$x], 3);
+
+$x = $mbn->new('33/8');
+is($array[$x], 5);
+
+$x = $mbn->new('-33/8');
+is($array[$x], 6);
+
+$x = $mbn->new('-8/1');
+is($array[$x], 2);    # -8 => 2
+
+$x = $mbn->new('33/8');
+is($x->numify() * 1000, 4125);
+
+$x = $mbn->new('-33/8');
+is($x->numify() * 1000, -4125);
+
+$x = $mbn->inf;
+is($x->numify(), 'inf');
+
+$x = $mbn->ninf;
+is($x->numify(), '-inf');
+
+$x = $mbn->nan;
+is($x->numify(), 'NaN');
+
+$x = $mbn->new('4/3');
+is($x->numify(), 4 / 3);
+
+##############################################################################
+# done
+
+1;

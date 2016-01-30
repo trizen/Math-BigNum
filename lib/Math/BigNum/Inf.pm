@@ -4,8 +4,6 @@ use 5.010;
 use strict;
 use warnings;
 
-no warnings qw(qw);
-
 use Math::GMPq qw();
 use Math::MPFR qw();
 use Math::BigNum qw();
@@ -16,7 +14,7 @@ use Class::Multimethods qw(multimethod);
 
 =head1 NAME
 
-Math::BigNum::Inf - An abstraction for the +Infinity value.
+Math::BigNum::Inf - Represents the +Infinity value.
 
 =head1 VERSION
 
@@ -330,7 +328,7 @@ sub atan {
 ## Comparisons
 #
 
-=head eq
+=head2 eq
 
 =cut
 
@@ -338,7 +336,7 @@ multimethod eq => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) == Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-=head ne
+=head2 ne
 
 =cut
 

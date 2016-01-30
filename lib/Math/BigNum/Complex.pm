@@ -189,7 +189,7 @@ sub new {
                 return __PACKAGE__->new($x, __PACKAGE__->new($re, $im));
             }
             else {
-                return __PACKAGE__->new($x, __PACKAGE__->new(0, $y));
+                return __PACKAGE__->new($x, __PACKAGE__->new(0, substr($y, 0, -1)));
             }
         }
     }
@@ -480,6 +480,14 @@ multimethod div => qw(Math::BigNum::Complex Math::BigNum) => sub {
 
     bless \$r, __PACKAGE__;
 };
+
+=head2 inv
+
+    $x->inv         # => Complex
+
+Returns C<1/$x>.
+
+=cut
 
 sub inv {
     my ($x) = @_;

@@ -215,11 +215,29 @@ sub import {
         if ($name eq ':constant') {
             overload::constant
               integer => sub { _new_uint(shift) },
-              float   => sub { Math::BigNum->new(shift, 10) };
+              float   => sub { Math::BigNum->new(shift, 10) },
+              binary => sub {
+                my ($const) = @_;
+                my $prefix = substr($const, 0, 2);
+                    $prefix eq '0x' ? Math::BigNum->new(substr($const, 2), 16)
+                  : $prefix eq '0b' ? Math::BigNum->new(substr($const, 2), 2)
+                  :                   Math::BigNum->new(substr($const, 1), 8);
+              },
+              ;
         }
         elsif ($name eq 'i') {
             no strict 'refs';
             *{caller(0) . '::' . 'i'} = \&i;
+        }
+        elsif ($name eq 'e') {
+            no strict 'refs';
+            my $e = Math::BigNum->e;
+            *{caller(0) . '::' . 'e'} = sub() { $e };
+        }
+        elsif ($name eq 'PI' or $name eq 'pi') {
+            no strict 'refs';
+            my $pi = Math::BigNum->pi;
+            *{caller(0) . '::' . $name} = sub() { $pi };
         }
         else {
             require Carp;
@@ -1590,6 +1608,29 @@ sub sqrt {
     _mpfr2big($r);
 }
 
+=head2 bsqrt
+
+    $x->bsqrt       # => BigNum | Complex
+
+Square root of C<$x>, changing C<$x> in-place. Promotes C<$x> to a Complex number when C<$x> is negative.
+
+=cut
+
+sub bsqrt {
+    my ($x) = @_;
+
+    # Return a complex number for x < 0
+    if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+        return _big2cplx($x, Math::BigNum::Complex->new($x)->sqrt);
+    }
+
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_sqrt($r, $r, $ROUND);
+    Math::MPFR::Rmpfr_get_q($$x, $r);
+
+    $x;
+}
+
 =head2 isqrt
 
     $x->isqrt       # => BigNum | Complex
@@ -1636,7 +1677,7 @@ sub cbrt {
     $x->root(Complex)     # => Complex
     $x->root(Inf)         # => BigNum(1)
 
-Nth root of C<$x>. Returns a Complex number when is C<$x> is negative.
+Nth root of C<$x>. Returns a Complex number when C<$x> is negative.
 
 =cut
 
@@ -1649,38 +1690,70 @@ multimethod root => qw(Math::BigNum Math::BigNum::Complex) => sub {
 };
 
 multimethod root => qw(Math::BigNum $) => sub {
-    $_[0]->root(Math::BigNum->new($_[1]));
+    $_[0]->pow(Math::BigNum->new($_[1])->inv);
 };
 
 multimethod root => qw(Math::BigNum Math::BigNum::Inf) => \&ONE;
 multimethod root => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 broot
+
+    $x->broot(BigNum)      # => BigNum | Complex
+    $x->broot(Complex)     # => Complex
+    $x->broot(Inf)         # => BigNum(1)
+
+Nth root of C<$x>, changing C<$x> in-place. Promotes
+C<$x> to a Complex number when C<$x> is negative.
+
+=cut
+
+multimethod broot => qw(Math::BigNum $) => sub {
+    $_[0]->bpow(Math::BigNum->new($_[1])->inv);
+};
+
+multimethod broot => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->bpow($_[1]->inv);
+};
+
+multimethod broot => qw(Math::BigNum Math::BigNum::Complex) => sub {
+    my $complex = Math::BigNum::Complex->new($_[0])->bpow($_[1]->inv);
+    _big2cplx($_[0], $complex);
+};
+
+multimethod broot => qw(Math::BigNum Math::BigNum::Inf) => \&bone;
+multimethod broot => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 iroot
 
     $x->iroot(BigNum)       # => BigNum | Complex
     $x->iroot(Scalar)       # => BigNum | Complex
 
-Nth integer root of C<$x> (C<$x**(1/$n)>). Returns a Complex number when C<$x> is negative and C<$y> is even.
+Nth integer root of C<$x> (C<$x**(1/$n)>). Returns a
+Complex number when C<$x> is negative and C<$y> is even.
 
 =cut
 
-multimethod iroot => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-
-    my $z    = _as_int($x);
-    my $root = CORE::int(Math::GMPq::Rmpq_get_d($$y));
-
-    my ($is_even, $is_neg) = $root % 2 == 0;
-    ($is_neg = Math::GMPz::Rmpz_sgn($z) < 0) if $is_even;
-    Math::GMPz::Rmpz_abs($z, $z) if ($is_even && $is_neg);
-    Math::GMPz::Rmpz_root($z, $z, $root);
-
-    $is_even && $is_neg
-      ? Math::BigNum::Complex->new(0, _mpz2rat($z))
-      : _mpz2rat($z);
+multimethod iroot => qw(Math::BigNum $) => sub {
+    $_[0]->copy->biroot($_[1]);
 };
 
-multimethod iroot => qw(Math::BigNum $) => sub {
+multimethod iroot => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->copy->biroot(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
+};
+
+multimethod iroot => qw(Math::BigNum Math::BigNum::Inf) => \&ONE;
+multimethod iroot => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 biroot
+
+    $x->biroot(BigNum)      =
+
+Nth integer root of C<$x>, changing C<$x> in-place. Promotes
+C<$x> to a Complex number when C<$x> is negative and C<$y> is even.
+
+=cut
+
+multimethod biroot => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     my $z    = _as_int($x);
@@ -1691,13 +1764,18 @@ multimethod iroot => qw(Math::BigNum $) => sub {
     Math::GMPz::Rmpz_abs($z, $z) if ($is_even && $is_neg);
     Math::GMPz::Rmpz_root($z, $z, $root);
 
-    $is_even && $is_neg
-      ? Math::BigNum::Complex->new(0, _mpz2rat($z))
-      : _mpz2rat($z);
+    if ($is_even && $is_neg) {
+        my $complex = Math::BigNum::Complex->new(0, _mpz2rat($z));
+        return _big2cplx($x, $complex);
+    }
+
+    Math::GMPq::Rmpq_set_z($$x, $z);
+    $x;
 };
 
-multimethod iroot => qw(Math::BigNum Math::BigNum::Inf) => \&ONE;
-multimethod iroot => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+multimethod biroot => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->biroot(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
+};
 
 =head2 pow
 
@@ -1951,6 +2029,10 @@ multimethod blog => qw(Math::BigNum $) => sub {
     $x;
 };
 
+multimethod blog => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->blog(Math::GMPq::Rmpq_get_d(${$_[1]}));
+};
+
 multimethod blog => qw(Math::BigNum) => sub {
     my ($x, $y) = @_;
 
@@ -2018,6 +2100,22 @@ sub exp {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_exp($r, $r, $ROUND);
     _mpfr2big($r);
+}
+
+=head2 bexp
+
+    $x->bexp        # => BigNum
+
+Exponential of C<$x> in base e, changing C<$x> in-place.
+
+=cut
+
+sub bexp {
+    my ($x) = @_;
+    my $r = _as_float($x);
+    Math::MPFR::Rmpfr_exp($r, $r, $ROUND);
+    Math::MPFR::Rmpfr_get_q($$x, $r);
+    $x;
 }
 
 =head2 exp2
