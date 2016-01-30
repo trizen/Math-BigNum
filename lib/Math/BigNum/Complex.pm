@@ -80,6 +80,9 @@ use overload
 #*inf = \&Math::BigNum::inf;
 #*ninf = \&Math::BigNum::ninf;
 
+*_str2mpfr = \&Math::BigNum::_str2mpfr;
+*_mpfr2big = \&Math::BigNum::_mpfr2big;
+
 # Needed by boolify()
 my $ZERO = do {
     my $r = Math::MPC::Rmpc_init2($PREC);
@@ -291,7 +294,7 @@ Returns the real part of C<$z>.
 sub re {
     my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPC::RMPC_RE($mpfr, ${$_[0]});
-    Math::BigNum::_mpfr2rat($mpfr);
+    _mpfr2big($mpfr);
 }
 
 =head2 im
@@ -305,7 +308,65 @@ Returns the imaginary part of C<$z>.
 sub im {
     my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPC::RMPC_IM($mpfr, ${$_[0]});
-    Math::BigNum::_mpfr2rat($mpfr);
+    _mpfr2big($mpfr);
+}
+
+=head2 abs
+
+    $z->abs     # => BigNum | Inf | Nan
+
+Absolute value of C<$z>.
+
+=cut
+
+sub abs {
+    my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPC::Rmpc_abs($mpfr, ${$_[0]}, $ROUND);
+    _mpfr2big($mpfr);
+}
+
+=head2 norm
+
+    $z->norm        # => BigNum | Inf | Nan
+
+Reciprocal value of C<$z>.
+
+=cut
+
+sub norm {
+    my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPC::Rmpc_norm($mpfr, ${$_[0]}, $ROUND);
+    _mpfr2big($mpfr);
+}
+
+=head2 neg
+
+    $z->neg         # => Complex
+
+Negative value of C<$z>.
+
+=cut
+
+sub neg {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_neg($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 conj
+
+    $z->conj        # => Complex
+
+Conjugate value of C<$z>.
+
+=cut
+
+sub conj {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_conj($r, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
 }
 
 #
@@ -420,11 +481,72 @@ multimethod div => qw(Math::BigNum::Complex Math::BigNum) => sub {
     bless \$r, __PACKAGE__;
 };
 
+sub inv {
+    my ($x) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_ui_div($r, 1, $$x, $ROUND);
+    bless(\$r, __PACKAGE__);
+}
+
+=head2 pow
+
+    $x->pow(Complex)    # => Complex
+    $x->pow(BigNum)     # => Complex
+    $x->pow(Scalar)     # => Complex
+
+Raise C<$x> to power C<$y>.
+
+=cut
+
+multimethod pow => qw(Math::BigNum::Complex $) => sub {
+    my ($x, $y) = @_;
+    $x->pow(Math::BigNum::Complex->new($y));
+};
+
+multimethod pow => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_pow_fr($r, $$x, $y->_as_float(), $ROUND);
+    bless \$r, __PACKAGE__;
+};
+
+multimethod pow => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_pow($r, $$x, $$y, $ROUND);
+    bless \$r, __PACKAGE__;
+};
+
+=head2 root
+
+    $z->root(Complex)      # => Complex
+    $z->root(BigNum)       # => Complex
+    $z->root(Scalar)       # => Complex
+
+Nth root of $z. (C<$z**(1/n)>)
+
+=cut
+
+multimethod root => qw(Math::BigNum::Complex $) => sub {
+    my ($x, $y) = @_;
+    $x->pow(Math::BigNum::Complex->new($y)->inv);
+};
+
+multimethod root => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    $x->pow($y->inv);
+};
+
+multimethod root => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    $x->pow($y->inv);
+};
+
 =head2 sqrt
 
-    $x->sqrt        # => Complex
+    $z->sqrt        # => Complex
 
-Square root of $x. ($x**(1/2))
+Square root of C<$z>. (C<$z**(1/2)>)
 
 =cut
 
@@ -455,6 +577,43 @@ sub cbrt {
     Math::MPC::Rmpc_pow($r, $$x, $three_inv, $ROUND);
     bless(\$r, __PACKAGE__);
 }
+
+=head2 log
+
+    $x->log                 # => Complex
+    $x->log(Complex)        # => Complex
+    $x->log(BigNum)         # => Complex
+    $x->log(Scalar)         # => Complex
+
+Logarithm of C<$x> in base C<$y>. When C<$y> is not specified, it defaults to base e.
+
+=cut
+
+multimethod log => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_log($r, $$x, $ROUND);
+
+    my $baseln = $y->_as_float();
+    Math::MPFR::Rmpfr_log($baseln, $baseln, $Math::BigNum::ROUND);
+    Math::MPC::Rmpc_div_fr($r, $r, $baseln, $ROUND);
+
+    bless \$r, __PACKAGE__;
+};
+
+multimethod log => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_log($r, $$x, $ROUND);
+
+    my $baseln = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_log($baseln, $$y, $ROUND);
+    Math::MPC::Rmpc_div($r, $r, $baseln, $ROUND);
+
+    bless \$r, __PACKAGE__;
+};
 
 =head2 ln
 
@@ -1127,5 +1286,19 @@ multimethod cmp => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
 };
 
 # TODO: add more multimethods for cmp()
+
+=head2 round
+
+    $x->round(Scalar)       # => BigNum
+    $x->round(BigNum)       # => BigNum
+
+Rounds the absolute value of C<$x> to the nth place.
+
+=cut
+
+sub round {
+    my ($x, $prec) = @_;
+    $x->abs->round($prec);
+}
 
 1;

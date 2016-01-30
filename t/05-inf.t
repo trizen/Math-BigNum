@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 8;
+plan tests => 14;
 
 use Math::BigNum;
 
@@ -30,3 +30,18 @@ ok("$ninf" =~ /^-inf/i);
 my $pio2 = $inf->atan;
 is(ref($pio2), 'Math::BigNum');
 ok("$pio2" =~ /^1\.570/);
+
+my $p = $inf * $ninf;
+ok("$p" =~ /^-inf/i);
+
+$p = $inf * $inf;
+ok("$p" =~ /^inf/i);
+
+$p = $ninf * $ninf;
+ok("$p" =~ /^inf/i);
+
+ok("$inf" =~ /^inf/i);
+ok("$ninf" =~ /^-inf/i);
+
+$p = $ninf * $inf;
+ok("$p" =~ /^-inf/i);

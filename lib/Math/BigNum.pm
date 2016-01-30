@@ -408,7 +408,7 @@ sub _as_int {
     $i;
 }
 
-sub _mpfr2rat {
+sub _mpfr2big {
 
     if (Math::MPFR::Rmpfr_inf_p($_[0])) {
         if (Math::MPFR::Rmpfr_sgn($_[0]) > 0) {
@@ -641,7 +641,7 @@ Returns the number PI, which is C<3.1415...>.
 sub pi {
     my $pi = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_const_pi($pi, $ROUND);
-    _mpfr2rat($pi);
+    _mpfr2big($pi);
 }
 
 =head2 tau
@@ -656,7 +656,7 @@ sub tau {
     my $tau = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_const_pi($tau, $ROUND);
     Math::MPFR::Rmpfr_mul_ui($tau, $tau, 2, $ROUND);
-    _mpfr2rat($tau);
+    _mpfr2big($tau);
 }
 
 =head2 ln2
@@ -670,7 +670,7 @@ Returns the natural logarithm of C<2>.
 sub ln2 {
     my $ln2 = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_const_log2($ln2, $ROUND);
-    _mpfr2rat($ln2);
+    _mpfr2big($ln2);
 }
 
 =head2 Y
@@ -684,7 +684,7 @@ Returns the Euler-Mascheroni constant, which is C<0.57721...>.
 sub Y {
     my $euler = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_const_euler($euler, $ROUND);
-    _mpfr2rat($euler);
+    _mpfr2big($euler);
 }
 
 =head2 G
@@ -699,7 +699,7 @@ as Beta(2) or G, and starts as: C<0.91596...>.
 sub G {
     my $catalan = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_const_catalan($catalan, $ROUND);
-    _mpfr2rat($catalan);
+    _mpfr2big($catalan);
 }
 
 =head2 e
@@ -714,7 +714,7 @@ sub e {
     state $one_f = (Math::MPFR::Rmpfr_init_set_ui(1, $ROUND))[0];
     my $e = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_exp($e, $one_f, $ROUND);
-    _mpfr2rat($e);
+    _mpfr2big($e);
 }
 
 =head2 phi
@@ -735,7 +735,7 @@ sub phi {
     Math::MPFR::Rmpfr_add($phi, $phi, $one_f, $ROUND);
     Math::MPFR::Rmpfr_div($phi, $phi, $two_f, $ROUND);
 
-    _mpfr2rat($phi);
+    _mpfr2big($phi);
 }
 
 #
@@ -1587,7 +1587,7 @@ sub sqrt {
 
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_sqrt($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 isqrt
@@ -1627,7 +1627,7 @@ sub cbrt {
 
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_cbrt($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 root
@@ -1731,7 +1731,7 @@ multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
     # A floating-point otherwise
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_pow($r, $r, _as_float($y), $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod pow => qw(Math::BigNum Math::BigNum::Complex) => sub {
@@ -1855,7 +1855,7 @@ sub ln {
 
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_log($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 log
@@ -1883,7 +1883,7 @@ multimethod log => qw(Math::BigNum Math::BigNum) => sub {
     Math::MPFR::Rmpfr_log($baseln, $baseln, $ROUND);
     Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
 
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod log => qw(Math::BigNum $) => sub {
@@ -1908,7 +1908,7 @@ multimethod log => qw(Math::BigNum $) => sub {
         Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
     }
 
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod log => qw(Math::BigNum) => \&ln;
@@ -1983,7 +1983,7 @@ sub log2 {
 
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_log2($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 log10
@@ -2003,7 +2003,7 @@ sub log10 {
 
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_log10($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 exp
@@ -2017,7 +2017,7 @@ Exponential of C<$x> in base e. (C<e**$x>)
 sub exp {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_exp($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 exp2
@@ -2031,7 +2031,7 @@ Exponential of C<$x> in base 2. (C<2**$x>)
 sub exp2 {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_exp2($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 exp10
@@ -2045,7 +2045,7 @@ Exponential of C<$x> in base 10. (C<10**$x>)
 sub exp10 {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_exp10($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 #
@@ -2063,7 +2063,7 @@ Returns the sine of C<$x>.
 sub sin {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_sin($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 asin
@@ -2085,7 +2085,7 @@ sub asin {
 
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_asin($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 sinh
@@ -2099,7 +2099,7 @@ Returns the hyperbolic sine of C<$x>.
 sub sinh {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_sinh($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 asinh
@@ -2113,7 +2113,7 @@ Returns the inverse hyperbolic sine of C<$x>.
 sub asinh {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_asinh($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 cos
@@ -2127,7 +2127,7 @@ Returns the cosine of C<$x>.
 sub cos {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_cos($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 acos
@@ -2149,7 +2149,7 @@ sub acos {
 
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_acos($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 cosh
@@ -2163,7 +2163,7 @@ Returns the hyperbolic cosine of C<$x>.
 sub cosh {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_cosh($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 acosh
@@ -2185,7 +2185,7 @@ sub acosh {
 
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_acosh($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 tan
@@ -2199,7 +2199,7 @@ Returns the tangent of C<$x>.
 sub tan {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_tan($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 atan
@@ -2213,7 +2213,7 @@ Returns the inverse tangent of C<$x>.
 sub atan {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_atan($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 tanh
@@ -2227,7 +2227,7 @@ Returns the hyperbolic tangent of C<$x>.
 sub tanh {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_tanh($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 atanh
@@ -2249,7 +2249,7 @@ sub atanh {
 
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_atanh($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 sec
@@ -2263,7 +2263,7 @@ Returns the secant of C<$x>.
 sub sec {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_sec($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 asec
@@ -2290,7 +2290,7 @@ sub asec {
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_acos($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 sech
@@ -2304,7 +2304,7 @@ Returns the hyperbolic secant of C<$x>.
 sub sech {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_sech($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 asech
@@ -2331,7 +2331,7 @@ sub asech {
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_acosh($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 csc
@@ -2345,7 +2345,7 @@ Returns the cosecant of C<$x>.
 sub csc {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_csc($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 acsc
@@ -2371,7 +2371,7 @@ sub acsc {
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_asin($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 csch
@@ -2385,7 +2385,7 @@ Returns the hyperbolic cosecant of C<$x>.
 sub csch {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_csch($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 acsch
@@ -2405,7 +2405,7 @@ sub acsch {
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_asinh($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 cot
@@ -2419,7 +2419,7 @@ Returns the cotangent of C<$x>.
 sub cot {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_cot($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 acot
@@ -2439,7 +2439,7 @@ sub acot {
     my $r = _as_float($x);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_atan($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 coth
@@ -2453,7 +2453,7 @@ Returns the hyperbolic cotangent of C<$x>.
 sub coth {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_coth($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 acoth
@@ -2472,7 +2472,7 @@ sub acoth {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_atanh($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 }
 
 =head2 atan2
@@ -2492,19 +2492,19 @@ Arctangent of C<$x> and C<$y>. When C<$y> is -Inf returns PI when C<<$x >= 0>>, 
 multimethod atan2 => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_atan2($r, $r, _as_float($_[1]), $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod atan2 => qw(Math::BigNum $) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_atan2($r, $r, _str2mpfr($_[1]), $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod atan2 => qw($ Math::BigNum) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_atan2($r, $r, _as_float($_[1]), $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod atan2 => qw(Math::BigNum Math::BigNum::Inf) => sub {
@@ -2898,7 +2898,7 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
         elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
             Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
         }
-        _mpfr2rat($r);
+        _mpfr2big($r);
     }
 };
 
@@ -2931,7 +2931,7 @@ multimethod mod => qw(Math::BigNum $) => sub {
         elsif ($sign > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
             Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
         }
-        _mpfr2rat($r);
+        _mpfr2big($r);
     }
 };
 
@@ -3434,7 +3434,7 @@ number of bits specified in C<$Math::BigNum::PREC>.
 sub float {
     my $f = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_set_q($f, ${$_[0]}, $ROUND);
-    _mpfr2rat($f);
+    _mpfr2big($f);
 }
 
 =head2 as_frac
@@ -3721,10 +3721,10 @@ sub ceil {
     $x->round(BigNum)      # => BigNum
     $x->round(Scalar)      # => BigNum
 
-Rounds C<$x> to nth places. A negative argument rounds that many digits after
-the decimal point, while a positive argument rounds before the decimal point.
-This method uses the "round half to even" algorithm, which is the default
-rounding mode used in IEEE 754 computing functions and operators.
+Rounds C<$x> to the nth place. A negative argument rounds that many digits
+after the decimal point, while a positive argument rounds before the decimal
+point. This method uses the "round half to even" algorithm, which is the
+default rounding mode used in IEEE 754 computing functions and operators.
 
 =cut
 
@@ -4395,19 +4395,19 @@ Arithmetic-geometric mean of C<$x> and C<$y>.
 multimethod agm => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_agm($r, $r, _as_float($_[1]), $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod agm => qw(Math::BigNum $) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_agm($r, $r, _str2mpfr($_[1]), $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod agm => qw($ $) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_agm($r, $r, _str2mpfr($_[1]), $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head2 hypot
@@ -4423,19 +4423,19 @@ The value of the hypotenuse for catheti C<$x> and C<$y>. (C<sqrt($x**2 + $y**2)>
 multimethod hypot => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_hypot($r, $r, _as_float($_[1]), $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod hypot => qw(Math::BigNum $) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_hypot($r, $r, _str2mpfr($_[1]), $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod hypot => qw($ $) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_hypot($r, $r, _str2mpfr($_[1]), $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head2 gamma
@@ -4450,13 +4450,13 @@ The Gamma function on C<$x>. Returns Inf when C<$x> is zero, and Nan when C<$x> 
 multimethod gamma => qw(Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_gamma($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod gamma => qw($) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_gamma($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head2 lngamma
@@ -4472,13 +4472,13 @@ Returns Inf when C<$x> is negative or equal with zero.
 multimethod lngamma => qw(Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_lngamma($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod lngamma => qw($) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_lngamma($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head2 lgamma
@@ -4494,13 +4494,13 @@ Returns Inf when C<$x> is negative or equal with zero.
 multimethod lgamma => qw(Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_lgamma($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod lgamma => qw($) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_lgamma($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head2 digamma
@@ -4516,13 +4516,13 @@ Returns Nan when C<$x> is negative, and -Inf when C<$x> is 0.
 multimethod digamma => qw(Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_digamma($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod digamma => qw($) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_digamma($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head2 zeta
@@ -4537,13 +4537,13 @@ The zeta function on C<$x>. Returns Inf when C<$x> is 1.
 multimethod zeta => qw(Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_zeta($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod zeta => qw($) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_zeta($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head2 erf
@@ -4558,13 +4558,13 @@ The error function on C<$x>.
 multimethod erf => qw(Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_erf($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod erf => qw($) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_erf($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head2 erfc
@@ -4579,13 +4579,13 @@ Complementary error function on C<$x>.
 multimethod erfc => qw(Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_erfc($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod erfc => qw($) => sub {
-    my $r = _mpfr2rat($_[0]);
+    my $r = _mpfr2big($_[0]);
     Math::MPFR::Rmpfr_erfc($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head2 eint
@@ -4600,13 +4600,13 @@ Exponential integral of C<$x>. Returns Nan when C<$x> is negative.
 multimethod eint => qw(Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_eint($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod eint => qw($) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_eint($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head2 li2
@@ -4621,13 +4621,13 @@ The dilogarithm function, defined as the integral of C<-log(1-t)/t> from 0 to C<
 multimethod li2 => qw(Math::BigNum) => sub {
     my $r = _as_float($_[0]);
     Math::MPFR::Rmpfr_li2($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 multimethod li2 => qw($) => sub {
     my $r = _str2mpfr($_[0]);
     Math::MPFR::Rmpfr_li2($r, $r, $ROUND);
-    _mpfr2rat($r);
+    _mpfr2big($r);
 };
 
 =head1 AUTHOR

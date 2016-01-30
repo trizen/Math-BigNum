@@ -122,6 +122,30 @@ sub numify {
     $_[0]->is_pos ? +'inf' : -'inf';
 }
 
+sub neg {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_neg($r, ${$_[0]});
+    bless \$r, __PACKAGE__;
+}
+
+sub bneg {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_neg($$x, $$x);
+    $x;
+}
+
+sub abs {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_abs($r, ${$_[0]});
+    bless \$r, __PACKAGE__;
+}
+
+sub babs {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_abs($$x, $$x);
+    $x;
+}
+
 sub copy {
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_set($r, ${$_[0]});
@@ -169,18 +193,12 @@ sub is_ninf {
     Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
 }
 
-sub is_pos {
-    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
-}
-
 sub is_neg {
     Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
 }
 
-sub neg {
-    my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_neg($r, ${$_[0]});
-    bless \$r, __PACKAGE__;
+sub is_pos {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
 }
 
 sub is_nan   { 0 }
@@ -201,15 +219,9 @@ sub as_bin { '' }
 
 =cut
 
-multimethod add => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
-    my ($x, $y) = @_;
-    $x->eq($y) ? $x->copy : nan();
-};
-
-multimethod add => qw(Math::BigNum::Inf $)                     => sub { $_[0]->copy };
-multimethod add => qw(Math::BigNum::Inf Math::BigNum)          => sub { $_[0]->copy };
-multimethod add => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub { $_[0]->copy };
-multimethod add => qw(Math::BigNum::Inf Math::BigNum::Nan)     => sub { nan() };
+sub add {
+    $_[0]->copy->badd($_[1]);
+}
 
 =head2 badd
 
@@ -225,16 +237,80 @@ multimethod badd => qw(Math::BigNum::Inf Math::BigNum)          => sub { $_[0] }
 multimethod badd => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub { $_[0] };
 multimethod badd => qw(Math::BigNum::Inf Math::BigNum::Nan)     => sub { $_[0]->bnan };
 
+=head2 sub
+
+
+=cut
+
+sub sub { $_[0]->copy->bsub($_[1]) }
+
+=head2 bsub
+
+=cut
+
+sub bsub {
+    $_[0]->badd($_[1]->neg);
+}
+
+=head2 mul
+
+
+=cut
+
+sub mul {
+    $_[0]->copy->bmul($_[1]);
+}
+
+multimethod bmul => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $sgn = Math::GMPq::Rmpq_sgn($$y);
+    $sgn < 0 ? $x->bneg : $sgn > 0 ? $x : $x->bnan;
+};
+
+multimethod bmul => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+    my ($x, $y) = @_;
+    my $xpos = $x->is_pos;
+    my $ypos = $y->is_pos;
+
+    # Inf * Inf = Inf
+    if ($xpos and $ypos) {
+        $x;
+    }
+
+    # Inf * -Inf = -Inf
+    elsif ($xpos and !$ypos) {
+        $x->bneg;
+    }
+
+    # -Inf * Inf = -Inf
+    elsif (!$xpos and $ypos) {
+        $x;
+    }
+
+    # -Inf * -Inf = Inf
+    else {
+        $x->bneg;
+    }
+};
+
 =head2 div
 
 =cut
 
-multimethod div => qw(Math::BigNum::Inf Math::BigNum) => sub {
+sub div {
+    $_[0]->copy->bdiv($_[1]);
+}
+
+=head2 bdiv
+
+=cut
+
+multimethod bdiv => qw(Math::BigNum::Inf Math::BigNum) => sub {
     my ($x, $y) = @_;
-    $y->is_neg ? $x->neg : $x->copy;
+    $y->is_neg ? $x->bneg : $x;
 };
 
-multimethod div => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&nan;
+multimethod bdiv => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&bnan;
 
 #
 ## Trigonometric functions
