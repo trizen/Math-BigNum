@@ -15,7 +15,7 @@ use 5.010;
 use strict;
 use warnings;
 
-use lib qw(/home/swampyx/Other/Programare/MYPKGS/Math-BigNum/lib);
+use lib qw(../lib);
 use Math::BigNum;
 
 sub asciibet {
