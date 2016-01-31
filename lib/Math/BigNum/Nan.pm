@@ -39,14 +39,48 @@ Math::BigNum::Nan is an abstract type that represents C<NaN>.
 use overload
   q{""} => \&stringify,
   q{0+} => \&numify,
+  bool  => \&boolify,
 
-  '==' => sub { $_[0]->eq($_[1]) },
-  '!=' => sub { $_[0]->ne($_[1]) },
+  '=' => sub { $_[0]->copy },
 
-  '>'  => sub { },
-  '>=' => sub { },
-  '<'  => sub { },
-  '<=' => sub { };
+  # Some shortcuts for speed
+  '+='  => sub { $_[0] },
+  '-='  => sub { $_[0] },
+  '*='  => sub { $_[0] },
+  '/='  => sub { $_[0] },
+  '%='  => sub { $_[0] },
+  '^='  => sub { $_[0] },
+  '&='  => sub { $_[0] },
+  '|='  => sub { $_[0] },
+  '**=' => sub { $_[0] },
+  '<<=' => sub { $_[0] },
+  '>>=' => sub { $_[0] },
+
+  '+'  => \&nan,
+  '*'  => \&nan,
+  '&'  => \&nan,
+  '|'  => \&nan,
+  '^'  => \&nan,
+  '~'  => \&nan,
+  '>>' => \&nan,
+  '<<' => \&nan,
+
+  '++' => sub { $_[0] },
+  '--' => sub { $_[0] },
+
+  '!='  => sub { 1 },
+  '=='  => sub { },
+  '>'   => sub { },
+  '>='  => sub { },
+  '<'   => sub { },
+  '<='  => sub { },
+  '<=>' => sub { },
+
+  '**'  => \&nan,
+  '-'   => \&nan,
+  '/'   => \&nan,
+  '%'   => \&nan,
+  atan2 => \&nan;
 
 sub new {
     my $r = Math::GMPq::Rmpq_init();
@@ -58,6 +92,34 @@ sub boolify   { }
 sub stringify { 'NaN' }
 sub numify    { 'NaN' }
 
+*copy  = \&Math::BigNum::copy;
+*nan   = \&Math::BigNum::nan;
+*inf   = \&Math::BigNum::inf;
+*binf  = \&Math::BigNum::binf;
+*bninf = \&Math::BigNum::bninf;
+*bnan  = \&Math::BigNum::bnan;
+
+sub bone {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_set_ui($$x, 1, 1);
+    bless $x, 'Math::BigNum';
+    $x;
+}
+
+sub bzero {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_set_ui($$x, 0, 1);
+    bless $x, 'Math::BigNum';
+    $x;
+}
+
+sub bmone {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_set_si($$x, -1, 1);
+    bless $x, 'Math::BigNum';
+    $x;
+}
+
 =head2 eq
 
     $x->eq($y)          # => Bool
@@ -67,11 +129,7 @@ Equality test: always returns a false value.
 
 =cut
 
-multimethod eq => qw(Math::BigNum::Nan Math::BigNum::Nan)     => sub { };    # should return true?
-multimethod eq => qw(Math::BigNum::Nan Math::BigNum)          => sub { };
-multimethod eq => qw(Math::BigNum::Nan Math::BigNum::Complex) => sub { };
-multimethod eq => qw(Math::BigNum::Nan Math::BigNum::Inf)     => sub { };
-multimethod eq => qw(Math::BigNum::Nan $)                     => sub { };
+sub eq { }
 
 =head2 ne
 
@@ -82,10 +140,42 @@ Inequality test: always returns a true value.
 
 =cut
 
-multimethod ne => qw(Math::BigNum::Nan Math::BigNum::Nan)     => sub { 1 };    # should return false?
-multimethod ne => qw(Math::BigNum::Nan Math::BigNum)          => sub { 1 };
-multimethod ne => qw(Math::BigNum::Nan Math::BigNum::Complex) => sub { 1 };
-multimethod ne => qw(Math::BigNum::Nan Math::BigNum::Inf)     => sub { 1 };
-multimethod ne => qw(Math::BigNum::Nan $)                     => sub { 1 };
+sub ne { 1 }
+
+=head2 add / badd
+
+    $x->add(Any)        # => Nan
+    $x->badd(Any)       # => Nan
+
+Always returns Nan.
+
+=cut
+
+sub add  { nan() }
+sub badd { $_[0] }
+
+=head2 sub / bsub
+
+    $x->sub(Any)        # => Nan
+    $x->bsub(Any)       # => Nan
+
+Always returns Nan.
+
+=cut
+
+sub sub  { nan() }
+sub bsub { $_[0] }
+
+=head2 div / bdiv
+
+    $x->div(Any)        # => Nan
+    $x->bdiv(Any)       # => Nan
+
+Always returns Nan.
+
+=cut
+
+sub div  { nan() }
+sub bdiv { $_[0] }
 
 1;

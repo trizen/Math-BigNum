@@ -725,9 +725,10 @@ Returns a deep copy of C<$x>.
 =cut
 
 sub copy {
+    my ($x) = @_;
     my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set($r, ${$_[0]});
-    bless \$r, __PACKAGE__;
+    Math::GMPq::Rmpq_set($r, $$x);
+    bless \$r, ref($x);
 }
 
 #

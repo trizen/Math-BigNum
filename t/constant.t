@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 14;
 
 use Math::BigNum qw(:constant);
 
@@ -52,6 +52,10 @@ is("$nan", "NaN");
 $nan = NaN + 2;
 is("$nan", "NaN");
 
-# More to come...
+$nan = NaN / 2;
+is("$nan", "NaN");
+
+$nan->bone;
+is("$nan", "1");
 
 like(1.0 / 3.0, qr/^0.333333333/, '1.0 / 3.0 = 0.333333333...');

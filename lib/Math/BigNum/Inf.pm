@@ -44,7 +44,6 @@ use overload
   '=' => sub { $_[0]->copy },
 
   # Some shortcuts for speed
-  # (although, a benchmark has never been done)
   '+='  => sub { $_[0]->badd($_[1]) },
   '-='  => sub { $_[0]->bsub($_[1]) },
   '*='  => sub { $_[0]->bmul($_[1]) },
@@ -144,16 +143,32 @@ sub babs {
     $x;
 }
 
-sub copy {
-    my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set($r, ${$_[0]});
-    bless \$r, __PACKAGE__;
-}
-
+*copy  = \&Math::BigNum::copy;
 *nan   = \&Math::BigNum::nan;
 *bnan  = \&Math::BigNum::bnan;
 *binf  = \&Math::BigNum::binf;
 *bninf = \&Math::BigNum::bninf;
+
+sub bone {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_set_ui($$x, 1, 1);
+    bless $x, 'Math::BigNum';
+    $x;
+}
+
+sub bzero {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_set_ui($$x, 0, 1);
+    bless $x, 'Math::BigNum';
+    $x;
+}
+
+sub bmone {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_set_si($$x, -1, 1);
+    bless $x, 'Math::BigNum';
+    $x;
+}
 
 *mod    = \&nan;
 *modpow = \&nan;
