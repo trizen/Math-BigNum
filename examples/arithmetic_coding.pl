@@ -107,9 +107,7 @@ sub arithmethic_decoding {
 
     # Decode the input number
     my $decoded = '';
-    for (my $i = $base - 1 ; $i >= 0 ; $i--) {
-
-        my $pow = $base**$i;
+    for (my $pow = $base**($base - 1) ; $pow > 0 ; $pow->bidiv($base)) {
         my $div = $enc->idiv($pow);
 
         my $c  = $dict{$div};
