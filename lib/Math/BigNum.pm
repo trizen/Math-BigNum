@@ -211,6 +211,8 @@ use overload
 sub import {
     shift;
 
+    my $caller = caller(0);
+
     foreach my $name (@_) {
         if ($name eq ':constant') {
             overload::constant
@@ -224,20 +226,45 @@ sub import {
                   :                   Math::BigNum->new(substr($const, 1), 8);
               },
               ;
+
+            # Export 'inf' and 'NaN' as constants
+            no strict 'refs';
+
+            my $inf_sub = $caller . '::' . 'inf';
+            if (not defined &$inf_sub) {
+                my $inf = inf();
+                *$inf_sub = sub () { $inf };
+            }
+
+            my $nan_sub = $caller . '::' . 'NaN';
+            if (not defined &$nan_sub) {
+                my $nan = nan();
+                *$nan_sub = sub () { $nan };
+            }
         }
         elsif ($name eq 'i') {
             no strict 'refs';
-            *{caller(0) . '::' . 'i'} = \&i;
+            my $i_sub = $caller . '::' . 'i';
+            if (not defined &$i_sub) {
+                my $i = i();
+                *$i_sub = sub () { $i };
+            }
         }
         elsif ($name eq 'e') {
             no strict 'refs';
-            my $e = Math::BigNum->e;
-            *{caller(0) . '::' . 'e'} = sub() { $e };
+            my $e_sub = $caller . '::' . 'e';
+            if (not defined &$e_sub) {
+                my $e = Math::BigNum->e;
+                *$e_sub = sub() { $e };
+            }
         }
         elsif ($name eq 'PI' or $name eq 'pi') {
             no strict 'refs';
-            my $pi = Math::BigNum->pi;
-            *{caller(0) . '::' . $name} = sub() { $pi };
+            my $pi_sub = $caller . '::' . $name;
+            if (not defined &$pi_sub) {
+                my $pi = Math::BigNum->pi;
+                *$pi_sub = sub() { $pi };
+            }
         }
         else {
             require Carp;

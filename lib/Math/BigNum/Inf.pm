@@ -150,7 +150,10 @@ sub copy {
     bless \$r, __PACKAGE__;
 }
 
-*nan = \&Math::BigNum::nan;
+*nan   = \&Math::BigNum::nan;
+*bnan  = \&Math::BigNum::bnan;
+*binf  = \&Math::BigNum::binf;
+*bninf = \&Math::BigNum::bninf;
 
 *mod    = \&nan;
 *expmod = \&nan;
