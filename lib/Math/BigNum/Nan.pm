@@ -36,6 +36,8 @@ Math::BigNum::Nan is an abstract type that represents C<NaN>.
 
 =cut
 
+sub _self { $_[0] }
+
 use overload
   q{""} => \&stringify,
   q{0+} => \&numify,
@@ -44,17 +46,17 @@ use overload
   '=' => sub { $_[0]->copy },
 
   # Some shortcuts for speed
-  '+='  => sub { $_[0] },
-  '-='  => sub { $_[0] },
-  '*='  => sub { $_[0] },
-  '/='  => sub { $_[0] },
-  '%='  => sub { $_[0] },
-  '^='  => sub { $_[0] },
-  '&='  => sub { $_[0] },
-  '|='  => sub { $_[0] },
-  '**=' => sub { $_[0] },
-  '<<=' => sub { $_[0] },
-  '>>=' => sub { $_[0] },
+  '+='  => \&_self,
+  '-='  => \&_self,
+  '*='  => \&_self,
+  '/='  => \&_self,
+  '%='  => \&_self,
+  '^='  => \&_self,
+  '&='  => \&_self,
+  '|='  => \&_self,
+  '**=' => \&_self,
+  '<<=' => \&_self,
+  '>>=' => \&_self,
 
   '+'  => \&nan,
   '*'  => \&nan,
@@ -65,12 +67,16 @@ use overload
   '>>' => \&nan,
   '<<' => \&nan,
 
-  '++' => sub { $_[0] },
-  '--' => sub { $_[0] },
+  '++' => \&_self,
+  '--' => \&_self,
 
   eq  => sub { "$_[0]" eq "$_[1]" },
   ne  => sub { "$_[0]" ne "$_[1]" },
-  cmp => sub { $_[2] ? "$_[1]" cmp $_[0]->stringify : $_[0]->stringify cmp "$_[1]" },
+  cmp => sub {
+    $_[2]
+      ? "$_[1]" cmp $_[0]->stringify
+      : $_[0]->stringify cmp "$_[1]";
+  },
 
   '!='  => sub { 1 },
   '=='  => sub { },
@@ -106,38 +112,26 @@ sub boolify   { }
 sub stringify { 'NaN' }
 sub numify    { 'NaN' + 0 }
 
-*copy  = \&Math::BigNum::copy;
-*inf   = \&Math::BigNum::inf;
-*binf  = \&Math::BigNum::binf;
-*bninf = \&Math::BigNum::bninf;
+*copy = \&Math::BigNum::copy;
+
+*inf   = \&Math::BigNum::Inf::inf;
+*binf  = \&Math::BigNum::Inf::binf;
+*bninf = \&Math::BigNum::Inf::bninf;
+
+*bone  = \&Math::BigNum::bone;
+*bzero = \&Math::BigNum::bzero;
+*bmone = \&Math::BigNum::bmone;
 
 sub bnan {
     my ($x) = @_;
     Math::GMPq::Rmpq_set_ui($$x, 0, 0);
-    bless $x, __PACKAGE__;
+    if (ref($x) ne __PACKAGE__) {
+        bless $x, __PACKAGE__;
+    }
     $x;
 }
 
-sub bone {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_set_ui($$x, 1, 1);
-    bless $x, 'Math::BigNum';
-    $x;
-}
-
-sub bzero {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_set_ui($$x, 0, 1);
-    bless $x, 'Math::BigNum';
-    $x;
-}
-
-sub bmone {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_set_si($$x, -1, 1);
-    bless $x, 'Math::BigNum';
-    $x;
-}
+sub in_base { '@NaN@' }
 
 =head2 eq
 
@@ -161,6 +155,30 @@ Inequality test: always returns a true value.
 
 sub ne { 1 }
 
+=head2 neg / bneg
+
+    $x->neg     # => Nan
+    $x->bneg    # => Nan
+
+Always returns Nan.
+
+=cut
+
+*neg  = \&nan;
+*bneg = \&_self;
+
+=head2 abs / babs
+
+    $x->abs     # => Nan
+    $x->babs    # => Nan
+
+Always returns Nan.
+
+=cut
+
+*abs  = \&nan;
+*babs = \&_self;
+
 =head2 add / badd
 
     $x->add(Any)        # => Nan
@@ -170,8 +188,10 @@ Always returns Nan.
 
 =cut
 
-sub add  { nan() }
-sub badd { $_[0] }
+*add   = \&nan;
+*iadd  = \&nan;
+*badd  = \&_self;
+*biadd = \&_self;
 
 =head2 sub / bsub
 
@@ -182,8 +202,10 @@ Always returns Nan.
 
 =cut
 
-sub sub  { nan() }
-sub bsub { $_[0] }
+*sub   = \&nan;
+*isub  = \&nan;
+*bsub  = \&_self;
+*bisub = \&_self;
 
 =head2 div / bdiv
 
@@ -194,7 +216,222 @@ Always returns Nan.
 
 =cut
 
-sub div  { nan() }
-sub bdiv { $_[0] }
+*div   = \&nan;
+*idiv  = \&nan;
+*bdiv  = \&_self;
+*bidiv = \&_self;
+
+=head2 pow / bpow
+
+    $x->pow(Any)        # => Nan
+    $x->bpow(Any)       # => Nan
+
+Always returns Nan.
+
+=cut
+
+*pow  = \&nan;
+*bpow = \&_self;
+
+=head2 mod / bmod
+
+    $x->mod(Any)        # => Nan
+    $x->bmod(Any)       # => Nan
+
+Always returns Nan.
+
+=cut
+
+*mod  = \&nan;
+*bmod = \&_self;
+
+=head2 fac / bfac
+
+    $x->fac        # => Nan
+    $x->bfac       # => Nan
+
+Always returns Nan.
+
+=cut
+
+*fac  = \&nan;
+*bfac = \&_self;
+
+=head2 primorial
+
+    $x->primorial        # => Nan
+
+Always returns Nan.
+
+=cut
+
+*primorial = \&nan;
+
+=head2 cmp
+
+    $x->cmp(Any)        # => undef
+
+Always returns C<undef>.
+
+=cut
+
+sub cmp { }
+
+*acmp = \&cmp;
+
+*gt = \&cmp;
+*ge = \&cmp;
+*lt = \&cmp;
+*le = \&cmp;
+
+# Other methods
+
+*sqrt  = \&nan;
+*bsqrt = \&_self;
+
+*isqrt = \&nan;
+*cbrt  = \&nan;
+
+*root  = \&nan;
+*broot = \&_self;
+
+*iroot  = \&nan;
+*biroot = \&_self;
+
+*ln    = \&nan;
+*log   = \&nan;
+*log2  = \&nan;
+*log10 = \&nan;
+*blog  = \&_self;
+
+*exp   = \&nan;
+*exp2  = \&nan;
+*exp10 = \&nan;
+*bexp  = \&_self;
+
+*sin   = \&nan;
+*asin  = \&nan;
+*sinh  = \&nan;
+*asinh = \&nan;
+*cos   = \&nan;
+*acos  = \&nan;
+*cosh  = \&nan;
+*acosh = \&nan;
+*tan   = \&nan;
+*atan  = \&nan;
+*tanh  = \&nan;
+*atanh = \&nan;
+*sec   = \&nan;
+*asec  = \&nan;
+*sech  = \&nan;
+*asech = \&nan;
+*csc   = \&nan;
+*acsc  = \&nan;
+*csch  = \&nan;
+*acsch = \&nan;
+*cot   = \&nan;
+*acot  = \&nan;
+*coth  = \&nan;
+*acoth = \&nan;
+*atan2 = \&nan;
+
+*rand   = \&nan;
+*modinv = \&nan;
+
+sub is_zero { }
+sub is_one  { }
+sub is_mone { }
+sub is_pos  { }
+sub is_neg  { }
+sub is_int  { }
+sub is_real { }
+sub is_inf  { }
+sub is_ninf { }
+sub is_nan  { 1 }
+sub is_even { }
+sub is_odd  { }
+sub is_div  { }
+sub is_psqr { }
+sub is_ppow { }
+sub sign    { '' }
+
+*max = \&_self;
+*min = \&_self;
+
+*gcd   = \&nan;
+*lcm   = \&nan;
+*int   = \&nan;
+*bint  = \&_self;
+*float = \&nan;
+
+sub as_frac  { '' }
+sub as_rat   { '' }
+sub as_float { '' }
+sub as_int   { '' }
+sub as_bin   { '' }
+sub as_hex   { '' }
+sub as_oct   { '' }
+
+sub digits { () }
+sub length { 0 }
+
+*numerator   = \&nan;
+*denominator = \&nan;
+
+*floor  = \&nan;
+*ceil   = \&nan;
+*round  = \&nan;
+*bround = \&_self;
+
+*inc  = \&nan;
+*binc = \&_self;
+*dec  = \&nan;
+*bdec = \&_self;
+
+*modpow = \&nan;
+
+*and  = \&nan;
+*band = \&_self;
+
+*ior  = \&nan;
+*bior = \&_self;
+
+*xor  = \&nan;
+*bxor = \&_self;
+
+*not  = \&nan;
+*bnot = \&_self;
+
+*lsft  = \&nan;
+*blsft = \&_self;
+
+*rsft  = \&nan;
+*brsft = \&_self;
+
+*dfac     = \&nan;
+*lucas    = \&nan;
+*binomial = \&nan;
+
+sub is_prime { }
+
+*next_prime = \&nan;    # next prime after NaN? Hmm...
+*agm        = \&nan;
+*hypot      = \&nan;
+*gamma      = \&nan;
+*lngamma    = \&nan;
+*lgamma     = \&nan;
+*digamma    = \&nan;
+*zeta       = \&nan;
+*erf        = \&nan;
+*erfc       = \&nan;
+*eint       = \&nan;
+*li2        = \&nan;
+
+sub complex {
+    my ($x, $y) = @_;
+    Math::BigNum::Complex->new('@NaN@', defined($y) ? $y : ());
+}
+
+sub divmod { (nan(), nan()) }
 
 1;

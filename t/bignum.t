@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 225;
+plan tests => 233;
 
 # Initialization
 
@@ -588,6 +588,32 @@ plan tests => 225;
 
     $y->babs;
     is("$y", "2");
+
+    my $z = 42;
+
+    $z->bnan;
+    is($z, NaN);
+
+    $z->bone;
+    is($z, 1);
+
+    $z->bmone;
+    is($z, -1);
+
+    $z->binf;
+    is($z, Inf);
+
+    $z->bzero;
+    is($z, 0);
+
+    $z->bninf;
+    is($z, -Inf);
+
+    $z->bnan;
+    is($z, NaN);
+
+    $z->binf;
+    is($z, Inf);
 }
 
 # op= operations

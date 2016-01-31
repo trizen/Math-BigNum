@@ -843,6 +843,9 @@ Changes C<$x> in-place to hold the value 0.
 sub bzero {
     my ($x) = @_;
     Math::GMPq::Rmpq_set($$x, $ZERO);
+    if (ref($x) ne __PACKAGE__) {
+        bless $x, __PACKAGE__;
+    }
     $x;
 }
 
@@ -857,6 +860,9 @@ Changes C<$x> in-place to hold the value +1.
 sub bone {
     my ($x) = @_;
     Math::GMPq::Rmpq_set($$x, $ONE);
+    if (ref($x) ne __PACKAGE__) {
+        bless $x, __PACKAGE__;
+    }
     $x;
 }
 
@@ -871,6 +877,9 @@ Changes C<$x> in-place to hold the value -1.
 sub bmone {
     my ($x) = @_;
     Math::GMPq::Rmpq_set($$x, $MONE);
+    if (ref($x) ne __PACKAGE__) {
+        bless $x, __PACKAGE__;
+    }
     $x;
 }
 
@@ -3236,6 +3245,22 @@ multimethod modinv => qw(Math::BigNum $) => sub {
     _mpz2rat($r);
 };
 
+=head2 modpow
+
+    $x->modpow(BigNum, BigNum)      # => BigNum
+
+Calculates C<($x ** $y) % $z>, where all three values are integers.
+
+=cut
+
+# TODO: make `modpow` to also support scalars.
+multimethod modpow => qw(Math::BigNum Math::BigNum Math::BigNum) => sub {
+    my ($x, $y, $z) = @_;
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), _big2mpz($z));
+    _mpz2rat($r);
+};
+
 #
 ## Miscellaneous
 #
@@ -4022,22 +4047,6 @@ sub bdec {
 ## Integer operations
 #
 
-=head2 modpow
-
-    $x->modpow(BigNum, BigNum)      # => BigNum
-
-Calculates C<($x ** $y) % $z>, where all three values are integers.
-
-=cut
-
-# TODO: make `modpow` to also support scalars.
-multimethod modpow => qw(Math::BigNum Math::BigNum Math::BigNum) => sub {
-    my ($x, $y, $z) = @_;
-    my $r = _big2mpz($x);
-    Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), _big2mpz($z));
-    _mpz2rat($r);
-};
-
 =head2 and
 
     $x->and(BigNum)         # => BigNum
@@ -4222,6 +4231,21 @@ sub not {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_com($r, $r);
     _mpz2rat($r);
+}
+
+=head2 bnot
+
+    $x->bnot        # => BigNum
+
+Integer logical-not operation, changing C<$x> in-place.
+
+=cut
+
+sub bnot {
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_com($r, $r);
+    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
+    $_[0];
 }
 
 =head2 lsft

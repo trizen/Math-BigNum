@@ -185,14 +185,18 @@ sub babs {
 sub binf {
     my ($x) = @_;
     Math::GMPq::Rmpq_set_ui($$x, 1, 0);
-    bless $x, __PACKAGE__;
+    if (ref($x) ne __PACKAGE__) {
+        bless $x, __PACKAGE__;
+    }
     $x;
 }
 
 sub bninf {
     my ($x) = @_;
     Math::GMPq::Rmpq_set_si($$x, -1, 0);
-    bless $x, __PACKAGE__;
+    if (ref($x) ne __PACKAGE__) {
+        bless $x, __PACKAGE__;
+    }
     $x;
 }
 
