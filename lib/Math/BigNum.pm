@@ -1746,7 +1746,8 @@ multimethod iroot => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 biroot
 
-    $x->biroot(BigNum)      =
+    $x->biroot(BigNum)       # => BigNum | Complex
+    $x->biroot(Scalar)       # => BigNum | Complex
 
 Nth integer root of C<$x>, changing C<$x> in-place. Promotes
 C<$x> to a Complex number when C<$x> is negative and C<$y> is even.
@@ -3919,7 +3920,7 @@ sub inc {
     ++$x         # => BigNum
     $x++         # => BigNum
 
-Increments C<$x> by 1 in-place.
+Increments C<$x> in-place by 1.
 
 =cut
 
@@ -3950,7 +3951,7 @@ sub dec {
     --$x         # => BigNum
     $x--         # => BigNum
 
-Decrements C<$x> by 1 in-place.
+Decrements C<$x> in-place by 1.
 
 =cut
 
@@ -4282,10 +4283,10 @@ multimethod brsft => qw(Math::BigNum $) => sub {
 
 =head2 fac
 
-    $x->fac           # => BigNum | Nan
+    $n->fac           # => BigNum | Nan
     fac(Scalar)       # => BigNum | Nan
 
-Factorial of C<$x>. Returns Nan when C<$x> is negative. (C<1*2*3*...*$x>)
+Factorial of C<$n>. Returns Nan when C<$n> is negative. (C<1*2*3*...*$n>)
 
 =cut
 
@@ -4305,12 +4306,29 @@ multimethod fac => qw($) => sub {
     _mpz2rat($r);
 };
 
+=head2 bfac
+
+    $n->bfac           # => BigNum | Nan
+
+Factorial of C<$n>, by changing C<$n> in-place.
+
+=cut
+
+sub bfac {
+    my ($x) = @_;
+    return $x->bnan if Math::GMPq::Rmpq_sgn($$x) < 0;
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_fac_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
+}
+
 =head2 dfac
 
-    $x->dfac            # => BigNum | Nan
+    $n->dfac            # => BigNum | Nan
     dfac(Scalar)        # => BigNum | Nan
 
-Double factorial of C<$x>. Returns Nan when C<$x> is negative.
+Double factorial of C<$n>. Returns Nan when C<$n> is negative.
 
 =cut
 
@@ -4330,16 +4348,16 @@ multimethod dfac => qw($) => sub {
     _mpz2rat($r);
 };
 
-=head2 prim
+=head2 primorial
 
-    $n->prim            # => BigNum | Nan
-    prim(Scalar)        # => BigNum | Nan
+    $n->primorial            # => BigNum | Nan
+    primorial(Scalar)        # => BigNum | Nan
 
 Returns the product of all the primes less than or equal with C<$n>.
 
 =cut
 
-multimethod prim => qw(Math::BigNum) => sub {
+multimethod primorial => qw(Math::BigNum) => sub {
     my ($x) = @_;
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
@@ -4347,7 +4365,7 @@ multimethod prim => qw(Math::BigNum) => sub {
     _mpz2rat($r);
 };
 
-multimethod prim => qw($) => sub {
+multimethod primorial => qw($) => sub {
     my ($x) = @_;
     return nan if $x < 0;
     my $r = Math::GMPz::Rmpz_init();
