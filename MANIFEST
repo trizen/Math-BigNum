@@ -1,6 +1,7 @@
 Build.PL
 Changes
 examples/arithmetic_coding.pl
+examples/bernoulli_numbers_recursive.pl
 examples/binary_arithmetic_coding.pl
 examples/binradix_arithmetic_coding.pl
 examples/closed_form_fib.pl
