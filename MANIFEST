@@ -9,6 +9,7 @@ examples/coin_change.pl
 examples/faulhaber_s_formula.pl
 examples/fibonacci_validation.pl
 examples/prime_count_approx.pl
+examples/rsa_algorithm.pl
 examples/tac-compressor.pl
 examples/zeta_2n.pl
 ignore.txt
