@@ -1,5 +1,6 @@
 Build.PL
 Changes
+examples/agm_pi.pl
 examples/arithmetic_coding.pl
 examples/bernoulli_numbers_recursive.pl
 examples/binary_arithmetic_coding.pl
@@ -8,6 +9,7 @@ examples/closed_form_fib.pl
 examples/coin_change.pl
 examples/faulhaber_s_formula.pl
 examples/fibonacci_validation.pl
+examples/pi_machin.pl
 examples/prime_count_approx.pl
 examples/rsa_algorithm.pl
 examples/tac-compressor.pl
