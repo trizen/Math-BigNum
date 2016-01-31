@@ -100,16 +100,23 @@ sub new {
     bless \$r, 'Math::BigNum::Nan';
 }
 
+BEGIN { *nan = \&new }
+
 sub boolify   { }
 sub stringify { 'NaN' }
 sub numify    { 'NaN' + 0 }
 
 *copy  = \&Math::BigNum::copy;
-*nan   = \&Math::BigNum::nan;
 *inf   = \&Math::BigNum::inf;
 *binf  = \&Math::BigNum::binf;
 *bninf = \&Math::BigNum::bninf;
-*bnan  = \&Math::BigNum::bnan;
+
+sub bnan {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_set_ui($$x, 0, 0);
+    bless $x, __PACKAGE__;
+    $x;
+}
 
 sub bone {
     my ($x) = @_;

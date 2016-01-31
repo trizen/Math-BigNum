@@ -73,7 +73,7 @@ Returns a new Nan object.
 
 =cut
 
-sub nan { Math::BigNum::Nan->new }
+BEGIN { *nan = \&Math::BigNum::Nan::nan }
 
 =head2 inf
 
@@ -83,7 +83,7 @@ Returns a new Inf object to represent positive Infinity.
 
 =cut
 
-sub inf { Math::BigNum::Inf->new }
+BEGIN { *inf = \&Math::BigNum::Inf::inf }
 
 =head2 ninf
 
@@ -93,45 +93,45 @@ Returns an Inf object to represent negative Infinity.
 
 =cut
 
-sub ninf { Math::BigNum::Inf->new('-') }
+BEGIN { *ninf = \&Math::BigNum::Inf::ninf }
 
-=head2 ONE
+=head2 one
 
-    BigNum->ONE       # => BigNum
+    BigNum->one       # => BigNum
 
 Returns a BigNum object containing the value C<1>.
 
 =cut
 
-sub ONE {
+sub one {
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_set($r, $ONE);
     bless \$r, __PACKAGE__;
 }
 
-=head2 ZERO
+=head2 zero
 
-    BigNum->ZERO        # => BigNum
+    BigNum->zero        # => BigNum
 
 Returns a BigNum object containing the value C<0>.
 
 =cut
 
-sub ZERO {
+sub zero {
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_set($r, $ZERO);
     bless \$r, __PACKAGE__;
 }
 
-=head2 MONE
+=head2 mone
 
-    BigNum->MONE        # => BigNum
+    BigNum->mone        # => BigNum
 
 Returns a BigNum object containing the value C<-1>.
 
 =cut
 
-sub MONE {
+sub mone {
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_set($r, $MONE);
     bless \$r, __PACKAGE__;
@@ -541,27 +541,9 @@ sub _mpz2rat {
     bless \$r, __PACKAGE__;
 }
 
-sub _big2cplx {
-    my ($x, $z) = @_;
-    $$x = $$z;
-    bless $x, 'Math::BigNum::Complex';
-    $x;
-}
-
-sub _big2inf {
-    my ($x, $y) = @_;
-    Math::GMPq::Rmpq_set($$x, $$y);
-    bless $x, 'Math::BigNum::Inf';
-    $x;
-}
-
-sub _big2ninf {
-    my ($x, $y) = @_;
-    Math::GMPq::Rmpq_set($$x, $$y);
-    Math::GMPq::Rmpq_neg($$x, $$x);
-    bless $x, 'Math::BigNum::Inf';
-    $x;
-}
+*_big2inf  = \&Math::BigNum::Inf::_big2inf;
+*_big2ninf = \&Math::BigNum::Inf::_big2ninf;
+*_big2cplx = \&Math::BigNum::Complex::_big2cplx;
 
 =head2 stringify
 
@@ -900,12 +882,7 @@ Changes C<$x> in-place to positive Infinity.
 
 =cut
 
-sub binf {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_set_ui($$x, 1, 0);
-    bless $x, 'Math::BigNum::Inf';
-    $x;
-}
+*binf = \&Math::BigNum::Inf::binf;
 
 =head2 bninf
 
@@ -915,12 +892,7 @@ Changes C<$x> in-place to negative Infinity.
 
 =cut
 
-sub bninf {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_set_si($$x, -1, 0);
-    bless $x, 'Math::BigNum::Inf';
-    $x;
-}
+*bninf = \&Math::BigNum::Inf::bninf;
 
 =head2 bnan
 
@@ -930,12 +902,7 @@ Changes C<$x> in-place to the special Not-A-Number value.
 
 =cut
 
-sub bnan {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_set_ui($$x, 0, 0);
-    bless $x, 'Math::BigNum::Nan';
-    $x;
-}
+*bnan = \&Math::BigNum::Nan::bnan;
 
 #
 ## Arithmetic
@@ -1428,7 +1395,7 @@ multimethod div => qw(Math::BigNum Math::BigNum::Complex) => sub {
     Math::BigNum::Complex->new($_[0])->div($_[1]);
 };
 
-multimethod div => qw(Math::BigNum Math::BigNum::Inf) => \&ZERO;
+multimethod div => qw(Math::BigNum Math::BigNum::Inf) => \&zero;
 multimethod div => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bdiv
@@ -1521,7 +1488,7 @@ multimethod idiv => qw(Math::BigNum $) => sub {
     _mpz2rat($r);
 };
 
-multimethod idiv => qw(Math::BigNum Math::BigNum::Inf) => \&ZERO;
+multimethod idiv => qw(Math::BigNum Math::BigNum::Inf) => \&zero;
 multimethod idiv => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bidiv
@@ -1783,7 +1750,7 @@ multimethod root => qw(Math::BigNum $) => sub {
     $_[0]->pow(Math::BigNum->new($_[1])->inv);
 };
 
-multimethod root => qw(Math::BigNum Math::BigNum::Inf) => \&ONE;
+multimethod root => qw(Math::BigNum Math::BigNum::Inf) => \&one;
 multimethod root => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 broot
@@ -1831,7 +1798,7 @@ multimethod iroot => qw(Math::BigNum Math::BigNum) => sub {
     $_[0]->copy->biroot(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
 };
 
-multimethod iroot => qw(Math::BigNum Math::BigNum::Inf) => \&ONE;
+multimethod iroot => qw(Math::BigNum Math::BigNum::Inf) => \&one;
 multimethod iroot => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 biroot
@@ -1926,7 +1893,7 @@ multimethod pow => qw($ Math::BigNum) => sub {
 };
 
 multimethod pow => qw(Math::BigNum Math::BigNum::Inf) => sub {
-    $_[1]->is_neg ? ZERO : inf;
+    $_[1]->is_neg ? zero : inf;
 };
 multimethod pow => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
@@ -2699,7 +2666,7 @@ multimethod atan2 => qw($ Math::BigNum) => sub {
 multimethod atan2 => qw(Math::BigNum Math::BigNum::Inf) => sub {
     $_[1]->is_neg
       ? ((Math::GMPq::Rmpq_sgn(${$_[0]}) >= 0) ? pi() : (pi()->neg))
-      : ZERO;
+      : zero;
 };
 multimethod atan2 => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
@@ -2959,7 +2926,7 @@ multimethod cmp => qw($ Math::BigNum) => sub {
 
 Compares the absolute values of C<$x> and C<$y>. Returns a negative value
 when the absolute value of C<$x> is less than the absolute value of C<$y>,
-0 when the absolute value of C<$x> is equal with the absolute value of C<$y>,
+0 when the absolute value of C<$x> is equal to the absolute value of C<$y>,
 and a positive value when the absolute value of C<$x> is greater than the
 absolute value of C<$y>.
 
@@ -3069,7 +3036,7 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
         my $r = _big2mpz($x);
         Math::GMPz::Rmpz_mod($r, $r, $yz);
         if (!Math::GMPz::Rmpz_sgn($r)) {
-            return (ZERO);    # return faster
+            return (zero);    # return faster
         }
         elsif ($sign_y < 0) {
             Math::GMPz::Rmpz_add($r, $r, $yz);
@@ -3082,7 +3049,7 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
         Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
         my $sign_r = Math::MPFR::Rmpfr_sgn($r);
         if (!$sign_r) {
-            return (ZERO);    # return faster
+            return (zero);    # return faster
         }
         elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
             Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
@@ -3102,7 +3069,7 @@ multimethod mod => qw(Math::BigNum $) => sub {
         $y = CORE::abs($y) if $neg_y;
         Math::GMPz::Rmpz_mod_ui($r, $r, $y);
         if (!Math::GMPz::Rmpz_sgn($r)) {
-            return (ZERO);    # return faster
+            return (zero);    # return faster
         }
         elsif ($neg_y) {
             Math::GMPz::Rmpz_sub_ui($r, $r, $y);
@@ -3115,7 +3082,7 @@ multimethod mod => qw(Math::BigNum $) => sub {
         Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
         my $sign = Math::MPFR::Rmpfr_sgn($r);
         if (!$sign) {
-            return (ZERO);    # return faster
+            return (zero);    # return faster
         }
         elsif ($sign > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
             Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
@@ -4443,7 +4410,7 @@ multimethod dfac => qw($) => sub {
     $n->primorial            # => BigNum | Nan
     primorial(Scalar)        # => BigNum | Nan
 
-Returns the product of all the primes less than or equal with C<$n>.
+Returns the product of all the primes less than or equal to C<$n>.
 
 =cut
 
@@ -4671,7 +4638,7 @@ multimethod gamma => qw($) => sub {
     lngamma(Scalar)      # => BigNum | Inf
 
 The natural logarithm of the Gamma function on C<$x>.
-Returns Inf when C<$x> is negative or equal with zero.
+Returns Inf when C<$x> is negative or equal to zero.
 
 =cut
 
@@ -4693,7 +4660,7 @@ multimethod lngamma => qw($) => sub {
     lgamma(Scalar)      # => BigNum | Inf
 
 The logarithm of the absolute value of the Gamma function.
-Returns Inf when C<$x> is negative or equal with zero.
+Returns Inf when C<$x> is negative or equal to zero.
 
 =cut
 

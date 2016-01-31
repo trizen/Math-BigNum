@@ -232,6 +232,14 @@ sub new {
     bless \$r, __PACKAGE__;
 }
 
+# Promotes a BigNum object to a Complex number
+sub _big2cplx {
+    my ($x, $z) = @_;
+    $$x = $$z;
+    bless $x, __PACKAGE__;
+    $x;
+}
+
 =head2 stringify
 
     $z->stringify       # => Scalar

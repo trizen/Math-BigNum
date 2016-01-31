@@ -125,11 +125,26 @@ sub new {
 }
 
 sub stringify {
-    $_[0]->is_pos ? 'Inf' : '-Inf';
+    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0) ? 'Inf' : '-Inf';
 }
 
 sub numify {
-    $_[0]->is_pos ? +'inf' : -'inf';
+    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0) ? +'inf' : -'inf';
+}
+
+sub _big2inf {
+    my ($x, $y) = @_;
+    Math::GMPq::Rmpq_set($$x, $$y);
+    bless $x, __PACKAGE__;
+    $x;
+}
+
+sub _big2ninf {
+    my ($x, $y) = @_;
+    Math::GMPq::Rmpq_set($$x, $$y);
+    Math::GMPq::Rmpq_neg($$x, $$x);
+    bless $x, __PACKAGE__;
+    $x;
 }
 
 sub neg {
@@ -157,29 +172,27 @@ sub babs {
 }
 
 *copy  = \&Math::BigNum::copy;
-*nan   = \&Math::BigNum::nan;
-*bnan  = \&Math::BigNum::bnan;
-*binf  = \&Math::BigNum::binf;
-*bninf = \&Math::BigNum::bninf;
+*one   = \&Math::BigNum::one;
+*mone  = \&Math::BigNum::mone;
+*zero  = \&Math::BigNum::zero;
+*bone  = \&Math::BigNum::bone;
+*bzero = \&Math::BigNum::bzero;
+*bmone = \&Math::BigNum::bmone;
 
-sub bone {
+*nan  = \&Math::BigNum::Nan::nan;
+*bnan = \&Math::BigNum::Nan::bnan;
+
+sub binf {
     my ($x) = @_;
-    Math::GMPq::Rmpq_set_ui($$x, 1, 1);
-    bless $x, 'Math::BigNum';
+    Math::GMPq::Rmpq_set_ui($$x, 1, 0);
+    bless $x, __PACKAGE__;
     $x;
 }
 
-sub bzero {
+sub bninf {
     my ($x) = @_;
-    Math::GMPq::Rmpq_set_ui($$x, 0, 1);
-    bless $x, 'Math::BigNum';
-    $x;
-}
-
-sub bmone {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_set_si($$x, -1, 1);
-    bless $x, 'Math::BigNum';
+    Math::GMPq::Rmpq_set_si($$x, -1, 0);
+    bless $x, __PACKAGE__;
     $x;
 }
 
@@ -298,21 +311,21 @@ multimethod bmul => qw(Math::BigNum::Inf Math::BigNum) => sub {
 
 multimethod bmul => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     my ($x, $y) = @_;
-    my $xpos = $x->is_pos;
-    my $ypos = $y->is_pos;
+    my $xsgn = Math::GMPq::Rmpq_sgn($$x);
+    my $ysgn = Math::GMPq::Rmpq_sgn($$y);
 
     # Inf * Inf = Inf
-    if ($xpos and $ypos) {
+    if ($xsgn > 0 and $ysgn > 0) {
         $x;
     }
 
     # Inf * -Inf = -Inf
-    elsif ($xpos and !$ypos) {
+    elsif ($xsgn > 0 and $ysgn < 0) {
         $x->bneg;
     }
 
     # -Inf * Inf = -Inf
-    elsif (!$xpos and $ypos) {
+    elsif ($xsgn < 0 and $ysgn > 0) {
         $x;
     }
 
@@ -321,6 +334,8 @@ multimethod bmul => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
         $x->bneg;
     }
 };
+
+multimethod bmul => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub { $_[0]->bnan };
 
 =head2 div
 
@@ -340,6 +355,7 @@ multimethod bdiv => qw(Math::BigNum::Inf Math::BigNum) => sub {
 };
 
 multimethod bdiv => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&bnan;
+multimethod bdiv => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub { $_[0]->bnan };
 
 #
 ## Trigonometric functions
@@ -350,10 +366,133 @@ multimethod bdiv => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&bnan;
 =cut
 
 sub atan {
-    $_[0]->is_neg
-      ? Math::BigNum->pi->div(-2)
-      : Math::BigNum->pi->div(2);
+    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0)
+      ? Math::BigNum->pi->div(2)
+      : Math::BigNum->pi->div(-2);
 }
+
+*atan2 = \&atan;
+
+#
+## atanh(+inf) = -pi/2*i
+## atanh(-inf) = pi/2*i
+#
+sub atanh {
+    (
+     (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0)
+     ? Math::BigNum->pi->div(-2)
+     : Math::BigNum->pi->div(2)
+      ) *
+      Math::BigNum::i();
+}
+
+#
+## asec(+inf) = pi/2
+## asec(-inf) = pi/2
+#
+sub asec {
+    Math::BigNum->pi->div(2);
+}
+
+#
+## asech(+inf) = pi/2*i
+## asech(-inf) = pi/2*i
+#
+sub asech {
+    Math::BigNum->pi->div(2) * Math::BigNum::i();
+}
+
+#
+## asin(+inf) = -inf*i
+## asin(-inf) = inf*i
+#
+sub asin {
+    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0)
+      ? Math::BigNum::Complex->new(0, '-@Inf@')
+      : Math::BigNum::Complex->new(0, '@Inf@');
+}
+
+#
+## acos(+inf) = inf*i
+## acos(-inf) = -inf*i
+#
+sub acos {
+    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0)
+      ? Math::BigNum::Complex->new(0, '@Inf@')
+      : Math::BigNum::Complex->new(0, '-@Inf@');
+}
+
+#
+## tanh(+inf) = coth(+inf) = erf(+inf) = +1
+## tanh(-inf) = coth(-inf) = erf(-inf) = -1
+#
+sub tanh {
+    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0)
+      ? one()
+      : mone();
+}
+
+*coth = \&tanh;
+*erf  = \&tanh;
+
+#
+## sin(+inf) = sin(-inf) = 0
+## cos(+inf) = cos(-inf) = 0
+## sech(+inf) = sech(-inf) = 0
+## ...
+#
+
+*sin   = \&zero;
+*cos   = \&zero;
+*sech  = \&zero;
+*csch  = \&zero;
+*acsc  = \&zero;
+*acsch = \&zero;
+*acot  = \&zero;
+*acoth = \&zero;
+
+#
+## acosh(+inf) = acosh(-inf) = inf
+#
+
+*acosh = \&inf;
+
+#
+## Other functions
+#
+
+#
+## binomial(inf, x) = 0       | with x < 0
+## binomial(inf, 0) = 1
+## binomial(inf, inf) = 1
+## binomial(inf, x) = inf     | with x > 0
+##
+#
+## binomial(-inf, x) = 0        | with x < 0
+## binomial(-inf, 0) = 1
+## binomial(-inf, inf) = 1
+## binomial(-inf, x) = -inf     | with x > 0
+##
+#
+
+multimethod binomial => qw(Math::BigNum::Inf Math::BigNum) => sub {
+        $_[1]->is_neg  ? zero()
+      : $_[1]->is_zero ? one()
+      :                  $_[0]->copy;
+};
+
+multimethod binomial => qw(Math::BigNum::Inf Math::BigNum::Inf)     => sub { one() };
+multimethod binomial => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub { nan() };
+
+=head2 inv
+
+    $x->inv     # => BigNum
+
+Inverse value of +/-Infinity. Always returns zero.
+
+=cut
+
+*inv = \&zero;
 
 #
 ## Comparisons
@@ -421,15 +560,167 @@ multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
 };
 
 multimethod cmp => qw(Math::BigNum::Inf Math::BigNum) => sub {
-    $_[0]->is_pos ? 1 : -1;
+    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0) ? 1 : -1;
+};
+
+multimethod cmp => qw(Math::BigNum::Inf $) => sub {
+    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0) ? 1 : -1;
+};
+
+multimethod cmp => qw($ Math::BigNum::Inf) => sub {
+    (Math::GMPq::Rmpq_sgn(${$_[1]}) > 0) ? -1 : 1;
+};
+
+multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub {
+    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0) ? 1 : -1;
 };
 
 multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub {
     ## undef for Inf <=> NaN
 };
 
-multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub {
-    $_[0]->is_pos ? 1 : -1;
+=head2 gt
+
+    $x->gt(BigNum)      # => Bool
+    $x->gt(Inf)         # => Bool
+    $x->gt(Complex)     # => Bool
+    $x->gt(Nan)         # => undef
+    $x > $y             # => Bool
+
+Returns true if C<$x> is greater than C<$y>.
+
+=cut
+
+multimethod gt => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) > Math::GMPq::Rmpq_sgn(${$_[1]});
+};
+
+multimethod gt => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
+};
+
+multimethod gt => qw(Math::BigNum::Inf $) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
+};
+
+multimethod gt => qw($ Math::BigNum::Inf) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[1]}) < 0;
+};
+
+multimethod gt => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
+};
+
+multimethod gt => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub {
+    ## undef for Inf > NaN
+};
+
+=head2 ge
+
+    $x->ge(BigNum)      # => Bool
+    $x->ge(Inf)         # => Bool
+    $x->ge(Complex)     # => Bool
+    $x->ge(Nan)         # => undef
+    $x >= $y            # => Bool
+
+Returns true if C<$x> is greater or equal to C<$y>.
+
+=cut
+
+multimethod ge => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) >= Math::GMPq::Rmpq_sgn(${$_[1]});
+};
+
+multimethod ge => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
+};
+
+multimethod ge => qw(Math::BigNum::Inf $) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
+};
+
+multimethod ge => qw($ Math::BigNum::Inf) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[1]}) < 0;
+};
+
+multimethod ge => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
+};
+
+multimethod ge => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub {
+    ## undef for Inf > NaN
+};
+
+=head2 lt
+
+    $x->lt(BigNum)      # => Bool
+    $x->lt(Inf)         # => Bool
+    $x->lt(Complex)     # => Bool
+    $x->lt(Nan)         # => undef
+    $x < $y             # => Bool
+
+Returns true if C<$x> is less than C<$y>.
+
+=cut
+
+multimethod lt => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) < Math::GMPq::Rmpq_sgn(${$_[1]});
+};
+
+multimethod lt => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
+};
+
+multimethod lt => qw(Math::BigNum::Inf $) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
+};
+
+multimethod lt => qw($ Math::BigNum::Inf) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[1]}) > 0;
+};
+
+multimethod lt => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
+};
+
+multimethod lt => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub {
+    ## undef for Inf > NaN
+};
+
+=head2 le
+
+    $x->le(BigNum)      # => Bool
+    $x->le(Inf)         # => Bool
+    $x->le(Complex)     # => Bool
+    $x->le(Nan)         # => undef
+    $x <= $y            # => Bool
+
+Returns true if C<$x> is less than or equal to C<$y>.
+
+=cut
+
+multimethod le => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) <= Math::GMPq::Rmpq_sgn(${$_[1]});
+};
+
+multimethod le => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
+};
+
+multimethod le => qw(Math::BigNum::Inf $) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
+};
+
+multimethod le => qw($ Math::BigNum::Inf) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[1]}) > 0;
+};
+
+multimethod le => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
+};
+
+multimethod le => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub {
+    ## undef for Inf > NaN
 };
 
 1;
