@@ -44,3 +44,4 @@ t/pod.t
 t/rand.t
 t/root.t
 t/round.t
+t/trignometric.t
