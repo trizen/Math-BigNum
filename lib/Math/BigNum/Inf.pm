@@ -367,8 +367,8 @@ sub atan {
 
 Equality test:
 
-    Inf == Inf      # => true
-    Inf == -Inf     # => false
+    Inf == Inf      # true
+    Inf == -Inf     # false
     Inf == 0        # false
     Inf == MaN      # false
 
@@ -389,8 +389,8 @@ multimethod eq => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub { };    # t
 
 Inequality test:
 
-    Inf != Inf      # => false
-    Inf != -Inf     # => true
+    Inf != Inf      # false
+    Inf != -Inf     # true
     Inf != 0        # true
     Inf != MaN      # true
 
@@ -422,6 +422,10 @@ multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
 
 multimethod cmp => qw(Math::BigNum::Inf Math::BigNum) => sub {
     $_[0]->is_pos ? 1 : -1;
+};
+
+multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub {
+    ## undef for Inf <=> NaN
 };
 
 multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub {
