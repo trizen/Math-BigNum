@@ -436,14 +436,17 @@ sub tanh {
 *erf  = \&tanh;
 
 #
-## sin(+inf) = sin(-inf) = 0
-## cos(+inf) = cos(-inf) = 0
-## sech(+inf) = sech(-inf) = 0
-## ...
+## sin(+inf) = sin(-inf) = NaN
+## cos(+inf) = cos(-inf) = NaN
 #
 
-*sin   = \&zero;
-*cos   = \&zero;
+*sin = \&nan;
+*cos = \&nan;
+
+#
+## sech(+inf) = sech(-inf) = 0
+#
+
 *sech  = \&zero;
 *csch  = \&zero;
 *acsc  = \&zero;

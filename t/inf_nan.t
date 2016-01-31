@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-use Test::More tests => 40;
+use Test::More tests => 49;
 
 use Math::BigNum qw(:constant);
 
@@ -47,4 +47,13 @@ isnt(NaN == NaN, 1);
 isnt(NaN > 0,    1);
 isnt(NaN < 0,    1);
 isnt(NaN == 0,   1);
-is(0.0 == -0.0, 1);    # should be false?
+is(0.0 == -0.0, 1);     # should be false?
+is(sin(Inf),    NaN);
+is(Inf / -1, -Inf);
+is(-Inf + 1e100, -Inf);
+is(Inf + -Inf, NaN);
+is(-Inf + Inf, NaN);
+is(0 * +Inf, NaN);
+is(NaN + 1.0, NaN);
+is(NaN + NaN, NaN);
+is(NaN != NaN, 1);

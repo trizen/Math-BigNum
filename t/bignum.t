@@ -137,7 +137,7 @@ plan tests => 225;
 
     # Root
     $z = 125->root(3);
-    ok("$z" =~ /^5(?:\.000|\z)/);
+    like("$z", qr/^5(?:\.000|\z)/);
 
     # as_float() / as_int()
     is($x->as_float,      "1.2");
@@ -168,7 +168,7 @@ plan tests => 225;
     is("$z3", 2**3);
 
     my $r = Math::BigNum->new(125)->root(3);
-    ok("$r" =~ /^5\b/);
+    like("$r", qr/^5\b/);
 }
 
 # Mixed arithmetic
@@ -237,58 +237,58 @@ plan tests => 225;
     is("$x", "0");
 
     $x = Math::BigNum->new(335) % Math::BigNum->new("-5.3");
-    ok("$x" =~ /^-4\.[12]/);
+    like("$x", qr/^-4\.[12]/);
 
     $x = Math::BigNum->new(335) % -5.3;
-    ok("$x" =~ /^-4\.[12]/);
+    like("$x", qr/^-4\.[12]/);
 
     $x = Math::BigNum->new(-335) % Math::BigNum->new("-3.3");
-    ok("$x" =~ /^-1\.[67]/);
+    like("$x", qr/^-1\.[67]/);
 
     $x = Math::BigNum->new(-335) % -3.3;
-    ok("$x" =~ /^-1\.[67]/);
+    like("$x", qr/^-1\.[67]/);
 
     $x = Math::BigNum->new(-335);
     $x->bmod(-3.3);
-    ok("$x" =~ /^-1\.[67]/);
+    like("$x", qr/^-1\.[67]/);
 
     $x = Math::BigNum->new(-335);
     $x->bmod(Math::BigNum->new("-3.3"));
-    ok("$x" =~ /^-1\.[67]/);
+    like("$x", qr/^-1\.[67]/);
 
     $x = Math::BigNum->new(335) % Math::BigNum->new("13.3");
-    ok("$x" =~ /^2\.[45]/);
+    like("$x", qr/^2\.[45]/);
 
     $x = Math::BigNum->new(335) % 13.3;
-    ok("$x" =~ /^2\.[45]/);
+    like("$x", qr/^2\.[45]/);
 
     $x = Math::BigNum->new(-335) % Math::BigNum->new("13.3");
-    ok("$x" =~ /^10\.[78]/);
+    like("$x", qr/^10\.[78]/);
 
     $x = Math::BigNum->new(-335);
     $x->bmod(13.3);
-    ok("$x" =~ /^10\.[78]/);
+    like("$x", qr/^10\.[78]/);
 
     $x = Math::BigNum->new(-335);
     $x->bmod(Math::BigNum->new("13.3"));
-    ok("$x" =~ /^10\.[78]/);
+    like("$x", qr/^10\.[78]/);
 
     $x = Math::BigNum->new(-335) % 13.3;
-    ok("$x" =~ /^10\.[78]/);
+    like("$x", qr/^10\.[78]/);
 
     $x = Math::BigNum->new(335) % Math::BigNum->new("-13.3");
-    ok("$x" =~ /^-10\.[78]/);
+    like("$x", qr/^-10\.[78]/);
 
     $x = Math::BigNum->new(335) % -13.3;
-    ok("$x" =~ /^-10\.[78]/);
+    like("$x", qr/^-10\.[78]/);
 
     $x = Math::BigNum->new(335);
     $x->bmod(-13.3);
-    ok("$x" =~ /^-10\.[78]/);
+    like("$x", qr/^-10\.[78]/);
 
     $x = Math::BigNum->new(335);
     $x->bmod(Math::BigNum->new("-13.3"));
-    ok("$x" =~ /^-10\.[78]/);
+    like("$x", qr/^-10\.[78]/);
 
     $x = Math::BigNum->new(-335) % Math::BigNum->new(-23);
     is("$x", "-13");
@@ -491,7 +491,7 @@ plan tests => 225;
     is("$i", $int);
 
     my $j = $i->idiv(1227);
-    ok("$j" =~ /9638805202027\z/);
+    like("$j", qr/9638805202027\z/);
 
     $i->bidiv(1227);
     ok($i == $j);
