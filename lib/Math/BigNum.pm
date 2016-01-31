@@ -349,6 +349,65 @@ multimethod new => qw($ $ $) => sub {
     bless(\$r, $_[0]);
 };
 
+multimethod new => qw($ Math::BigInt) => sub {
+    my ($x, $mb) = @_;
+
+    if ($mb->is_nan) {
+        return nan();
+    }
+    elsif ($mb->is_inf('-')) {
+        return ninf();
+    }
+    elsif ($mb->is_inf('+')) {
+        return inf();
+    }
+
+    my $value = $mb->bstr;
+    my $r     = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_str($r, $value, 10);
+    bless \$r, $_[0];
+};
+
+multimethod new => qw($ Math::BigFloat) => sub {
+    my ($x, $mb) = @_;
+
+    if ($mb->is_nan) {
+        return nan();
+    }
+    elsif ($mb->is_inf('-')) {
+        return ninf();
+    }
+    elsif ($mb->is_inf('+')) {
+        return inf();
+    }
+
+    my $value = $mb->bstr;
+    my $r     = Math::GMPq::Rmpq_init();
+    my $rat   = _str2rat($value);
+    Math::GMPq::Rmpq_set_str($r, $rat, 10);
+    Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
+    bless \$r, $_[0];
+};
+
+multimethod new => qw($ Math::BigRat) => sub {
+    my ($x, $mb) = @_;
+
+    if ($mb->is_nan) {
+        return nan();
+    }
+    elsif ($mb->is_inf('-')) {
+        return ninf();
+    }
+    elsif ($mb->is_inf('+')) {
+        return inf();
+    }
+
+    my $value = $mb->bstr;
+    my $r     = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_str($r, $value, 10);
+    bless \$r, $_[0];
+};
+
 # TODO: find a better solution (maybe)
 # This solution is very slow for literals with absolute big exponents, such as: "1e-10000000"
 sub _str2rat {
@@ -3992,16 +4051,16 @@ sub bdec {
 ## Integer operations
 #
 
-=head2 expmod
+=head2 modpow
 
-    $x->expmod(BigNum, BigNum)      # => BigNum
+    $x->modpow(BigNum, BigNum)      # => BigNum
 
 Calculates C<($x ** $y) % $z>, where all three values are integers.
 
 =cut
 
-# TODO: make `expmod` to also support scalars.
-multimethod expmod => qw(Math::BigNum Math::BigNum Math::BigNum) => sub {
+# TODO: make `modpow` to also support scalars.
+multimethod modpow => qw(Math::BigNum Math::BigNum Math::BigNum) => sub {
     my ($x, $y, $z) = @_;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), _big2mpz($z));

@@ -307,8 +307,8 @@ $z = $mbn->new(3);
 is($x->copy()->broot($y),      2**8);
 is(ref($x->copy()->broot($y)), $mbn);
 
-is($x->expmod($y, $z), 1);
-is(ref($x->expmod($y, $z)), $mbn);
+is($x->modpow($y, $z), 1);
+is(ref($x->modpow($y, $z)), $mbn);
 
 $x = $mbn->new(8);
 $y = $mbn->new(5033);

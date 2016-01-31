@@ -156,7 +156,7 @@ sub copy {
 *bninf = \&Math::BigNum::bninf;
 
 *mod    = \&nan;
-*expmod = \&nan;
+*modpow = \&nan;
 *modinv = \&nan;
 *and    = \&nan;
 *ior    = \&nan;
