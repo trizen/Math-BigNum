@@ -34,6 +34,7 @@ t/constant.t
 t/fib.t
 t/general.t
 t/inf.t
+t/inf_nan.t
 t/log.t
 t/manifest.t
 t/nan_cmp.t

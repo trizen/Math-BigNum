@@ -68,6 +68,10 @@ use overload
   '++' => sub { $_[0] },
   '--' => sub { $_[0] },
 
+  eq  => sub { "$_[0]" eq "$_[1]" },
+  ne  => sub { "$_[0]" ne "$_[1]" },
+  cmp => sub { $_[2] ? "$_[1]" cmp $_[0]->stringify : $_[0]->stringify cmp "$_[1]" },
+
   '!='  => sub { 1 },
   '=='  => sub { },
   '>'   => sub { },
@@ -80,7 +84,15 @@ use overload
   '-'   => \&nan,
   '/'   => \&nan,
   '%'   => \&nan,
-  atan2 => \&nan;
+  atan2 => \&nan,
+
+  sin  => \&nan,
+  cos  => \&nan,
+  exp  => \&nan,
+  log  => \&nan,
+  int  => \&nan,
+  abs  => \&nan,
+  sqrt => \&nan;
 
 sub new {
     my $r = Math::GMPq::Rmpq_init();
@@ -90,7 +102,7 @@ sub new {
 
 sub boolify   { }
 sub stringify { 'NaN' }
-sub numify    { 'NaN' }
+sub numify    { 'NaN' + 0 }
 
 *copy  = \&Math::BigNum::copy;
 *nan   = \&Math::BigNum::nan;

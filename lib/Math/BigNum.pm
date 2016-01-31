@@ -41,7 +41,7 @@ our ($ROUND, $PREC);
 
 BEGIN {
     $ROUND = Math::MPFR::MPFR_RNDN();
-    $PREC  = 128;                           # too little?
+    $PREC  = 128;                       # too little?
 }
 
 use Math::BigNum::Inf qw();
@@ -197,6 +197,9 @@ use overload
   '/'   => sub { Math::BigNum::div($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '%'   => sub { Math::BigNum::mod($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   atan2 => sub { Math::BigNum::atan2($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+
+  eq  => sub { "$_[0]" eq "$_[1]" },
+  ne  => sub { "$_[0]" ne "$_[1]" },
   cmp => sub { $_[2] ? "$_[1]" cmp $_[0]->stringify : $_[0]->stringify cmp "$_[1]" },
 
   neg  => sub { $_[0]->neg },
@@ -227,10 +230,10 @@ sub import {
               },
               ;
 
-            # Export 'inf' and 'NaN' as constants
+            # Export 'Inf' and 'NaN' as constants
             no strict 'refs';
 
-            my $inf_sub = $caller . '::' . 'inf';
+            my $inf_sub = $caller . '::' . 'Inf';
             if (not defined &$inf_sub) {
                 my $inf = inf();
                 *$inf_sub = sub () { $inf };

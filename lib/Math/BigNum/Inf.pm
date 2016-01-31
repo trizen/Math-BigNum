@@ -81,7 +81,20 @@ use overload
   '-'   => sub { Math::BigNum::Inf::sub($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '/'   => sub { Math::BigNum::Inf::div($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '%'   => sub { Math::BigNum::Inf::mod($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
-  atan2 => sub { Math::BigNum::Inf::atan2($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) };
+  atan2 => sub { Math::BigNum::Inf::atan2($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+
+  eq  => sub { "$_[0]" eq "$_[1]" },
+  ne  => sub { "$_[0]" ne "$_[1]" },
+  cmp => sub { $_[2] ? "$_[1]" cmp $_[0]->stringify : $_[0]->stringify cmp "$_[1]" },
+
+  neg  => sub { $_[0]->neg },
+  sin  => sub { $_[0]->sin },
+  cos  => sub { $_[0]->cos },
+  exp  => sub { $_[0]->exp },
+  log  => sub { $_[0]->ln },
+  int  => sub { $_[0]->int },
+  abs  => sub { $_[0]->abs },
+  sqrt => sub { $_[0]->sqrt };
 
 =head2 new
 
@@ -112,7 +125,7 @@ sub new {
 }
 
 sub stringify {
-    $_[0]->is_pos ? 'inf' : '-inf';
+    $_[0]->is_pos ? 'Inf' : '-Inf';
 }
 
 sub numify {
@@ -348,18 +361,71 @@ sub atan {
 
 =head2 eq
 
+    $x->eq($y)      # => Bool
+    $x == $y        # => Bool
+
+
+Equality test:
+
+    Inf == Inf      # => true
+    Inf == -Inf     # => false
+    Inf == 0        # false
+    Inf == MaN      # false
+
 =cut
 
 multimethod eq => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) == Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
+multimethod eq => qw(Math::BigNum::Inf Math::BigNum)          => sub { };
+multimethod eq => qw(Math::BigNum::Inf Math::BigNum::Nan)     => sub { };
+multimethod eq => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub { };    # this may equal
+
 =head2 ne
+
+    $x->ne($y)      # => Bool
+    $x != $y        # => Bool
+
+Inequality test:
+
+    Inf != Inf      # => false
+    Inf != -Inf     # => true
+    Inf != 0        # true
+    Inf != MaN      # true
 
 =cut
 
 multimethod ne => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) != Math::GMPq::Rmpq_sgn(${$_[1]});
+};
+
+multimethod ne => qw(Math::BigNum::Inf Math::BigNum)          => sub { 1 };
+multimethod ne => qw(Math::BigNum::Inf Math::BigNum::Nan)     => sub { 1 };
+multimethod ne => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub { 1 };    # this may equal
+
+=head2 cmp
+
+    $x->cmp(Inf)            # => Scalar
+    $x->cmp(BigNum)         # => Scalar
+    $x->cmp(Complex)        # => Scalar
+    $x->cmp(Nan)            # => undef
+
+Compares C<$x> to C<$y> and returns a positive value when C<$x> is greater than C<$y>,
+a negative value when C<$x> is lower than C<$y>, or zero when C<$x> and C<$y> are equal.
+
+=cut
+
+multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) <=> Math::GMPq::Rmpq_sgn(${$_[1]});
+};
+
+multimethod cmp => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    $_[0]->is_pos ? 1 : -1;
+};
+
+multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Complex) => sub {
+    $_[0]->is_pos ? 1 : -1;
 };
 
 1;

@@ -37,16 +37,16 @@ is("$x",
       . "1669034276900318581864860508537538828119465699"
       . "4643364900608409.6");
 
-my $inf = inf * inf;
+my $inf = Inf * Inf;
 like($inf, qr/^inf/i);
 
-my $ninf = inf * -1;
+my $ninf = Inf * -1;
 like($ninf, qr/^-inf/i);
 
 my $nan = 3 * NaN;
 is("$nan", "NaN");
 
-$nan = inf / inf;
+$nan = Inf / Inf;
 is("$nan", "NaN");
 
 $nan = NaN + 2;

@@ -68,6 +68,10 @@ use overload
   '/'   => sub { Math::BigNum::Complex::div($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   atan2 => sub { Math::BigNum::Complex::atan2($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
+  eq  => sub { "$_[0]" eq "$_[1]" },
+  ne  => sub { "$_[0]" ne "$_[1]" },
+  cmp => sub { $_[2] ? "$_[1]" cmp $_[0]->stringify : $_[0]->stringify cmp "$_[1]" },
+
   sin  => sub { $_[0]->sin },
   cos  => sub { $_[0]->cos },
   exp  => sub { $_[0]->exp },
