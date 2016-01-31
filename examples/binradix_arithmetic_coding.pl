@@ -18,20 +18,14 @@ use warnings;
 use lib qw(../lib);
 use Math::BigNum;
 
-sub asciibet {
-    map { chr } 0 .. 255;
-}
-
 sub cumulative_freq {
     my ($freq) = @_;
 
     my %cf;
     my $total = Math::BigNum->new(0);
-    foreach my $c (asciibet()) {
-        if (exists $freq->{$c}) {
-            $cf{$c} = $total;
-            $total += $freq->{$c};
-        }
+    foreach my $c (sort keys %$freq) {
+        $cf{$c} = $total;
+        $total += $freq->{$c};
     }
 
     return %cf;

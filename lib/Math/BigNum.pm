@@ -41,7 +41,7 @@ our ($ROUND, $PREC);
 
 BEGIN {
     $ROUND = Math::MPFR::MPFR_RNDN();
-    $PREC  = 128;
+    $PREC  = 128;                           # too little?
 }
 
 use Math::BigNum::Inf qw();
