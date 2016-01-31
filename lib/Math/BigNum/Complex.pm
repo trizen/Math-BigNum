@@ -395,7 +395,7 @@ multimethod add => qw(Math::BigNum::Complex Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_add_fr($r, $$x, $y->_as_float(), $ROUND);
+    Math::MPC::Rmpc_add_fr($r, $$x, $y->_big2mpfr(), $ROUND);
 
     bless \$r, __PACKAGE__;
 };
@@ -422,7 +422,7 @@ multimethod sub => qw(Math::BigNum::Complex Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_add_fr($r, $$x, -$y->_as_float(), $ROUND);
+    Math::MPC::Rmpc_add_fr($r, $$x, -$y->_big2mpfr(), $ROUND);
 
     bless \$r, __PACKAGE__;
 };
@@ -449,7 +449,7 @@ multimethod mul => qw(Math::BigNum::Complex Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_mul_fr($r, $$x, $y->_as_float(), $ROUND);
+    Math::MPC::Rmpc_mul_fr($r, $$x, $y->_big2mpfr(), $ROUND);
 
     bless \$r, __PACKAGE__;
 };
@@ -476,7 +476,7 @@ multimethod div => qw(Math::BigNum::Complex Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_div_fr($r, $$x, $y->_as_float(), $ROUND);
+    Math::MPC::Rmpc_div_fr($r, $$x, $y->_big2mpfr(), $ROUND);
 
     bless \$r, __PACKAGE__;
 };
@@ -514,7 +514,7 @@ multimethod pow => qw(Math::BigNum::Complex $) => sub {
 multimethod pow => qw(Math::BigNum::Complex Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_pow_fr($r, $$x, $y->_as_float(), $ROUND);
+    Math::MPC::Rmpc_pow_fr($r, $$x, $y->_big2mpfr(), $ROUND);
     bless \$r, __PACKAGE__;
 };
 
@@ -603,7 +603,7 @@ multimethod log => qw(Math::BigNum::Complex Math::BigNum) => sub {
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_log($r, $$x, $ROUND);
 
-    my $baseln = $y->_as_float();
+    my $baseln = $y->_big2mpfr();
     Math::MPFR::Rmpfr_log($baseln, $baseln, $Math::BigNum::ROUND);
     Math::MPC::Rmpc_div_fr($r, $r, $baseln, $ROUND);
 
@@ -1208,7 +1208,7 @@ multimethod atan2 => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
 
 multimethod atan2 => qw(Math::BigNum::Complex Math::BigNum) => sub {
     my ($x, $y) = @_;
-    $y = $y->_as_float();
+    $y = $y->_big2mpfr();
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_div_fr($r, $$x, $y, $ROUND);
     Math::MPC::Rmpc_atan($r, $r, $ROUND);

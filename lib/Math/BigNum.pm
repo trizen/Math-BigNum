@@ -414,13 +414,13 @@ sub _str2mpz {
     Math::GMPz::Rmpz_init_set_str($_[0], 10);
 }
 
-sub _as_float {
+sub _big2mpfr {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_set_q($r, ${$_[0]}, $ROUND);
     $r;
 }
 
-sub _as_int {
+sub _big2mpz {
     my $i = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($i, ${$_[0]});
     $i;
@@ -930,13 +930,13 @@ are truncated to integers before addition.
 =cut
 
 multimethod iadd => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_add($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_add($r, $r, _big2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod iadd => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     my $y = CORE::int($_[1]);
     $y < 0
       ? Math::GMPz::Rmpz_sub_ui($r, $r, CORE::abs($y))
@@ -960,14 +960,14 @@ Both values are truncated to integers before addition.
 =cut
 
 multimethod biadd => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_add($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_add($r, $r, _big2mpz($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
 
 multimethod biadd => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     my $y = CORE::int($_[1]);
     $y < 0
       ? Math::GMPz::Rmpz_sub_ui($r, $r, CORE::abs($y))
@@ -1063,13 +1063,13 @@ are truncated to integers before subtraction.
 =cut
 
 multimethod isub => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_sub($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_sub($r, $r, _big2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod isub => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     my $y = CORE::int($_[1]);
     $y < 0
       ? Math::GMPz::Rmpz_add_ui($r, $r, CORE::abs($y))
@@ -1093,14 +1093,14 @@ Both values are truncated to integers before subtraction.
 =cut
 
 multimethod bisub => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_sub($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_sub($r, $r, _big2mpz($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
 
 multimethod bisub => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     my $y = CORE::int($_[1]);
     $y < 0
       ? Math::GMPz::Rmpz_add_ui($r, $r, CORE::abs($y))
@@ -1202,13 +1202,13 @@ are truncated to integers before multiplication.
 =cut
 
 multimethod imul => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_mul($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_mul($r, $r, _big2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod imul => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     my $y = CORE::int($_[1]);
     $y < 0
       ? Math::GMPz::Rmpz_mul_si($r, $r, $y)
@@ -1236,14 +1236,14 @@ Both values are truncated to integers before multiplication.
 =cut
 
 multimethod bimul => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_mul($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_mul($r, $r, _big2mpz($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
 
 multimethod bimul => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     my $y = CORE::int($_[1]);
     $y < 0
       ? Math::GMPz::Rmpz_mul_si($r, $r, $y)
@@ -1407,8 +1407,8 @@ multimethod idiv => qw(Math::BigNum Math::BigNum) => sub {
         return (!$sign ? nan : $sign > 0 ? inf : ninf);
     }
 
-    my $r = _as_int($x);
-    Math::GMPz::Rmpz_div($r, $r, _as_int($y));
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_div($r, $r, _big2mpz($y));
     _mpz2rat($r);
 };
 
@@ -1421,12 +1421,12 @@ multimethod idiv => qw(Math::BigNum $) => sub {
     }
 
     if (CORE::int($y) eq $y and $y >= 0) {
-        my $r = _as_int($x);
+        my $r = _big2mpz($x);
         Math::GMPz::Rmpz_div_ui($r, $r, $y);
         return _mpz2rat($r);
     }
 
-    my $r = _as_int($x);
+    my $r = _big2mpz($x);
     Math::GMPz::Rmpz_div($r, $r, _str2mpz($y));
     _mpz2rat($r);
 };
@@ -1455,8 +1455,8 @@ multimethod bidiv => qw(Math::BigNum Math::BigNum) => sub {
           :             $x->bnan;
     }
 
-    my $r = _as_int($x);
-    Math::GMPz::Rmpz_div($r, $r, _as_int($y));
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_div($r, $r, _big2mpz($y));
     Math::GMPq::Rmpq_set_z($$x, $r);
     $x;
 };
@@ -1473,13 +1473,13 @@ multimethod bidiv => qw(Math::BigNum $) => sub {
     }
 
     if (CORE::int($y) eq $y and $y >= 0) {
-        my $r = _as_int($x);
+        my $r = _big2mpz($x);
         Math::GMPz::Rmpz_div_ui($r, $r, $y);
         Math::GMPq::Rmpq_set_z($$x, $r);
         return $x;
     }
 
-    my $r = _as_int($x);
+    my $r = _big2mpz($x);
     Math::GMPz::Rmpz_div($r, $r, _str2mpz($y));
     Math::GMPq::Rmpq_set_z($$x, $r);
     $x;
@@ -1603,7 +1603,7 @@ sub sqrt {
         return Math::BigNum::Complex->new($x)->sqrt;
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_sqrt($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -1624,7 +1624,7 @@ sub bsqrt {
         return _big2cplx($x, Math::BigNum::Complex->new($x)->sqrt);
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_sqrt($r, $r, $ROUND);
     Math::MPFR::Rmpfr_get_q($$x, $r);
 
@@ -1640,7 +1640,7 @@ Integer square root of C<$x>. Returns a Complex number when C<$x> is negative.
 =cut
 
 sub isqrt {
-    my $r      = _as_int($_[0]);
+    my $r      = _big2mpz($_[0]);
     my $is_neg = Math::GMPz::Rmpz_sgn($r) < 0;
     Math::GMPz::Rmpz_abs($r, $r) if $is_neg;
     Math::GMPz::Rmpz_sqrt($r, $r);
@@ -1666,7 +1666,7 @@ sub cbrt {
         return Math::BigNum::Complex->new($x)->cbrt;
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_cbrt($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -1756,7 +1756,7 @@ C<$x> to a Complex number when C<$x> is negative and C<$y> is even.
 multimethod biroot => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    my $z    = _as_int($x);
+    my $z    = _big2mpz($x);
     my $root = CORE::int($y);
 
     my ($is_even, $is_neg) = $root % 2 == 0;
@@ -1796,7 +1796,7 @@ multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
 
     # Both are integers and $y is positive
     if (Math::GMPq::Rmpq_sgn($$y) >= 0 and Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
-        my $r = _as_int($x);
+        my $r = _big2mpz($x);
         Math::GMPz::Rmpz_pow_ui($r, $r, Math::GMPq::Rmpq_get_d($$y));
         return _mpz2rat($r);
     }
@@ -1807,8 +1807,8 @@ multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
     }
 
     # A floating-point otherwise
-    my $r = _as_float($x);
-    Math::MPFR::Rmpfr_pow($r, $r, _as_float($y), $ROUND);
+    my $r = _big2mpfr($x);
+    Math::MPFR::Rmpfr_pow($r, $r, _big2mpfr($y), $ROUND);
     _mpfr2big($r);
 };
 
@@ -1821,7 +1821,7 @@ multimethod pow => qw(Math::BigNum $) => sub {
 
     # Minor performance when both are integers and $y is positive
     if (CORE::int($y) eq $y and $y >= 0 and Math::GMPq::Rmpq_integer_p($$x)) {
-        my $r = _as_int($x);
+        my $r = _big2mpz($x);
         Math::GMPz::Rmpz_pow_ui($r, $r, $y);
         _mpz2rat($r);
     }
@@ -1869,8 +1869,8 @@ multimethod bpow => qw(Math::BigNum Math::BigNum) => sub {
     }
 
     # A floating-point otherwise
-    my $r = _as_float($x);
-    Math::MPFR::Rmpfr_pow($r, $r, _as_float($y), $ROUND);
+    my $r = _big2mpfr($x);
+    Math::MPFR::Rmpfr_pow($r, $r, _big2mpfr($y), $ROUND);
     Math::MPFR::Rmpfr_get_q($$x, $r);
     $x;
 };
@@ -1897,7 +1897,7 @@ multimethod bpow => qw(Math::BigNum $) => sub {
     }
 
     # A floating-point otherwise
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     if ($y_is_int) {
         if ($y >= 0) {
             Math::MPFR::Rmpfr_pow_ui($r, $r, $y, $ROUND);
@@ -1931,7 +1931,7 @@ sub ln {
         return Math::BigNum::Complex->new($x)->ln;
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_log($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -1955,9 +1955,9 @@ multimethod log => qw(Math::BigNum Math::BigNum) => sub {
     }
 
     # log(x,base) = log(x)/log(base)
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_log($r, $r, $ROUND);
-    my $baseln = _as_float($y);
+    my $baseln = _big2mpfr($y);
     Math::MPFR::Rmpfr_log($baseln, $baseln, $ROUND);
     Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
 
@@ -1971,7 +1971,7 @@ multimethod log => qw(Math::BigNum $) => sub {
         return Math::BigNum::Complex->new($x)->log($y);
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
 
     if ($y == 2) {
         Math::MPFR::Rmpfr_log2($r, $r, $ROUND);
@@ -2010,7 +2010,7 @@ multimethod blog => qw(Math::BigNum $) => sub {
         return _big2cplx($x, $z);
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
 
     if ($y == 2) {
         Math::MPFR::Rmpfr_log2($r, $r, $ROUND);
@@ -2041,7 +2041,7 @@ multimethod blog => qw(Math::BigNum) => sub {
         return _big2cplx($x, $z);
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_log($r, $r, $ROUND);
     Math::MPFR::Rmpfr_get_q($$x, $r);
 
@@ -2063,7 +2063,7 @@ sub log2 {
         return Math::BigNum::Complex->new($x)->log2;
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_log2($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2083,7 +2083,7 @@ sub log10 {
         return Math::BigNum::Complex->new($x)->log10;
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_log10($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2097,7 +2097,7 @@ Exponential of C<$x> in base e. (C<e**$x>)
 =cut
 
 sub exp {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_exp($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2112,7 +2112,7 @@ Exponential of C<$x> in base e, changing C<$x> in-place.
 
 sub bexp {
     my ($x) = @_;
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_exp($r, $r, $ROUND);
     Math::MPFR::Rmpfr_get_q($$x, $r);
     $x;
@@ -2127,7 +2127,7 @@ Exponential of C<$x> in base 2. (C<2**$x>)
 =cut
 
 sub exp2 {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_exp2($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2141,7 +2141,7 @@ Exponential of C<$x> in base 10. (C<10**$x>)
 =cut
 
 sub exp10 {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_exp10($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2159,7 +2159,7 @@ Returns the sine of C<$x>.
 =cut
 
 sub sin {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_sin($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2181,7 +2181,7 @@ sub asin {
         return Math::BigNum::Complex->new($x)->asin;
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_asin($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2195,7 +2195,7 @@ Returns the hyperbolic sine of C<$x>.
 =cut
 
 sub sinh {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_sinh($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2209,7 +2209,7 @@ Returns the inverse hyperbolic sine of C<$x>.
 =cut
 
 sub asinh {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_asinh($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2223,7 +2223,7 @@ Returns the cosine of C<$x>.
 =cut
 
 sub cos {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_cos($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2245,7 +2245,7 @@ sub acos {
         return Math::BigNum::Complex->new($x)->acos;
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_acos($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2259,7 +2259,7 @@ Returns the hyperbolic cosine of C<$x>.
 =cut
 
 sub cosh {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_cosh($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2281,7 +2281,7 @@ sub acosh {
         return Math::BigNum::Complex->new($x)->acosh;
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_acosh($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2295,7 +2295,7 @@ Returns the tangent of C<$x>.
 =cut
 
 sub tan {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_tan($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2309,7 +2309,7 @@ Returns the inverse tangent of C<$x>.
 =cut
 
 sub atan {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_atan($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2323,7 +2323,7 @@ Returns the hyperbolic tangent of C<$x>.
 =cut
 
 sub tanh {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_tanh($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2345,7 +2345,7 @@ sub atanh {
         return Math::BigNum::Complex->new($x)->atanh;
     }
 
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_atanh($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2359,7 +2359,7 @@ Returns the secant of C<$x>.
 =cut
 
 sub sec {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_sec($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2385,7 +2385,7 @@ sub asec {
     }
 
     state $one = Math::MPFR->new(1);
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_acos($r, $r, $ROUND);
     _mpfr2big($r);
@@ -2400,7 +2400,7 @@ Returns the hyperbolic secant of C<$x>.
 =cut
 
 sub sech {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_sech($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2426,7 +2426,7 @@ sub asech {
     }
 
     state $one = Math::MPFR->new(1);
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_acosh($r, $r, $ROUND);
     _mpfr2big($r);
@@ -2441,7 +2441,7 @@ Returns the cosecant of C<$x>.
 =cut
 
 sub csc {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_csc($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2466,7 +2466,7 @@ sub acsc {
     }
 
     state $one = Math::MPFR->new(1);
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_asin($r, $r, $ROUND);
     _mpfr2big($r);
@@ -2481,7 +2481,7 @@ Returns the hyperbolic cosecant of C<$x>.
 =cut
 
 sub csch {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_csch($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2500,7 +2500,7 @@ Returns the inverse hyperbolic cosecant of C<$x>.
 sub acsch {
     my ($x) = @_;
     state $one = Math::MPFR->new(1);
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_asinh($r, $r, $ROUND);
     _mpfr2big($r);
@@ -2515,7 +2515,7 @@ Returns the cotangent of C<$x>.
 =cut
 
 sub cot {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_cot($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2534,7 +2534,7 @@ Returns the inverse cotangent of C<$x>.
 sub acot {
     my ($x) = @_;
     state $one = Math::MPFR->new(1);
-    my $r = _as_float($x);
+    my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_atan($r, $r, $ROUND);
     _mpfr2big($r);
@@ -2549,7 +2549,7 @@ Returns the hyperbolic cotangent of C<$x>.
 =cut
 
 sub coth {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_coth($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -2567,7 +2567,7 @@ Returns the inverse hyperbolic cotangent of C<$x>.
 #
 sub acoth {
     state $one = Math::MPFR->new(1);
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
     Math::MPFR::Rmpfr_atanh($r, $r, $ROUND);
     _mpfr2big($r);
@@ -2588,20 +2588,20 @@ Arctangent of C<$x> and C<$y>. When C<$y> is -Inf returns PI when C<<$x >= 0>>, 
 =cut
 
 multimethod atan2 => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
-    Math::MPFR::Rmpfr_atan2($r, $r, _as_float($_[1]), $ROUND);
+    my $r = _big2mpfr($_[0]);
+    Math::MPFR::Rmpfr_atan2($r, $r, _big2mpfr($_[1]), $ROUND);
     _mpfr2big($r);
 };
 
 multimethod atan2 => qw(Math::BigNum $) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_atan2($r, $r, _str2mpfr($_[1]), $ROUND);
     _mpfr2big($r);
 };
 
 multimethod atan2 => qw($ Math::BigNum) => sub {
     my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_atan2($r, $r, _as_float($_[1]), $ROUND);
+    Math::MPFR::Rmpfr_atan2($r, $r, _big2mpfr($_[1]), $ROUND);
     _mpfr2big($r);
 };
 
@@ -2971,11 +2971,11 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
 
     if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
 
-        my $yz     = _as_int($y);
+        my $yz     = _big2mpz($y);
         my $sign_y = Math::GMPz::Rmpz_sgn($yz);
         return nan if !$sign_y;
 
-        my $r = _as_int($x);
+        my $r = _big2mpz($x);
         Math::GMPz::Rmpz_mod($r, $r, $yz);
         if (!Math::GMPz::Rmpz_sgn($r)) {
             return (ZERO);    # return faster
@@ -2986,8 +2986,8 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
         _mpz2rat($r);
     }
     else {
-        my $r  = _as_float($x);
-        my $yf = _as_float($y);
+        my $r  = _big2mpfr($x);
+        my $yf = _big2mpfr($y);
         Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
         my $sign_r = Math::MPFR::Rmpfr_sgn($r);
         if (!$sign_r) {
@@ -3006,7 +3006,7 @@ multimethod mod => qw(Math::BigNum $) => sub {
     return nan if ($y == 0);
 
     if (CORE::int($x) eq $x and CORE::int($y) eq $y) {
-        my $r     = _as_int($x);
+        my $r     = _big2mpz($x);
         my $neg_y = $y < 0;
         $y = CORE::abs($y) if $neg_y;
         Math::GMPz::Rmpz_mod_ui($r, $r, $y);
@@ -3019,7 +3019,7 @@ multimethod mod => qw(Math::BigNum $) => sub {
         _mpz2rat($r);
     }
     else {
-        my $r  = _as_float($x);
+        my $r  = _big2mpfr($x);
         my $yf = _str2mpfr($y);
         Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
         my $sign = Math::MPFR::Rmpfr_sgn($r);
@@ -3057,11 +3057,11 @@ multimethod bmod => qw(Math::BigNum Math::BigNum) => sub {
 
     if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
 
-        my $yz     = _as_int($y);
+        my $yz     = _big2mpz($y);
         my $sign_y = Math::GMPz::Rmpz_sgn($yz);
         return nan if !$sign_y;
 
-        my $r = _as_int($x);
+        my $r = _big2mpz($x);
         Math::GMPz::Rmpz_mod($r, $r, $yz);
         if ($sign_y < 0 and Math::GMPz::Rmpz_sgn($r)) {
             Math::GMPz::Rmpz_add($r, $r, $yz);
@@ -3069,8 +3069,8 @@ multimethod bmod => qw(Math::BigNum Math::BigNum) => sub {
         Math::GMPq::Rmpq_set_z($$x, $r);
     }
     else {
-        my $r  = _as_float($x);
-        my $yf = _as_float($y);
+        my $r  = _big2mpfr($x);
+        my $yf = _big2mpfr($y);
         Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
         my $sign = Math::MPFR::Rmpfr_sgn($r);
         if (!$sign) {
@@ -3091,7 +3091,7 @@ multimethod bmod => qw(Math::BigNum $) => sub {
     return nan if ($y == 0);
 
     if (CORE::int($x) eq $x and CORE::int($y) eq $y) {
-        my $r     = _as_int($x);
+        my $r     = _big2mpz($x);
         my $neg_y = $y < 0;
         $y = CORE::abs($y) if $neg_y;
         Math::GMPz::Rmpz_mod_ui($r, $r, $y);
@@ -3101,7 +3101,7 @@ multimethod bmod => qw(Math::BigNum $) => sub {
         Math::GMPq::Rmpq_set_z($$x, $r);
     }
     else {
-        my $r  = _as_float($x);
+        my $r  = _big2mpfr($x);
         my $yf = _str2mpfr($y);
         Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
         my $sign_r = Math::MPFR::Rmpfr_sgn($r);
@@ -3133,8 +3133,8 @@ where both are integers. When C<$y> is zero, it returns two Nan values.
 multimethod divmod => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    my $r1 = _as_int($x);
-    my $r2 = _as_int($y);
+    my $r1 = _big2mpz($x);
+    my $r2 = _big2mpz($y);
 
     Math::GMPz::Rmpz_sgn($$y) || return (nan, nan);
 
@@ -3147,7 +3147,7 @@ multimethod divmod => qw(Math::BigNum $) => sub {
 
     CORE::int($y) || return (nan, nan);
 
-    my $r1 = _as_int($x);
+    my $r1 = _big2mpz($x);
     my $r2 = Math::GMPz::Rmpz_init();
 
     Math::GMPz::Rmpz_divmod_ui($r1, $r2, $r1, CORE::int($y));
@@ -3166,14 +3166,14 @@ If an inverse doesn't exist the Nan value is returned.
 
 multimethod modinv => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
-    my $r = _as_int($x);
-    Math::GMPz::Rmpz_invert($r, $r, _as_int($y)) || return nan;
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_invert($r, $r, _big2mpz($y)) || return nan;
     _mpz2rat($r);
 };
 
 multimethod modinv => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
-    my $r = _as_int($x);
+    my $r = _big2mpz($x);
     Math::GMPz::Rmpz_invert($r, $r, _str2mpz($y)) || return nan;
     _mpz2rat($r);
 };
@@ -3352,7 +3352,7 @@ multimethod is_div => qw(Math::BigNum $) => sub {
 
     # Use a faster method when both $x and $y are integers
     if ($y > 0 and CORE::int($y) eq $y and Math::GMPq::Rmpq_integer_p($$x)) {
-        Math::GMPz::Rmpz_divisible_ui_p(_as_int($x), $y);
+        Math::GMPz::Rmpz_divisible_ui_p(_big2mpz($x), $y);
     }
 
     # Otherwise, do the division and check the result
@@ -3461,8 +3461,8 @@ The greatest common divisor of C<$x> and C<$y>.
 
 multimethod gcd => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
-    my $r = _as_int($x);
-    Math::GMPz::Rmpz_gcd($r, $r, _as_int($y));
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_gcd($r, $r, _big2mpz($y));
     _mpz2rat($r);
 };
 
@@ -3481,8 +3481,8 @@ The least common multiple of C<$x> and C<$y>.
 
 multimethod lcm => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
-    my $r = _as_int($x);
-    Math::GMPz::Rmpz_lcm($r, $r, _as_int($y));
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_lcm($r, $r, _big2mpz($y));
     _mpz2rat($r);
 };
 
@@ -3975,8 +3975,8 @@ Calculates C<($x ** $y) % $z>, where all three values are integers.
 # TODO: make `expmod` to also support scalars.
 multimethod expmod => qw(Math::BigNum Math::BigNum Math::BigNum) => sub {
     my ($x, $y, $z) = @_;
-    my $r = _as_int($x);
-    Math::GMPz::Rmpz_powm($r, $r, _as_int($y), _as_int($z));
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), _big2mpz($z));
     _mpz2rat($r);
 };
 
@@ -3994,20 +3994,20 @@ Integer logical-and operation.
 =cut
 
 multimethod and => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_and($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_and($r, $r, _big2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod and => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_and($r, $r, _str2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod and => qw($ Math::BigNum) => sub {
     my $r = _str2mpz($_[0]);
-    Math::GMPz::Rmpz_and($r, $r, _as_int($_[1]));
+    Math::GMPz::Rmpz_and($r, $r, _big2mpz($_[1]));
     _mpz2rat($r);
 };
 
@@ -4024,14 +4024,14 @@ Integer logical-and operation, changing C<$x> in-place.
 =cut
 
 multimethod band => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_and($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_and($r, $r, _big2mpz($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
 
 multimethod band => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_and($r, $r, _str2mpz($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
@@ -4051,20 +4051,20 @@ Integer logical inclusive-or operation.
 =cut
 
 multimethod ior => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_ior($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_ior($r, $r, _big2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod ior => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_ior($r, $r, _str2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod ior => qw($ Math::BigNum) => sub {
     my $r = _str2mpz($_[0]);
-    Math::GMPz::Rmpz_ior($r, $r, _as_int($_[1]));
+    Math::GMPz::Rmpz_ior($r, $r, _big2mpz($_[1]));
     _mpz2rat($r);
 };
 
@@ -4081,14 +4081,14 @@ Integer logical inclusive-or operation, changing C<$x> in-place.
 =cut
 
 multimethod bior => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_ior($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_ior($r, $r, _big2mpz($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
 
 multimethod bior => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_ior($r, $r, _str2mpz($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
@@ -4108,20 +4108,20 @@ Integer logical exclusive-or operation.
 =cut
 
 multimethod xor => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_xor($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_xor($r, $r, _big2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod xor => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_xor($r, $r, _str2mpz($_[1]));
     _mpz2rat($r);
 };
 
 multimethod xor => qw($ Math::BigNum) => sub {
     my $r = _str2mpz($_[0]);
-    Math::GMPz::Rmpz_xor($r, $r, _as_int($_[1]));
+    Math::GMPz::Rmpz_xor($r, $r, _big2mpz($_[1]));
     _mpz2rat($r);
 };
 
@@ -4138,14 +4138,14 @@ Integer logical exclusive-or operation, changing C<$x> in-place.
 =cut
 
 multimethod bxor => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
-    Math::GMPz::Rmpz_xor($r, $r, _as_int($_[1]));
+    my $r = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_xor($r, $r, _big2mpz($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
 
 multimethod bxor => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_xor($r, $r, _str2mpz($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
@@ -4161,7 +4161,7 @@ Integer logical-not operation. (The one's complement of $x).
 =cut
 
 sub not {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_com($r, $r);
     _mpz2rat($r);
 }
@@ -4180,13 +4180,13 @@ Integer left-shift operation. (C<$x * (2 ** $y)>)
 =cut
 
 multimethod lsft => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
     _mpz2rat($r);
 };
 
 multimethod lsft => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int($_[1]));
     _mpz2rat($r);
 };
@@ -4210,14 +4210,14 @@ Integer left-shift operation, changing C<$x> in-place. (C<$x * (2 ** $y)>)
 =cut
 
 multimethod blsft => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
 
 multimethod blsft => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::int($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
@@ -4237,13 +4237,13 @@ Integer right-shift operation. (C<$x / (2 ** $y)>)
 =cut
 
 multimethod rsft => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
     _mpz2rat($r);
 };
 
 multimethod rsft => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int($_[1]));
     _mpz2rat($r);
 };
@@ -4267,14 +4267,14 @@ Integer right-shift operation. (C<$x / (2 ** $y)>)
 =cut
 
 multimethod brsft => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
 
 multimethod brsft => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_div_2exp($r, $r, CORE::int($_[1]));
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
@@ -4421,13 +4421,13 @@ Calculates the binomial coefficient n over k, also called the
 
 multimethod binomial => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
-    my $r = _as_int($x);
+    my $r = _big2mpz($x);
     Math::GMPz::Rmpz_bin_si($r, $r, CORE::int(Math::GMPq::Rmpq_get_d($$y)));
     _mpz2rat($r);
 };
 
 multimethod binomial => qw(Math::BigNum $) => sub {
-    my $r = _as_int($_[0]);
+    my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_bin_si($r, $r, CORE::int($_[1]));
     _mpz2rat($r);
 };
@@ -4450,15 +4450,15 @@ See also: L<https://en.wikipedia.org/wiki/Miller–Rabin_primality_test>
 =cut
 
 multimethod is_prime => qw(Math::BigNum) => sub {
-    Math::GMPz::Rmpz_probab_prime_p(_as_int($_[0]), 12);
+    Math::GMPz::Rmpz_probab_prime_p(_big2mpz($_[0]), 12);
 };
 
 multimethod is_prime => qw(Math::BigNum $) => sub {
-    Math::GMPz::Rmpz_probab_prime_p(_as_int($_[0]), CORE::abs(CORE::int($_[1])));
+    Math::GMPz::Rmpz_probab_prime_p(_big2mpz($_[0]), CORE::abs(CORE::int($_[1])));
 };
 
 multimethod is_prime => qw(Math::BigNum Math::BigNum) => sub {
-    Math::GMPz::Rmpz_probab_prime_p(_as_int($_[0]), CORE::abs(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]}))));
+    Math::GMPz::Rmpz_probab_prime_p(_big2mpz($_[0]), CORE::abs(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]}))));
 };
 
 =head2 next_prime
@@ -4471,7 +4471,7 @@ Returns the next prime after $n.
 
 sub next_prime {
     my ($x) = @_;
-    my $r = _as_int($x);
+    my $r = _big2mpz($x);
     Math::GMPz::Rmpz_nextprime($r, $r);
     _mpz2rat($r);
 }
@@ -4491,13 +4491,13 @@ Arithmetic-geometric mean of C<$x> and C<$y>.
 =cut
 
 multimethod agm => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
-    Math::MPFR::Rmpfr_agm($r, $r, _as_float($_[1]), $ROUND);
+    my $r = _big2mpfr($_[0]);
+    Math::MPFR::Rmpfr_agm($r, $r, _big2mpfr($_[1]), $ROUND);
     _mpfr2big($r);
 };
 
 multimethod agm => qw(Math::BigNum $) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_agm($r, $r, _str2mpfr($_[1]), $ROUND);
     _mpfr2big($r);
 };
@@ -4519,13 +4519,13 @@ The value of the hypotenuse for catheti C<$x> and C<$y>. (C<sqrt($x**2 + $y**2)>
 =cut
 
 multimethod hypot => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
-    Math::MPFR::Rmpfr_hypot($r, $r, _as_float($_[1]), $ROUND);
+    my $r = _big2mpfr($_[0]);
+    Math::MPFR::Rmpfr_hypot($r, $r, _big2mpfr($_[1]), $ROUND);
     _mpfr2big($r);
 };
 
 multimethod hypot => qw(Math::BigNum $) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_hypot($r, $r, _str2mpfr($_[1]), $ROUND);
     _mpfr2big($r);
 };
@@ -4546,7 +4546,7 @@ The Gamma function on C<$x>. Returns Inf when C<$x> is zero, and Nan when C<$x> 
 =cut
 
 multimethod gamma => qw(Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_gamma($r, $r, $ROUND);
     _mpfr2big($r);
 };
@@ -4568,7 +4568,7 @@ Returns Inf when C<$x> is negative or equal with zero.
 =cut
 
 multimethod lngamma => qw(Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_lngamma($r, $r, $ROUND);
     _mpfr2big($r);
 };
@@ -4590,7 +4590,7 @@ Returns Inf when C<$x> is negative or equal with zero.
 =cut
 
 multimethod lgamma => qw(Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_lgamma($r, $r, $ROUND);
     _mpfr2big($r);
 };
@@ -4612,7 +4612,7 @@ Returns Nan when C<$x> is negative, and -Inf when C<$x> is 0.
 =cut
 
 multimethod digamma => qw(Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_digamma($r, $r, $ROUND);
     _mpfr2big($r);
 };
@@ -4633,7 +4633,7 @@ The zeta function on C<$x>. Returns Inf when C<$x> is 1.
 =cut
 
 multimethod zeta => qw(Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_zeta($r, $r, $ROUND);
     _mpfr2big($r);
 };
@@ -4654,7 +4654,7 @@ The error function on C<$x>.
 =cut
 
 multimethod erf => qw(Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_erf($r, $r, $ROUND);
     _mpfr2big($r);
 };
@@ -4675,7 +4675,7 @@ Complementary error function on C<$x>.
 =cut
 
 multimethod erfc => qw(Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_erfc($r, $r, $ROUND);
     _mpfr2big($r);
 };
@@ -4696,7 +4696,7 @@ Exponential integral of C<$x>. Returns Nan when C<$x> is negative.
 =cut
 
 multimethod eint => qw(Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_eint($r, $r, $ROUND);
     _mpfr2big($r);
 };
@@ -4717,7 +4717,7 @@ The dilogarithm function, defined as the integral of C<-log(1-t)/t> from 0 to C<
 =cut
 
 multimethod li2 => qw(Math::BigNum) => sub {
-    my $r = _as_float($_[0]);
+    my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_li2($r, $r, $ROUND);
     _mpfr2big($r);
 };
