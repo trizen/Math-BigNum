@@ -48,14 +48,32 @@ use overload
   '0+' => \&numify,
   bool => \&boolify,
 
-  neg  => sub { $_[0]->neg },
+  '=' => sub { $_[0]->copy },
+
+  # Some shortcuts for speed
+  '+='  => sub { $_[0]->badd($_[1]) },
+  '-='  => sub { $_[0]->bsub($_[1]) },
+  '*='  => sub { $_[0]->bmul($_[1]) },
+  '/='  => sub { $_[0]->bdiv($_[1]) },
+  '%='  => sub { $_[0]->bmod($_[1]) },
+  '^='  => sub { $_[0]->bxor($_[1]) },
+  '&='  => sub { $_[0]->band($_[1]) },
+  '|='  => sub { $_[0]->bior($_[1]) },
+  '**=' => sub { $_[0]->bpow($_[1]) },
+  '<<=' => sub { $_[0]->blsft($_[1]) },
+  '>>=' => sub { $_[0]->brsft($_[1]) },
+
   '+'  => sub { $_[0]->add($_[1]) },
   '*'  => sub { $_[0]->mul($_[1]) },
   '==' => sub { $_[0]->eq($_[1]) },
   '!=' => sub { $_[0]->ne($_[1]) },
   '&'  => sub { $_[0]->and($_[1]) },
-  '|'  => sub { $_[0]->or($_[1]) },
+  '|'  => sub { $_[0]->ior($_[1]) },
   '^'  => sub { $_[0]->xor($_[1]) },
+  '~'  => sub { $_[0]->not },
+
+  '++' => sub { $_[0]->binc },
+  '--' => sub { $_[0]->bdec },
 
   '>'   => sub { Math::BigNum::Complex::gt($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '>='  => sub { Math::BigNum::Complex::ge($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
@@ -63,15 +81,20 @@ use overload
   '<='  => sub { Math::BigNum::Complex::le($_[2]  ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '<=>' => sub { Math::BigNum::Complex::cmp($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
+  '>>' => sub { Math::BigNum::Complex::rsft($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '<<' => sub { Math::BigNum::Complex::lsft($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+
   '**'  => sub { Math::BigNum::Complex::pow($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '-'   => sub { Math::BigNum::Complex::sub($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '/'   => sub { Math::BigNum::Complex::div($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '%'   => sub { Math::BigNum::Complex::mod($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   atan2 => sub { Math::BigNum::Complex::atan2($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
   eq  => sub { "$_[0]" eq "$_[1]" },
   ne  => sub { "$_[0]" ne "$_[1]" },
   cmp => sub { $_[2] ? "$_[1]" cmp $_[0]->stringify : $_[0]->stringify cmp "$_[1]" },
 
+  neg  => sub { $_[0]->neg },
   sin  => sub { $_[0]->sin },
   cos  => sub { $_[0]->cos },
   exp  => sub { $_[0]->exp },
@@ -80,9 +103,12 @@ use overload
   abs  => sub { $_[0]->abs },
   sqrt => sub { $_[0]->sqrt };
 
-#*nan = \&Math::BigNum::nan;
-#*inf = \&Math::BigNum::inf;
-#*ninf = \&Math::BigNum::ninf;
+*nan   = \&Math::BigNum::Nan::nan;
+*bnan  = \&Math::BigNum::Nan::bnan;
+*inf   = \&Math::BigNum::Inf::inf;
+*binf  = \&Math::BigNum::Inf::binf;
+*ninf  = \&Math::BigNum::Inf::ninf;
+*bninf = \&Math::BigNum::Inf::bninf;
 
 *_str2mpfr = \&Math::BigNum::_str2mpfr;
 *_mpfr2big = \&Math::BigNum::_mpfr2big;
@@ -295,6 +321,20 @@ sub numify {
     Math::MPFR::Rmpfr_get_d($r, $ROUND);
 }
 
+=head2 copy
+
+    $z->copy        # => Complex
+
+Returns a copy of the self-object.
+
+=cut
+
+sub copy {
+    my $r = Math::MPC::Rmpc_init2($PREC);
+    Math::MPC::Rmpc_set($r, ${$_[0]}, $ROUND);
+    bless \$r, __PACKAGE__;
+}
+
 =head2 re
 
     $z->re      # => BigNum | Inf | Nan
@@ -389,8 +429,9 @@ sub conj {
 
     $x->add(Complex)        # => Complex
     $x->add(BigNum)         # => Complex
+    $x + $y                 # => Complex
 
-Adds $x to $y and returns the result.
+Addition: C<$x + $y>.
 
 =cut
 
@@ -412,12 +453,47 @@ multimethod add => qw(Math::BigNum::Complex Math::BigNum) => sub {
     bless \$r, __PACKAGE__;
 };
 
+multimethod add => qw(Math::BigNum::Complex $) => sub {
+    $_[0]->add(Math::BigNum::Complex->new($_[1]));
+};
+
+multimethod add => qw($ Math::BigNum::Complex) => sub {
+    Math::BigNum::Complex->new($_[0])->add($_[1]);
+};
+
+=head2 badd
+
+    $x->badd(Complex)        # => Complex
+    $x->badd(BigNum)         # => Complex
+    $x += $y                 # => Complex
+
+Addition: C<$x + $y>, changing C<$x> in place.
+
+=cut
+
+multimethod badd => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    Math::MPC::Rmpc_add($$x, $$x, $$y, $ROUND);
+    $x;
+};
+
+multimethod badd => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    Math::MPC::Rmpc_add_fr($$x, $$x, $y->_big2mpfr(), $ROUND);
+    $x;
+};
+
+multimethod badd => qw(Math::BigNum::Complex $) => sub {
+    $_[0]->badd(Math::BigNum::Complex->new($_[1]));
+};
+
 =head2 sub
 
     $x->sub(Complex)        # => Complex
     $x->sub(BigNum)         # => Complex
+    $x - $y                 # => Complex
 
-Subtracts $y from $x and returns the result.
+Subtraction: C<$x - $y>.
 
 =cut
 
@@ -434,17 +510,58 @@ multimethod sub => qw(Math::BigNum::Complex Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     my $r = Math::MPC::Rmpc_init2($PREC);
-    Math::MPC::Rmpc_add_fr($r, $$x, -$y->_big2mpfr(), $ROUND);
+
+    my $fr = $y->_big2mpfr();
+    Math::MPFR::Rmpfr_neg($fr, $fr, $Math::BigNum::ROUND);
+    Math::MPC::Rmpc_add_fr($r, $$x, $fr, $ROUND);
 
     bless \$r, __PACKAGE__;
+};
+
+multimethod sub => qw(Math::BigNum::Complex $) => sub {
+    $_[0]->sub(Math::BigNum::Complex->new($_[1]));
+};
+
+multimethod sub => qw($ Math::BigNum::Complex) => sub {
+    Math::BigNum::Complex->new($_[0])->sub($_[1]);
+};
+
+=head2 bsub
+
+    $x->bsub(Complex)        # => Complex
+    $x->bsub(BigNum)         # => Complex
+    $x -= $y                 # => Complex
+
+Subtraction: C<$x - $y>, changing C<$x> in-place.
+
+=cut
+
+multimethod bsub => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    Math::MPC::Rmpc_sub($$x, $$x, $$y, $ROUND);
+    $x;
+};
+
+multimethod bsub => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $fr = $y->_big2mpfr();
+    Math::MPFR::Rmpfr_neg($fr, $fr, $Math::BigNum::ROUND);
+    Math::MPC::Rmpc_add_fr($$x, $$x, $fr, $ROUND);
+    $x;
+};
+
+multimethod bsub => qw(Math::BigNum::Complex $) => sub {
+    $_[0]->bsub(Math::BigNum::Complex->new($_[1]));
 };
 
 =head2 mul
 
     $x->mul(Complex)        # => Complex
     $x->mul(BigNum)         # => Complex
+    $x->mul(Scalar)         # => Complex
+    $x * $y                 # => Complex
 
-Multiplies $x by $y and returns the result.
+Multiplication C<$x * $y>.
 
 =cut
 
@@ -466,12 +583,49 @@ multimethod mul => qw(Math::BigNum::Complex Math::BigNum) => sub {
     bless \$r, __PACKAGE__;
 };
 
+multimethod mul => qw(Math::BigNum::Complex $) => sub {
+    $_[0]->mul(Math::BigNum::Complex->new($_[1]));
+};
+
+multimethod mul => qw($ Math::BigNum::Complex) => sub {
+    Math::BigNum::Complex->new($_[0])->mul($_[1]);
+};
+
+=head2 bmul
+
+    $x->bmul(Complex)        # => Complex
+    $x->bmul(BigNum)         # => Complex
+    $x->bmul(Scalar)         # => Complex
+    $x *= $y                 # => Complex
+
+Multiplication C<$x * $y>, changing C<$x> in-place.
+
+=cut
+
+multimethod bmul => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    Math::MPC::Rmpc_mul($$x, $$x, $$y, $ROUND);
+    $x;
+};
+
+multimethod bmul => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    Math::MPC::Rmpc_mul_fr($$x, $$x, $y->_big2mpfr(), $ROUND);
+    $x;
+};
+
+multimethod bmul => qw(Math::BigNum::Complex $) => sub {
+    $_[0]->bmul(Math::BigNum::Complex->new($_[1]));
+};
+
 =head2 div
 
     $x->div(Complex)        # => Complex
     $x->div(BigNum)         # => Complex
+    $x->div(Scalar)         # => Complex
+    $x / $y                 # => Complex
 
-Divides $x by $y and returns the result.
+Division: C<$x / $y>.
 
 =cut
 
@@ -493,6 +647,41 @@ multimethod div => qw(Math::BigNum::Complex Math::BigNum) => sub {
     bless \$r, __PACKAGE__;
 };
 
+multimethod div => qw(Math::BigNum::Complex $) => sub {
+    $_[0]->div(Math::BigNum::Complex->new($_[1]));
+};
+
+multimethod div => qw($ Math::BigNum::Complex) => sub {
+    Math::BigNum::Complex->new($_[0])->div($_[1]);
+};
+
+=head2 bdiv
+
+    $x->bdiv(Complex)        # => Complex
+    $x->bdiv(BigNum)         # => Complex
+    $x->bdiv(Scalar)         # => Complex
+    $x /= $y                 # => Complex
+
+Division: C<$x / $y>, changing C<$x> in-place.
+
+=cut
+
+multimethod bdiv => qw(Math::BigNum::Complex Math::BigNum::Complex) => sub {
+    my ($x, $y) = @_;
+    Math::MPC::Rmpc_div($$x, $$x, $$y, $ROUND);
+    $x;
+};
+
+multimethod bdiv => qw(Math::BigNum::Complex Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    Math::MPC::Rmpc_div_fr($$x, $$x, $y->_big2mpfr(), $ROUND);
+    $x;
+};
+
+multimethod bdiv => qw(Math::BigNum::Complex $) => sub {
+    $_[0]->bdiv(Math::BigNum::Complex->new($_[1]));
+};
+
 =head2 inv
 
     $x->inv         # => Complex
@@ -506,6 +695,20 @@ sub inv {
     my $r = Math::MPC::Rmpc_init2($PREC);
     Math::MPC::Rmpc_ui_div($r, 1, $$x, $ROUND);
     bless(\$r, __PACKAGE__);
+}
+
+=head2 binv
+
+    $x->binv         # => Complex
+
+Does C<1/$x>, changing C<$x> in-place.
+
+=cut
+
+sub binv {
+    my ($x) = @_;
+    Math::MPC::Rmpc_ui_div($$x, 1, $$x, $ROUND);
+    $x;
 }
 
 =head2 pow

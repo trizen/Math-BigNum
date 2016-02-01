@@ -158,7 +158,6 @@ use overload
   '=' => sub { $_[0]->copy },
 
   # Some shortcuts for speed
-  # (although, a benchmark has never been done)
   '+='  => sub { $_[0]->badd($_[1]) },
   '-='  => sub { $_[0]->bsub($_[1]) },
   '*='  => sub { $_[0]->bmul($_[1]) },
