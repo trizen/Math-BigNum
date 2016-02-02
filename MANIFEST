@@ -41,6 +41,7 @@ t/nan_cmp.t
 t/new.t
 t/pod-coverage.t
 t/pod.t
+t/pow.t
 t/rand.t
 t/root.t
 t/round.t

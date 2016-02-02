@@ -1860,11 +1860,25 @@ Raise C<$x> to power C<$y>.
 multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    # Both are integers and $y is positive
-    if (Math::GMPq::Rmpq_sgn($$y) >= 0 and Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
-        my $r = _big2mpz($x);
-        Math::GMPz::Rmpz_pow_ui($r, $r, Math::GMPq::Rmpq_get_d($$y));
-        return _mpz2rat($r);
+    # Both are integers
+    if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
+
+        my $pow = Math::GMPq::Rmpq_get_d($$y);
+
+        my $z = _big2mpz($x);
+        Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
+        my $q = Math::GMPq::Rmpq_init();
+        Math::GMPq::Rmpq_set_z($q, $z);
+
+        if ($pow < 0) {
+            if (!Math::GMPq::Rmpq_sgn($q)) {
+                return inf();
+            }
+            Math::GMPq::Rmpq_inv($q, $q);
+        }
+
+        return bless \$q, __PACKAGE__;
     }
 
     # Return a Complex number when $x is negative and $y is not an integer
@@ -1885,11 +1899,21 @@ multimethod pow => qw(Math::BigNum Math::BigNum::Complex) => sub {
 multimethod pow => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    # Minor performance when both are integers and $y is positive
-    if (CORE::int($y) eq $y and $y >= 0 and Math::GMPq::Rmpq_integer_p($$x)) {
-        my $r = _big2mpz($x);
-        Math::GMPz::Rmpz_pow_ui($r, $r, $y);
-        _mpz2rat($r);
+    # Minor performance when both are integers
+    if (CORE::int($y) eq $y and Math::GMPq::Rmpq_integer_p($$x)) {
+        my $z = _big2mpz($x);
+        Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($y));
+        my $q = Math::GMPq::Rmpq_init();
+        Math::GMPq::Rmpq_set_z($q, $z);
+
+        if ($y < 0) {
+            if (!Math::GMPq::Rmpq_sgn($q)) {
+                return inf();
+            }
+            Math::GMPq::Rmpq_inv($q, $q);
+        }
+
+        return bless \$q, __PACKAGE__;
     }
     else {
         $x->pow(Math::BigNum->new($y));
@@ -1918,12 +1942,23 @@ Raise C<$x> to power C<$y>, changing C<$x> in-place.
 multimethod bpow => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    # Both are integers and $y is positive
-    if (Math::GMPq::Rmpq_sgn($$y) >= 0 and Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
+    # Both are integers
+    if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
+
+        my $pow = Math::GMPq::Rmpq_get_d($$y);
+
         my $z = Math::GMPz::Rmpz_init();
         Math::GMPz::Rmpz_set_q($z, $$x);
-        Math::GMPz::Rmpz_pow_ui($z, $z, Math::GMPq::Rmpq_get_d($$y));
+        Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
         Math::GMPq::Rmpq_set_z($$x, $z);
+
+        if ($pow < 0) {
+            if (!Math::GMPq::Rmpq_sgn($$x)) {
+                return $x->binf;
+            }
+            Math::GMPq::Rmpq_inv($$x, $$x);
+        }
+
         return $x;
     }
 
@@ -1946,17 +1981,25 @@ multimethod bpow => qw(Math::BigNum $) => sub {
 
     my $y_is_int = CORE::int($y) eq $y;
 
-    # Both are integers and $y is positive
-    if ($y >= 0 and Math::GMPq::Rmpq_integer_p($$x) and $y_is_int) {
-        my $r = Math::GMPz::Rmpz_init();
-        Math::GMPz::Rmpz_set_q($r, $$x);
-        Math::GMPz::Rmpz_pow_ui($r, $r, $y);
-        Math::GMPq::Rmpq_set_z($$x, $r);
+    # Both are integers
+    if ($y_is_int and Math::GMPq::Rmpq_integer_p($$x)) {
+        my $z = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_set_q($z, $$x);
+        Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($y));
+        Math::GMPq::Rmpq_set_z($$x, $z);
+
+        if ($y < 0) {
+            if (!Math::GMPq::Rmpq_sgn($$x)) {
+                return $x->binf;
+            }
+            Math::GMPq::Rmpq_inv($$x, $$x);
+        }
+
         return $x;
     }
 
     # Return a Complex number when $x is negative and $y is not an integer
-    if (Math::GMPq::Rmpq_sgn($$x) < 0 and !$y_is_int) {
+    if (!$y_is_int and Math::GMPq::Rmpq_sgn($$x) < 0) {
         my $z = Math::BigNum::Complex->new($x)->pow($y);
         _big2cplx($x, $z);
         return $x;

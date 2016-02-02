@@ -5,10 +5,7 @@ use strict;
 use warnings;
 
 use Math::GMPq qw();
-use Math::MPFR qw();
 use Math::BigNum qw();
-
-use Class::Multimethods qw(multimethod);
 
 =encoding utf8
 
