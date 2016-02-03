@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 15;
+plan tests => 0;
 
 # Basic operations
 {

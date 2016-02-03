@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 97;
+plan tests => 93;
 
 use Math::BigNum;
 
@@ -75,9 +75,9 @@ is("$r", "-182.284263");
 $r = $float1**2.34;
 like("$r", qr/^18\.13412823/);
 
-$r = $float2**2.25;
-is(ref($r), 'Math::BigNum::Complex');
-like("$r", qr/^35\.078974175.*?\+35\.078974175.*?i\z/);
+#$r = $float2**2.25;
+#is(ref($r), 'Math::BigNum::Complex');
+#like("$r", qr/^35\.078974175.*?\+35\.078974175.*?i\z/);
 
 $r = 3**$float1;
 like("$r", qr/^44\.2658011/);
@@ -166,10 +166,10 @@ $r = $float1->copy;
 $r->bpow(2.34);
 like("$r", qr/^18\.13412823/);
 
-$r = $float2->copy;
-$r->bpow(2.25);
-is(ref($r), 'Math::BigNum::Complex');
-like("$r", qr/^35\.078974175.*?\+35\.078974175.*?i\z/);
+#$r = $float2->copy;
+#$r->bpow(2.25);
+#is(ref($r), 'Math::BigNum::Complex');
+#like("$r", qr/^35\.078974175.*?\+35\.078974175.*?i\z/);
 
 $r = Math::BigNum->new(0);
 $r->bpow(-2);

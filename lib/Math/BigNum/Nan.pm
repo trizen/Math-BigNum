@@ -27,7 +27,7 @@ Version 0.01
 
 =head1 DESCRIPTION
 
-Math::BigNum::Nan is an abstract type that represents C<NaN>.
+Math::BigNum::Nan is an abstract type that represents the C<NaN> value.
 
 =head1 SUBROUTINES/METHODS
 
@@ -40,7 +40,7 @@ use overload
   q{0+} => \&numify,
   bool  => \&boolify,
 
-  '=' => sub { $_[0]->copy },
+  '=' => \&copy,
 
   # Some shortcuts for speed
   '+='  => \&_self,
@@ -76,12 +76,12 @@ use overload
   },
 
   '!='  => sub { 1 },
-  '=='  => sub { },
-  '>'   => sub { },
-  '>='  => sub { },
-  '<'   => sub { },
-  '<='  => sub { },
-  '<=>' => sub { },
+  '=='  => sub { 0 },
+  '>'   => sub { 0 },
+  '>='  => sub { 0 },
+  '<'   => sub { 0 },
+  '<='  => sub { 0 },
+  '<=>' => sub { 0 },
 
   '**'  => \&nan,
   '-'   => \&nan,
@@ -105,7 +105,7 @@ sub new {
 
 BEGIN { *nan = \&new }
 
-sub boolify   { }
+sub boolify   { 0 }
 sub stringify { 'NaN' }
 sub numify    { 'NaN' + 0 }
 
@@ -139,7 +139,7 @@ Equality test: always returns a false value.
 
 =cut
 
-sub eq { }
+sub eq { 0 }
 
 =head2 ne
 
@@ -335,21 +335,21 @@ sub cmp { }
 *rand   = \&nan;
 *modinv = \&nan;
 
-sub is_zero { }
-sub is_one  { }
-sub is_mone { }
-sub is_pos  { }
-sub is_neg  { }
-sub is_int  { }
-sub is_real { }
-sub is_inf  { }
-sub is_ninf { }
+sub is_zero { 0 }
+sub is_one  { 0 }
+sub is_mone { 0 }
+sub is_pos  { 0 }
+sub is_neg  { 0 }
+sub is_int  { 0 }
+sub is_real { 0 }
+sub is_inf  { 0 }
+sub is_ninf { 0 }
 sub is_nan  { 1 }
-sub is_even { }
-sub is_odd  { }
-sub is_div  { }
-sub is_psqr { }
-sub is_ppow { }
+sub is_even { 0 }
+sub is_odd  { 0 }
+sub is_div  { 0 }
+sub is_psqr { 0 }
+sub is_ppow { 0 }
 sub sign    { '' }
 
 *max = \&_self;
@@ -409,7 +409,7 @@ sub length { 0 }
 *lucas    = \&nan;
 *binomial = \&nan;
 
-sub is_prime { }
+sub is_prime { 0 }
 
 *next_prime = \&nan;    # next prime after NaN? Hmm...
 *agm        = \&nan;

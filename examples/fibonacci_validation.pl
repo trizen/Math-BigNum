@@ -59,7 +59,15 @@ sub fib_pos5 {
     ($n * sqrt(5))->log($S)->round(0);
 }
 
-my @fib_pos_funcs = (\&fib_pos1, \&fib_pos2, \&fib_pos3, \&fib_pos4, \&fib_pos5);
+my @fib_pos_funcs = (
+
+    #\&fib_pos1,
+    \&fib_pos2,
+
+    #\&fib_pos3,
+    #\&fib_pos4,
+    \&fib_pos5
+);
 
 sub is_prob_fib {
     my ($n) = @_;

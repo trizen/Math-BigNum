@@ -5,16 +5,16 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 56;
+plan tests => 82;
 
 use Math::BigNum;
 
 my $x = Math::BigNum->new(42);
 my $y = Math::BigNum->new(-42);
-my $z = Math::BigNum::Complex->new(3, 4);
 
 my $inf  = Math::BigNum->inf;
 my $ninf = Math::BigNum->ninf;
+my $nan  = Math::BigNum->nan;
 
 ok($inf->neg == $ninf);
 ok($inf == $ninf->neg);
@@ -46,8 +46,108 @@ like("$ninf", qr/^-inf/i);
 $p = $ninf * $inf;
 like("$p", qr/^-inf/i);
 
-{    # Infinity <=> Scalar
-        # Scalar <=> Infinity
+###################################################
+# Check b* methods
+
+$p = $inf->copy;
+$p->badd($ninf);
+
+is(ref($p), 'Math::BigNum::Nan');
+is($p,      $nan);
+
+$p = $inf->copy;
+$p->bmul(-2);
+is($p, $ninf);
+
+$p = $inf->copy;
+$p->bmul(0);
+is($p, $nan);
+
+$p = $inf->copy;
+$p->bmul($y);
+is($p, $ninf);
+
+$p = $inf->copy;
+$p->bmul(3);
+is($p, $inf);
+
+$p = $inf->copy;
+$p->bmul($x);
+is($p, $inf);
+
+$p = $ninf->copy;
+$p->bmul($y);
+is($p, $inf);
+
+$p = $ninf->copy;
+$p->bmul($ninf);
+is($p, $inf);
+
+$p = $ninf->copy;
+$p->bmul($inf);
+is($p, $ninf);
+
+$p = $inf->copy;
+$p->bdiv($x);
+is($p, $inf);
+
+$p = $ninf->copy;
+$p->bdiv($y);
+is($p, $inf);
+
+$p = $ninf->copy;
+$p->bdiv($inf);
+is($p, $nan);
+
+$p = $ninf->copy;
+$p->bidiv($x);
+is($p, $ninf);
+
+$p = $ninf->copy;
+$p->bsub($y);
+is($p, $ninf);
+
+$p = $ninf->copy;
+$p->bsub($x);
+is($p, $ninf);
+
+$p = $inf->copy;
+$p->bsub($x);
+is($p, $inf);
+
+$p = $inf->copy;
+$p->bsub($y);
+is($p, $inf);
+
+$p = $inf->copy;
+$p->bsub(34);
+is($p, $inf);
+
+$p = $ninf->copy;
+$p->bsub(10);
+is($p, $ninf);
+
+$p = $ninf->copy;
+$p->bsub(-30);
+is($p, $ninf);
+
+$p = $x->copy;
+$p->bsub($inf);
+is($p, $ninf);
+
+$p = $y->copy;
+$p->bsub($inf);
+is($p, $ninf);
+
+$p = $y->copy;
+$p->bmul($ninf);
+is($p, $inf);
+
+###################################################
+# Infinity <=> Scalar
+# Scalar   <=> Infinity
+
+{
     ok($inf > 3);
     ok($inf >= 0);
     ok($ninf < 0);
@@ -71,9 +171,11 @@ like("$p", qr/^-inf/i);
     is(-3 <=> $inf,    -1);
 }
 
-{    # Infinity <=> BigNum
+###################################################
+# Infinity <=> BigNum
+# BigNum <=> Infinity
 
-    # BigNum <=> Infinity
+{
     use Math::BigNum qw(:constant);
 
     ok(Inf > 3);
@@ -98,3 +200,7 @@ like("$p", qr/^-inf/i);
     is(-3 <=> -Inf,  1);
     is(-3 <=> Inf,   -1);
 }
+
+# Make sure $x and $y are unchanged
+is($x, Math::BigNum->new(42));
+is($y, Math::BigNum->new(-42));

@@ -1,5 +1,5 @@
 ---
-abstract: 'Arbitrary size precision for integer, complex and floating-point numbers'
+abstract: 'Arbitrary size precision for integers and floating-point numbers'
 author:
   - 'Daniel Șuteu <trizenx@gmail.com>'
 build_requires:
@@ -17,8 +17,6 @@ provides:
   Math::BigNum:
     file: lib/Math/BigNum.pm
     version: '0.01'
-  Math::BigNum::Complex:
-    file: lib/Math/BigNum/Complex.pm
   Math::BigNum::Inf:
     file: lib/Math/BigNum/Inf.pm
   Math::BigNum::Nan:

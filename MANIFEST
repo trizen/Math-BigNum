@@ -14,9 +14,10 @@ examples/prime_count_approx.pl
 examples/rsa_algorithm.pl
 examples/tac-compressor.pl
 examples/zeta_2n.pl
+experiments/Complex.txt
+experiments/t-complex.txt
 ignore.txt
 lib/Math/BigNum.pm
-lib/Math/BigNum/Complex.pm
 lib/Math/BigNum/Inf.pm
 lib/Math/BigNum/Nan.pm
 LICENSE
@@ -29,7 +30,6 @@ t/00-load.t
 t/big_e_pi.t
 t/bigexp.t
 t/bignum.t
-t/complex.t
 t/constant.t
 t/fib.t
 t/general.t

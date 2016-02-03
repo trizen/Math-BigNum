@@ -1,10 +1,10 @@
 # Math-BigNum
 
-Transparent interface to Math::GMPq, Math::GMPz, Math::MPFR and Math::MPC
+Transparent interface to Math::GMPq, Math::GMPz and Math::MPFR.
 
 # DESCRIPTION
 
-Math::BigNum provides a correct, intuitive and transparent interface to the GMP, MPFR and MPC numerical libraries.
+Math::BigNum provides a correct, intuitive and transparent interface to the GMP and MPFR numerical libraries.
 
 # SYNOPSIS
 
@@ -28,20 +28,6 @@ say 2/$x;                   # => 3
 
 # Floating-point numbers
 say "equal" if (1.1 + 2.2 == 3.3);     # => "equal"
-
-# Complex numbers
-say sqrt(-1);               # => i
-```
-
-Importing the `i` constant to explicitly create complex numbers:
-
-```perl
-use Math::BigNum qw(:constant i);
-
-my $z = 3 + 4*i;
-say $z;              # => "3+4i"
-say $z + 2;          # => "5+4i"
-say sqrt($z);        # => "2+i"
 ```
 
 # INSTALLATION

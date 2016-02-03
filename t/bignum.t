@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 233;
+plan tests => 223;
 
 # Initialization
 
@@ -72,6 +72,7 @@ plan tests => 233;
     is(10->in_base(2), "1010");
 }
 
+=for comment
 # Complex numbers
 {
     use Math::BigNum qw(:constant i);
@@ -97,6 +98,7 @@ plan tests => 233;
     $z = 3->complex(4);
     is("$z", "3+4i");
 }
+=cut
 
 # Float
 {
@@ -503,14 +505,15 @@ plan tests => 233;
     is("$root", "5");
 
     $y->bneg;
-    $root = $y->iroot(2);
-    is("$root", "35i");
 
-    $root = $y->iroot(Math::BigNum->new(3));
-    is("$root", "-10");
+    #$root = $y->iroot(2);
+    #is("$root", "35i");
 
-    $root = $y->iroot(Math::BigNum->new(6));
-    is("$root", "3i");
+    #$root = $y->iroot(Math::BigNum->new(3));
+    #is("$root", "-10");
+
+    #$root = $y->iroot(Math::BigNum->new(6));
+    #is("$root", "3i");
 
     $root = $y->iroot(5);
     is("$root", "-4");

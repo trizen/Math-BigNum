@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 139;
+use Test::More tests => 138;
 use Math::BigNum;
 
 ###############################################################################
@@ -203,8 +203,8 @@ is(($x % $y)->as_rat, '3/4');
 #$y = $mbn->new('5/9');
 #is(($x % $y)->as_rat, '1/12');
 
-$x = $mbn->new('-144/9')->bsqrt();
-is("$x", '4i');
+#$x = $mbn->new('-144/9')->bsqrt();
+#is("$x", '4i');
 
 $x = $mbn->new('144/9')->bsqrt();
 is($x, '4');
