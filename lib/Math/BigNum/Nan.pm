@@ -424,11 +424,6 @@ sub is_prime { 0 }
 *eint       = \&nan;
 *li2        = \&nan;
 
-sub complex {
-    my ($x, $y) = @_;
-    Math::BigNum::Complex->new('@NaN@', defined($y) ? $y : ());
-}
-
 sub divmod { (nan(), nan()) }
 
 1;

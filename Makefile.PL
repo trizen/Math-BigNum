@@ -10,7 +10,6 @@ WriteMakefile
                    'Class::Multimethods' => 0,
                    'Math::GMPq' => '0.39',
                    'Math::GMPz' => 0,
-                   'Math::MPC' => 0,
                    'Math::MPFR' => '3.29',
                    'Test::More' => 0
                  },

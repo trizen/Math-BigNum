@@ -22,7 +22,6 @@ my $builder = Module::Build->new(
                                               'perl'                => '5.14.0',
                                               'Carp'                => 0,
                                               'Math::MPFR'          => 3.29,
-                                              'Math::MPC'           => 0,
                                               'Math::GMPq'          => 0.39,
                                               'Math::GMPz'          => 0,
                                               'Class::Multimethods' => 0,
