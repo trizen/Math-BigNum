@@ -16,7 +16,7 @@ use Class::Multimethods qw(multimethod);
 
 =head1 NAME
 
-Math::BigNum - Arbitrary size precision for integers and floating-point numbers
+Math::BigNum - Arbitrary size precision for integers, rationals and floating-point numbers
 
 =head1 VERSION
 
@@ -30,6 +30,92 @@ Version 0.01
 =head1 DESCRIPTION
 
 Math::BigNum provides a transparent interface to Math::GMPz, Math::GMPq and Math::MPFR.
+
+In most cases, I<Math::BigNum> can be used as a drop-in replacement for the I<bignum>
+and I<bigrat> pragmas.
+
+I<Math::BigNum> provides an arbitrary size precision for integers, rationals and floating-point
+numbers, focusing on performance and transparency.
+
+=head1 MOTIVATION
+
+This module came into existence as a response to Dana Jacobsen's request for a transparent
+interface to I<Math::GMPz> and I<Math::MPFR>, which he talked about at the YAPC NA, in 2015.
+See the talk at: L<https://www.youtube.com/watch?v=Dhl4_Chvm_g>.
+
+The aim of this module is to provide a correct and fast alternative to I<Math::Big{Float,Int,Rat}>.
+
+=head1 HOW IT WORKS
+
+I<Math::BigNum> tries really hard to do the right thing and as efficiently as possible.
+For example, if you say C<$x**$y>, it first checks to see if C<$x> and <$y> are integers,
+so it can optimize the operation to integer exponentiation, by calling the corresponding
+I<mpz> function. Otherwise, it will fallback to the corresponding C<mpfr> function.
+
+All numbers in I<Math::BigNum> are stored as rational I<Math::GMPq> objects. Each operation
+outside the functions provided by I<Math::GMPq>, is done by converting the internal objects to
+I<Math::GMPz> or I<Math::MPFR> objects and calling the corresponding functions, converting
+the results back to I<Math::GMPq> objects, without loosing any precision in the process.
+
+=head1 IMPORT/EXPORT
+
+I<Math::BigNum> does not export anything by default, but it recognizes the following list of words:
+
+    :constant       # will make any number a Math::BigNum object
+                    # it will also export the "Inf" and "NaN" constants,
+                    # which represent +Infinity and NaN special values
+
+    e               # "e" constant (2.7182...)
+    pi              # "pi" constant (3.1415...)
+    tau             # "tau" constant (which is: 2*pi)
+    phi             # Golden ratio constant (1.618...)
+    G               # Catalan's constant (0.91596...)
+    Y               # Euler-Mascheroni constant (0.57721...)
+
+The syntax for importing something, is:
+
+    use Math::BigNum qw(:constant pi);
+    say cos(2*pi);
+
+B<NOTE:> C<:constant> is lexical to the current scope only.
+
+=cut
+
+=head1 PRECISION
+
+The default precision of floating-point numbers is 128 bits, which is equivalent with about 32
+digits of precision in base 10.
+
+The precision can be changed by modifying the C<$Math::BigNum::PREC> variable, such as:
+
+    local $Math::BigNum::PREC = 1024;
+
+However, a very important thing to take into account, it's the fact that an individual number
+do B<*NOT*> have a specific precision stored inside, therefore it's not possible to create
+I<Math::BigNum> objects with a specific precision. All numbers can grow or shrink dynamically,
+regardless of the global precision.
+
+The global precision controls only the precision of the floating-point functions and the stringification
+of floating-point numbers.
+
+For example, let's change the precision to 3 decimal digits (where C<4> is the conversion factor):
+
+    local $Math::BigNum::PREC = 3*4
+    say sqrt(2);                        # => 1.414
+    say 98**7;                          # => 86812553324672
+    say 1 / 98**7                       # => 1.15e-14
+
+As shown above, integers do not obey the global precision, as they can grow or shrink, virtually, without any limit.
+This is true for rational numbers as well.
+
+A rational number never losses precision in rational operations, therefore if we say:
+
+    my $x = 1 / 3;
+    say $x * 3;         # => 1
+    say 1 / $x;         # => 3
+    say 3 / $x;         # => 9
+
+...the results are exactly what we expect.
 
 =head1 SUBROUTINES/METHODS
 
@@ -292,10 +378,6 @@ B<NOTE:> no prefix, such as C<"0x"> or C<"0b">, is allowed in front of the numbe
 
 =cut
 
-multimethod new => qw($ Math::BigNum) => sub {
-    $_[1]->copy;
-};
-
 multimethod new => qw($ #) => sub {
     bless(\_str2mpq($_[1]), $_[0]);
 };
@@ -332,6 +414,18 @@ multimethod new => qw($ $ $) => sub {
         Math::GMPq::Rmpq_canonicalize($r) if (index($_[1], '/') != -1);
     }
     bless(\$r, $_[0]);
+};
+
+multimethod new => qw($ Math::BigNum) => sub {
+    $_[1]->copy;
+};
+
+multimethod new => qw($ Math::BigNum::Inf) => sub {
+    $_[1]->copy;
+};
+
+multimethod new => qw($ Math::BigNum::Nan) => sub {
+    $_[1]->copy;
 };
 
 multimethod new => qw($ Math::BigInt) => sub {
