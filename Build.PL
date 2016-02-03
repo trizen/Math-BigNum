@@ -18,6 +18,11 @@ my $builder = Module::Build->new(
                                  build_requires => {
                                                     'Test::More' => 0,
                                                    },
+                                 meta_merge => {
+                                                resources => {
+                                                              repository => 'https://github.com/trizen/Math-BigNum'
+                                                             }
+                                               },
                                  requires => {
                                               'perl'                => '5.14.0',
                                               'Carp'                => 0,

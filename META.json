@@ -51,7 +51,10 @@
    "resources" : {
       "license" : [
          "http://www.perlfoundation.org/artistic_license_2_0"
-      ]
+      ],
+      "repository" : {
+         "url" : "https://github.com/trizen/Math-BigNum"
+      }
    },
    "version" : "0.01",
    "x_serialization_backend" : "JSON::PP version 2.27300"
