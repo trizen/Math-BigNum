@@ -3,29 +3,24 @@
 use strict;
 use warnings;
 
-use Test::More tests => 23;
+use Test::More tests => 26;
 
 use Math::BigNum qw(:constant);
 
 is(2**255, '578960446186580977117854925043439539266' . '34992332820282019728792003956564819968', '2 ** 255');
 
-{
-    no warnings 'portable';    # protect against "non-portable" warnings
+is(ref(0xff),  'Math::BigNum');
+is(ref(0123),  'Math::BigNum');
+is(ref(0b101), 'Math::BigNum');
 
-    # hexadecimal constants
-    is(0x123456789012345678901234567890, Math::BigNum->new('123456789012345678901234567890', '16'), 'hexadecimal constant');
+# hexadecimal constants
+is(0x123456ff, Math::BigNum->new('123456ff', '16'), 'hexadecimal constant');
 
-    # binary constants
-    is(0b01010100011001010110110001110011010010010110000101101101,
-        Math::BigNum->new('01010100011001010110110001110011010010010110000101101101', '2'),
-        'binary constant');
+# binary constants
+is(0b0101010001100, Math::BigNum->new('0101010001100', '2'), 'binary constant');
 
-    # octal constants
-    is(0443212636110022150531704401106425474220,
-        Math::BigNum->new('443212636110022150531704401106425474220', '8'),
-        'octal constant');
-
-}
+# octal constants
+is(01234567, Math::BigNum->new('1234567', '8'), 'octal constant');
 
 my $x = 2 + 4.5;    # BigNum 6.5
 is("$x", "6.5");
