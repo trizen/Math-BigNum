@@ -4,8 +4,6 @@ use 5.014;
 use strict;
 use warnings;
 
-no warnings qw(qw);
-
 use Math::GMPq qw();
 use Math::GMPz qw();
 use Math::MPFR qw();
@@ -506,128 +504,101 @@ B<NOTE:> no prefix, such as C<"0x"> or C<"0b">, is allowed as part of the number
 
 =cut
 
-multimethod new => qw($ #) => sub {
-    bless(\_str2mpq($_[1]), $_[0]);
-};
+sub new {
+    my ($class, $num, $base) = @_;
 
-multimethod new => qw($ $) => sub {
-    my $r   = Math::GMPq::Rmpq_init();
-    my $rat = _str2rat($_[1]);
-    Math::GMPq::Rmpq_set_str($r, $rat, 10);
-    Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
-    bless(\$r, $_[0]);
-};
+    my $ref = ref($num);
 
-multimethod new => qw($ # #) => sub {
-    if ($_[2] == 10) {
-        (bless \_str2mpq($_[1]), $_[0]);
+    # Be forgetful
+    if (!defined($num) or ($ref eq '' and $num eq '')) {
+        return zero();
     }
-    else {
-        my $r = Math::GMPq::Rmpq_init();
-        Math::GMPq::Rmpq_set_str($r, $_[1], $_[2]);
-        Math::GMPq::Rmpq_canonicalize($r) if (index($_[1], '/') != -1);
-        bless(\$r, $_[0]);
-    }
-};
 
-multimethod new => qw($ $ $) => sub {
+    # Special objects
+    elsif (   $ref eq 'Math::BigNum'
+           or $ref eq 'Math::BigNum::Inf'
+           or $ref eq 'Math::BigNum::Nan') {
+        return $num->copy;
+    }
+
+    # Special values as Big{Int,Float,Rat}
+    elsif (   $ref eq 'Math::BigInt'
+           or $ref eq 'Math::BigFloat'
+           or $ref eq 'Math::BigRat') {
+        if ($num->is_nan) {
+            return nan();
+        }
+        elsif ($num->is_inf('-')) {
+            return ninf();
+        }
+        elsif ($num->is_inf('+')) {
+            return inf();
+        }
+    }
+
+    # GMPz
+    elsif ($ref eq 'Math::GMPz') {
+        return _mpz2big($num);
+    }
+
+    # MPFR
+    elsif ($ref eq 'Math::MPFR') {
+        return _mpfr2big($num);
+    }
+
+    # New GMPq object
     my $r = Math::GMPq::Rmpq_init();
-    if ($_[2] == 10) {
-        my $rat = _str2rat($_[1]);
+
+    # Plain scalar
+    if ($ref eq '' and !defined($base)) {    # it's a scalar
+        my $rat = _str2rat($num);
         Math::GMPq::Rmpq_set_str($r, $rat, 10);
         Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
     }
+
+    # BigFloat
+    elsif ($ref eq 'Math::BigInt') {
+        Math::GMPq::Rmpq_set_str($r, $num->bstr, 10);
+    }
+
+    # BigFloat
+    elsif ($ref eq 'Math::BigFloat') {
+        my $rat = _str2rat($num->bstr);
+        Math::GMPq::Rmpq_set_str($r, $rat, 10);
+        Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
+    }
+
+    # BigRat
+    elsif ($ref eq 'Math::BigRat') {
+        Math::GMPq::Rmpq_set_str($r, $num->bstr, 10);
+    }
+
+    # GMPq
+    elsif ($ref eq 'Math::GMPq') {
+        Math::GMPq::Rmpq_set($r, $num);
+    }
+
+    # number with base
+    elsif ($ref eq '' and defined($base)) {
+
+        if ($base < 2 or $base > 36) {
+            require Carp;
+            Carp::croak("base must be between 2 and 36, got $base");
+        }
+
+        my $rat = $base == 10 ? _str2rat($num) : $num;
+        Math::GMPq::Rmpq_set_str($r, $rat, $base);
+        Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
+    }
+
+    # Fatal error
     else {
-        Math::GMPq::Rmpq_set_str($r, $_[1], $_[2]);
-        Math::GMPq::Rmpq_canonicalize($r) if (index($_[1], '/') != -1);
-    }
-    bless(\$r, $_[0]);
-};
-
-multimethod new => qw($ Math::BigNum) => sub {
-    $_[1]->copy;
-};
-
-multimethod new => qw($ Math::BigNum::Inf) => sub {
-    $_[1]->copy;
-};
-
-multimethod new => qw($ Math::BigNum::Nan) => sub {
-    $_[1]->copy;
-};
-
-multimethod new => qw($ Math::BigInt) => sub {
-    my ($x, $mb) = @_;
-
-    if ($mb->is_nan) {
-        return nan();
-    }
-    elsif ($mb->is_inf('-')) {
-        return ninf();
-    }
-    elsif ($mb->is_inf('+')) {
-        return inf();
+        require Carp;
+        Carp::croak("Invalid argument <<$num>> of type <<$ref>> provided to Math::BigNum::new()");
     }
 
-    my $value = $mb->bstr;
-    my $r     = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set_str($r, $value, 10);
-    bless \$r, $_[0];
-};
-
-multimethod new => qw($ Math::BigFloat) => sub {
-    my ($x, $mb) = @_;
-
-    if ($mb->is_nan) {
-        return nan();
-    }
-    elsif ($mb->is_inf('-')) {
-        return ninf();
-    }
-    elsif ($mb->is_inf('+')) {
-        return inf();
-    }
-
-    my $value = $mb->bstr;
-    my $r     = Math::GMPq::Rmpq_init();
-    my $rat   = _str2rat($value);
-    Math::GMPq::Rmpq_set_str($r, $rat, 10);
-    Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
-    bless \$r, $_[0];
-};
-
-multimethod new => qw($ Math::BigRat) => sub {
-    my ($x, $mb) = @_;
-
-    if ($mb->is_nan) {
-        return nan();
-    }
-    elsif ($mb->is_inf('-')) {
-        return ninf();
-    }
-    elsif ($mb->is_inf('+')) {
-        return inf();
-    }
-
-    my $value = $mb->bstr;
-    my $r     = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set_str($r, $value, 10);
-    bless \$r, $_[0];
-};
-
-multimethod new => qw($ Math::GMPz) => sub {
-    _mpz2big($_[1]);
-};
-
-multimethod new => qw($ Math::MPFR) => sub {
-    _mpfr2big($_[1]);
-};
-
-multimethod new => qw($ Math::GMPq) => sub {
-    my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set($r, $_[1]);
-    bless \$r, $_[0];
-};
+    bless \$r, $class;
+}
 
 =head2 nan
 
@@ -4760,27 +4731,18 @@ multimethod brsft => qw(Math::BigNum $) => sub {
 =head2 fac
 
     $n->fac                        # => BigNum | Nan
-    fac(Scalar)                    # => BigNum | Nan
 
 Factorial of C<$n>. Returns Nan when C<$n> is negative. (C<1*2*3*...*$n>)
 
 =cut
 
-multimethod fac => qw(Math::BigNum) => sub {
+sub fac {
     my ($x) = @_;
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_fac_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
     _mpz2big($r);
-};
-
-multimethod fac => qw($) => sub {
-    my ($x) = @_;
-    return nan if $x < 0;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_fac_ui($r, CORE::int($x));
-    _mpz2big($r);
-};
+}
 
 =head2 bfac
 
@@ -4802,102 +4764,66 @@ sub bfac {
 =head2 dfac
 
     $n->dfac                       # => BigNum | Nan
-    dfac(Scalar)                   # => BigNum | Nan
 
 Double factorial of C<$n>. Returns Nan when C<$n> is negative.
 
 =cut
 
-multimethod dfac => qw(Math::BigNum) => sub {
+sub dfac {
     my ($x) = @_;
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_2fac_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
     _mpz2big($r);
-};
-
-multimethod dfac => qw($) => sub {
-    my ($x) = @_;
-    return nan if $x < 0;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_2fac_ui($r, CORE::int($x));
-    _mpz2big($r);
-};
+}
 
 =head2 primorial
 
     $n->primorial                  # => BigNum | Nan
-    primorial(Scalar)              # => BigNum | Nan
 
 Returns the product of all the primes less than or equal to C<$n>.
 
 =cut
 
-multimethod primorial => qw(Math::BigNum) => sub {
+sub primorial {
     my ($x) = @_;
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_primorial_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
     _mpz2big($r);
-};
-
-multimethod primorial => qw($) => sub {
-    my ($x) = @_;
-    return nan if $x < 0;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_primorial_ui($r, CORE::int($x));
-    _mpz2big($r);
-};
+}
 
 =head2 fib
 
     $n->fib                        # => BigNum | Nan
-    fib(Scalar)                    # => BigNum | Nan
 
 The $n'th Fibonacci number. Returns Nan when C<$n> is negative.
 
 =cut
 
-multimethod fib => qw(Math::BigNum) => sub {
+sub fib {
     my ($x) = @_;
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_fib_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
     _mpz2big($r);
-};
-
-multimethod fib => qw($) => sub {
-    my ($x) = @_;
-    return nan if $x < 0;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_fib_ui($r, CORE::int($x));
-    _mpz2big($r);
-};
+}
 
 =head2 lucas
 
     $n->lucas                      # => BigNum | Nan
-    lucas(Scalar)                  # => BigNum | Nan
 
 The $n'th Lucas number. Returns Nan when C<$n> is negative.
 
 =cut
 
-multimethod lucas => qw(Math::BigNum) => sub {
+sub lucas {
     my ($x) = @_;
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_lucnum_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
     _mpz2big($r);
-};
-
-multimethod lucas => qw($) => sub {
-    my ($x) = @_;
-    return nan if $x < 0;
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_lucnum_ui($r, CORE::int($x));
-    _mpz2big($r);
-};
+}
 
 =head2 binomial
 
@@ -4978,7 +4904,6 @@ sub next_prime {
 
     $x->agm(BigNum)                # => BigNum
     $x->agm(Scalar)                # => BigNum
-    agm(Scalar, Scalar)            # => BigNum
 
 Arithmetic-geometric mean of C<$x> and C<$y>.
 
@@ -4996,17 +4921,10 @@ multimethod agm => qw(Math::BigNum $) => sub {
     _mpfr2big($r);
 };
 
-multimethod agm => qw($ $) => sub {
-    my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_agm($r, $r, _str2mpfr($_[1]), $ROUND);
-    _mpfr2big($r);
-};
-
 =head2 hypot
 
     $x->hypot(BigNum)              # => BigNum
     $x->hypot(Scalar)              # => BigNum
-    hypot(Scalar, Scalar)          # => BigNum
 
 The value of the hypotenuse for catheti C<$x> and C<$y>. (C<sqrt($x**2 + $y**2)>)
 
@@ -5024,182 +4942,120 @@ multimethod hypot => qw(Math::BigNum $) => sub {
     _mpfr2big($r);
 };
 
-multimethod hypot => qw($ $) => sub {
-    my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_hypot($r, $r, _str2mpfr($_[1]), $ROUND);
-    _mpfr2big($r);
-};
-
 =head2 gamma
 
     $x->gamma                      # => BigNum | Inf | Nan
-    gamma(Scalar)                  # => BigNum | Inf | Nan
 
 The Gamma function on C<$x>. Returns Inf when C<$x> is zero, and Nan when C<$x> is negative.
 
 =cut
 
-multimethod gamma => qw(Math::BigNum) => sub {
+sub gamma {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_gamma($r, $r, $ROUND);
     _mpfr2big($r);
-};
-
-multimethod gamma => qw($) => sub {
-    my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_gamma($r, $r, $ROUND);
-    _mpfr2big($r);
-};
+}
 
 =head2 lngamma
 
     $x->lngamma                    # => BigNum | Inf
-    lngamma(Scalar)                # => BigNum | Inf
 
 The natural logarithm of the Gamma function on C<$x>.
 Returns Inf when C<$x> is negative or equal to zero.
 
 =cut
 
-multimethod lngamma => qw(Math::BigNum) => sub {
+sub lngamma {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_lngamma($r, $r, $ROUND);
     _mpfr2big($r);
-};
-
-multimethod lngamma => qw($) => sub {
-    my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_lngamma($r, $r, $ROUND);
-    _mpfr2big($r);
-};
+}
 
 =head2 lgamma
 
     $x->lgamma                     # => BigNum | Inf
-    lgamma(Scalar)                 # => BigNum | Inf
 
 The logarithm of the absolute value of the Gamma function.
 Returns Inf when C<$x> is negative or equal to zero.
 
 =cut
 
-multimethod lgamma => qw(Math::BigNum) => sub {
+sub lgamma {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_lgamma($r, $r, $ROUND);
     _mpfr2big($r);
-};
-
-multimethod lgamma => qw($) => sub {
-    my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_lgamma($r, $r, $ROUND);
-    _mpfr2big($r);
-};
+}
 
 =head2 digamma
 
     $x->digamma                    # => BigNum | Inf | Nan
-    digamma(Scalar)                # => BigNum | Inf | Nan
 
 The Digamma function (sometimes also called Psi).
 Returns Nan when C<$x> is negative, and -Inf when C<$x> is 0.
 
 =cut
 
-multimethod digamma => qw(Math::BigNum) => sub {
+sub digamma {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_digamma($r, $r, $ROUND);
     _mpfr2big($r);
-};
-
-multimethod digamma => qw($) => sub {
-    my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_digamma($r, $r, $ROUND);
-    _mpfr2big($r);
-};
+}
 
 =head2 zeta
 
     $x->zeta                       # => BigNum | Inf
-    zeta(Scalar)                   # => BigNum | Inf
 
 The zeta function on C<$x>. Returns Inf when C<$x> is 1.
 
 =cut
 
-multimethod zeta => qw(Math::BigNum) => sub {
+sub zeta {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_zeta($r, $r, $ROUND);
     _mpfr2big($r);
-};
-
-multimethod zeta => qw($) => sub {
-    my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_zeta($r, $r, $ROUND);
-    _mpfr2big($r);
-};
+}
 
 =head2 erf
 
     $x->erf                        # => BigNum
-    erf(Scalar)                    # => BigNum
 
 The error function on C<$x>.
 
 =cut
 
-multimethod erf => qw(Math::BigNum) => sub {
+sub erf {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_erf($r, $r, $ROUND);
     _mpfr2big($r);
-};
-
-multimethod erf => qw($) => sub {
-    my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_erf($r, $r, $ROUND);
-    _mpfr2big($r);
-};
+}
 
 =head2 erfc
 
     $x->erfc                       # => BigNum
-    erfc(Scalar)                   # => BigNum
 
 Complementary error function on C<$x>.
 
 =cut
 
-multimethod erfc => qw(Math::BigNum) => sub {
+sub erfc {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_erfc($r, $r, $ROUND);
     _mpfr2big($r);
-};
-
-multimethod erfc => qw($) => sub {
-    my $r = _mpfr2big($_[0]);
-    Math::MPFR::Rmpfr_erfc($r, $r, $ROUND);
-    _mpfr2big($r);
-};
+}
 
 =head2 eint
 
     $x->eint                       # => BigNum | Inf | Nan
-    eint(Scalar)                   # => BigNum | Inf | Nan
 
 Exponential integral of C<$x>. Returns -Inf when C<$x> is zero, and Nan when C<$x> is negative.
 
 =cut
 
-multimethod eint => qw(Math::BigNum) => sub {
+sub eint {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_eint($r, $r, $ROUND);
     _mpfr2big($r);
-};
-
-multimethod eint => qw($) => sub {
-    my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_eint($r, $r, $ROUND);
-    _mpfr2big($r);
-};
+}
 
 =head2 li2
 
@@ -5210,17 +5066,11 @@ The dilogarithm function, defined as the integral of C<-log(1-t)/t> from 0 to C<
 
 =cut
 
-multimethod li2 => qw(Math::BigNum) => sub {
+sub li2 {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_li2($r, $r, $ROUND);
     _mpfr2big($r);
-};
-
-multimethod li2 => qw($) => sub {
-    my $r = _str2mpfr($_[0]);
-    Math::MPFR::Rmpfr_li2($r, $r, $ROUND);
-    _mpfr2big($r);
-};
+}
 
 =head1 AUTHOR
 
