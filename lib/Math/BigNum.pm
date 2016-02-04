@@ -81,8 +81,6 @@ The syntax for importing something, is:
 
 B<NOTE:> C<:constant> is lexical to the current scope only.
 
-=cut
-
 =head1 PRECISION
 
 The default precision of floating-point numbers is 128 bits, which is equivalent with about 32
@@ -169,6 +167,8 @@ my $ONE = do {
     $r;
 };
 
+my $ONE_Z = Math::GMPz::Rmpz_init_set_ui(1);
+
 use overload
   '""' => \&stringify,
   '0+' => \&numify,
@@ -182,15 +182,17 @@ use overload
   '*='  => sub { $_[0]->bmul($_[1]) },
   '/='  => sub { $_[0]->bdiv($_[1]) },
   '%='  => sub { $_[0]->bmod($_[1]) },
+  '**=' => sub { $_[0]->bpow($_[1]) },
+
   '^='  => sub { $_[0]->bxor($_[1]) },
   '&='  => sub { $_[0]->band($_[1]) },
   '|='  => sub { $_[0]->bior($_[1]) },
-  '**=' => sub { $_[0]->bpow($_[1]) },
   '<<=' => sub { $_[0]->blsft($_[1]) },
   '>>=' => sub { $_[0]->brsft($_[1]) },
 
-  '+'  => sub { $_[0]->add($_[1]) },
-  '*'  => sub { $_[0]->mul($_[1]) },
+  '+' => sub { $_[0]->add($_[1]) },
+  '*' => sub { $_[0]->mul($_[1]) },
+
   '==' => sub { $_[0]->eq($_[1]) },
   '!=' => sub { $_[0]->ne($_[1]) },
   '&'  => sub { $_[0]->and($_[1]) },
@@ -210,14 +212,16 @@ use overload
   '>>' => sub { Math::BigNum::rsft($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
   '<<' => sub { Math::BigNum::lsft($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
-  '**'  => sub { Math::BigNum::pow($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
-  '-'   => sub { Math::BigNum::sub($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
-  '/'   => sub { Math::BigNum::div($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
-  '%'   => sub { Math::BigNum::mod($_[2]   ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '**' => sub { Math::BigNum::pow($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '-'  => sub { Math::BigNum::sub($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '/'  => sub { Math::BigNum::div($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+  '%'  => sub { Math::BigNum::mod($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
+
   atan2 => sub { Math::BigNum::atan2($_[2] ? ($_[1], $_[0]) : ($_[0], $_[1])) },
 
-  eq  => sub { "$_[0]" eq "$_[1]" },
-  ne  => sub { "$_[0]" ne "$_[1]" },
+  eq => sub { "$_[0]" eq "$_[1]" },
+  ne => sub { "$_[0]" ne "$_[1]" },
+
   cmp => sub { $_[2] ? "$_[1]" cmp $_[0]->stringify : $_[0]->stringify cmp "$_[1]" },
 
   neg  => \&neg,
@@ -1256,9 +1260,13 @@ multimethod isub => qw(Math::BigNum $) => sub {
     _mpz2big($r);
 };
 
-multimethod isub => qw(Math::BigNum Math::BigNum::Inf) => sub {
-    $_[1]->neg;
+multimethod isub => qw($ Math::BigNum) => sub {
+    my $r = _str2mpz($_[0]);
+    Math::GMPz::Rmpz_sub($r, $r, _big2mpz($_[1]));
+    _mpz2big($r);
 };
+
+multimethod isub => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->neg };
 multimethod isub => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bisub
@@ -1596,6 +1604,18 @@ multimethod idiv => qw(Math::BigNum $) => sub {
 
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_div($r, $r, _str2mpz($y));
+    _mpz2big($r);
+};
+
+multimethod idiv => qw($ Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    if (!Math::GMPq::Rmpq_sgn($$y)) {
+        return ($x == 0 ? nan : $x > 0 ? inf : ninf);
+    }
+
+    my $r = _str2mpz($x);
+    Math::GMPz::Rmpz_div($r, $r, _big2mpz($y));
     _mpz2big($r);
 };
 
@@ -1942,7 +1962,7 @@ multimethod biroot => qw(Math::BigNum Math::BigNum) => sub {
     BigNum ** Scalar               # => BigNum | Nan
     Scalar ** BigNum               # => BigNum | Nan
 
-Raise C<$x> to power C<$y>. Returns Nan when C<$x> is negative
+Raises C<$x> to power C<$y>. Returns Nan when C<$x> is negative
 and C<$y> is not an integer.
 
 =cut
@@ -2009,7 +2029,7 @@ multimethod pow => qw(Math::BigNum $) => sub {
 
 # This will happen rarely, so no special optimization.
 multimethod pow => qw($ Math::BigNum) => sub {
-    Math::BigNum->new($_[0])->pow($_[1]);
+    Math::BigNum->new($_[0])->bpow($_[1]);
 };
 
 # (+/-1) ** (+/-Inf) = 1
@@ -2029,7 +2049,7 @@ multimethod pow => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
     $x->bpow(BigNum)               # => BigNum | Nan
     $x->bpow(Scalar)               # => BigNum | Nan
 
-Raise C<$x> to power C<$y>, changing C<$x> in-place.
+Raises C<$x> to power C<$y>, changing C<$x> in-place.
 
 =cut
 
@@ -2108,6 +2128,105 @@ multimethod bpow => qw(Math::BigNum Math::BigNum::Inf) => sub {
 };
 
 multimethod bpow => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
+
+=head2 ipow
+
+    $x->ipow(BigNum)               # => BigNum
+    $x->ipow(Scalar)               # => BigNum
+
+Raises C<$x> to power C<$y>, truncating C<$x> and C<$y> to integers, if necessarily.
+
+=cut
+
+multimethod ipow => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $pow = CORE::int(Math::GMPq::Rmpq_get_d($$y));
+
+    my $z = _big2mpz($x);
+    Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
+    if ($pow < 0) {
+        return inf() if !Math::GMPz::Rmpz_sgn($z);
+        Math::GMPz::Rmpz_div($z, $ONE_Z, $z);
+    }
+
+    _mpz2big($z);
+};
+
+multimethod ipow => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    $y = CORE::int($y);
+
+    my $z = _big2mpz($x);
+    Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($y));
+
+    if ($y < 0) {
+        return inf() if !Math::GMPz::Rmpz_sgn($z);
+        Math::GMPz::Rmpz_div($z, $ONE_Z, $z);
+    }
+
+    _mpz2big($z);
+};
+
+# This will happen rarely, so no special optimization.
+multimethod ipow => qw($ Math::BigNum) => sub {
+    Math::BigNum->new($_[0])->bipow($_[1]);
+};
+
+multimethod ipow => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[0]->int->pow($_[1]);
+};
+
+multimethod ipow => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 bipow
+
+    $x->bipow(BigNum)              # => BigNum
+    $x->bipow(Scalar)              # => BigNum
+
+Raises C<$x> to power C<$y>, changing C<$x> in-place.
+
+=cut
+
+multimethod bipow => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $pow = CORE::int(Math::GMPq::Rmpq_get_d($$y));
+
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_set_q($z, $$x);
+    Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+    if ($pow < 0) {
+        return $x->binf if !Math::GMPz::Rmpz_sgn($z);
+        Math::GMPz::Rmpz_div($z, $ONE_Z, $z);
+    }
+    Math::GMPq::Rmpq_set_z($$x, $z);
+    return $x;
+};
+
+multimethod bipow => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    $y = CORE::int($y);
+
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_set_q($z, $$x);
+    Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($y));
+    if ($y < 0) {
+        return $x->binf if !Math::GMPz::Rmpz_sgn($z);
+        Math::GMPz::Rmpz_div($z, $ONE_Z, $z);
+    }
+    Math::GMPq::Rmpq_set_z($$x, $z);
+    return $x;
+};
+
+multimethod bipow => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[0]->bint->bpow($_[1]);
+};
+
+multimethod bipow => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 ln
 
@@ -3098,7 +3217,7 @@ Example:
     BigNum % Scalar                # => BigNum | Nan
     Scalar % BigNum                # => BigNum | Nan
 
-Remainder of C<$x> divided by C<$y>. Returns Nan when C<$y> is zero.
+Remainder of C<$x> when is divided by C<$y>. Returns Nan when C<$y> is zero.
 
 =cut
 
@@ -3141,7 +3260,7 @@ multimethod mod => qw(Math::BigNum $) => sub {
 
     return nan if ($y == 0);
 
-    if (CORE::int($x) eq $x and CORE::int($y) eq $y) {
+    if (Math::GMPq::Rmpq_integer_p($$x) and CORE::int($y) eq $y) {
         my $r     = _big2mpz($x);
         my $neg_y = $y < 0;
         $y = CORE::abs($y) if $neg_y;
@@ -3169,12 +3288,12 @@ multimethod mod => qw(Math::BigNum $) => sub {
     }
 };
 
-# This will happen rarely, so no special optimization for this one.
+# This will happen rarely, so no special optimization.
 multimethod mod => qw($ Math::BigNum) => sub {
-    Math::BigNum->new($_[0])->mod($_[1]);
+    Math::BigNum->new($_[0])->bmod($_[1]);
 };
 
-multimethod mod => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
+multimethod mod => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[0]->copy };
 multimethod mod => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bmod
@@ -3185,7 +3304,7 @@ multimethod mod => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
     BigNum %= BigNum               # => BigNum | Nan
     BigNum %= Scalar               # => BigNum | Nan
 
-Sets C<$x> to the remainder of C<$x> divided by C<$y>. Sets C<$x> to Nan when C<$y> is zero.
+Sets C<$x> to the remainder of C<$x> when is divided by C<$y>. Sets C<$x> to Nan when C<$y> is zero.
 
 =cut
 
@@ -3196,7 +3315,7 @@ multimethod bmod => qw(Math::BigNum Math::BigNum) => sub {
 
         my $yz     = _big2mpz($y);
         my $sign_y = Math::GMPz::Rmpz_sgn($yz);
-        return nan if !$sign_y;
+        return $x->bnan if !$sign_y;
 
         my $r = _big2mpz($x);
         Math::GMPz::Rmpz_mod($r, $r, $yz);
@@ -3216,7 +3335,7 @@ multimethod bmod => qw(Math::BigNum Math::BigNum) => sub {
         elsif ($sign > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
             Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
         }
-        Math::MPFR::Rmpfr_get_q($$x, $r);
+        _mpfr2x($x, $r);
     }
 
     $x;
@@ -3225,9 +3344,9 @@ multimethod bmod => qw(Math::BigNum Math::BigNum) => sub {
 multimethod bmod => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    return nan if ($y == 0);
+    return $x->bnan if ($y == 0);
 
-    if (CORE::int($x) eq $x and CORE::int($y) eq $y) {
+    if (Math::GMPq::Rmpq_integer_p($$x) and CORE::int($y) eq $y) {
         my $r     = _big2mpz($x);
         my $neg_y = $y < 0;
         $y = CORE::abs($y) if $neg_y;
@@ -3248,14 +3367,116 @@ multimethod bmod => qw(Math::BigNum $) => sub {
         elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
             Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
         }
-        Math::MPFR::Rmpfr_get_q($$x, $r);
+        _mpfr2x($x, $r);
     }
 
     $x;
 };
 
-multimethod bmod => qw(Math::BigNum Math::BigNum::Inf) => \&bnan;
+multimethod bmod => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[0] };
 multimethod bmod => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
+
+=head2 imod
+
+    $x->imod(BigNum)               # => BigNum | Nan
+    $x->imod(Scalar)               # => BigNum | Nan
+
+Integer remainder of C<$x> when is divided by C<$y>. If necessary, C<$x> and C<$y>
+are implicitly truncated to integers. Nan is returned when C<$y> is zero.
+
+=cut
+
+multimethod imod => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $yz     = _big2mpz($y);
+    my $sign_y = Math::GMPz::Rmpz_sgn($yz);
+    return nan if !$sign_y;
+
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_mod($r, $r, $yz);
+    if (!Math::GMPz::Rmpz_sgn($r)) {
+        return (zero);    # return faster
+    }
+    elsif ($sign_y < 0) {
+        Math::GMPz::Rmpz_add($r, $r, $yz);
+    }
+    _mpz2big($r);
+};
+
+multimethod imod => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    $y = CORE::int($y);
+    return nan if ($y == 0);
+
+    my $r     = _big2mpz($x);
+    my $neg_y = $y < 0;
+    $y = CORE::abs($y) if $neg_y;
+    Math::GMPz::Rmpz_mod_ui($r, $r, $y);
+    if (!Math::GMPz::Rmpz_sgn($r)) {
+        return (zero);    # return faster
+    }
+    elsif ($neg_y) {
+        Math::GMPz::Rmpz_sub_ui($r, $r, $y);
+    }
+    _mpz2big($r);
+};
+
+# This will happen rarely, so no special optimization.
+multimethod imod => qw($ Math::BigNum) => sub {
+    Math::BigNum->new($_[0])->bimod($_[1]);
+};
+
+multimethod imod => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[0]->copy };
+multimethod imod => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 bimod
+
+    $x->bimod(BigNum)              # => BigNum | Nan
+    $x->bimod(Scalar)              # => BigNum | Nan
+
+Sets C<$x> to the remainder of C<$x> divided by C<$y>. If necessary, C<$x> and C<$y>
+are implicitly truncated to integers. Sets C<$x> to Nan when C<$y> is zero.
+
+=cut
+
+multimethod bimod => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $yz     = _big2mpz($y);
+    my $sign_y = Math::GMPz::Rmpz_sgn($yz);
+    return $x->bnan if !$sign_y;
+
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_mod($r, $r, $yz);
+    if ($sign_y < 0 and Math::GMPz::Rmpz_sgn($r)) {
+        Math::GMPz::Rmpz_add($r, $r, $yz);
+    }
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
+};
+
+multimethod bimod => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    $y = CORE::int($y);
+    return $x->bnan if ($y == 0);
+
+    my $r     = _big2mpz($x);
+    my $neg_y = $y < 0;
+    $y = CORE::abs($y) if $neg_y;
+    Math::GMPz::Rmpz_mod_ui($r, $r, $y);
+    if ($neg_y and Math::GMPz::Rmpz_sgn($r)) {
+        Math::GMPz::Rmpz_sub_ui($r, $r, $y);
+    }
+    Math::GMPq::Rmpq_set_z($$x, $r);
+
+    $x;
+};
+
+multimethod bimod => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[0] };
+multimethod bimod => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 divmod
 

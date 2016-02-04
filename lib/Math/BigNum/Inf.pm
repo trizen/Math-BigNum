@@ -1143,7 +1143,7 @@ sub bsqrt { $_[0]->is_neg ? $_[0]->bnan : $_[0] }
 
 *bisqrt = \&bsqrt;
 
-=head2 pow
+=head2 pow / ipow
 
     $x->pow(BigNum)                # => Inf | Nan | BigNum
     $x->pow(Scalar)                # => Inf | Nan | BigNum
@@ -1177,7 +1177,9 @@ multimethod pow => qw($ Math::BigNum::Inf) => sub {
 
 multimethod pow => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
-=head2 bpow
+*ipow = \&pow;    # probably, truncate first?
+
+=head2 bpow / bipow
 
     $x->bpow(BigNum)               # => Inf | Nan | BigNum
     $x->bpow(Scalar)               # => Inf | Nan | BigNum
@@ -1223,6 +1225,8 @@ multimethod bpow => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
 
 multimethod bpow => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 
+*bipow = \&bpow;    # probably, truncate first?
+
 =head2 root / iroot
 
     $x->root(BigNum)               # => BigNum | Inf | Nan
@@ -1243,7 +1247,7 @@ multimethod root => qw(Math::BigNum::Inf $) => sub {
 multimethod root => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&one;
 multimethod root => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
-*iroot = \&root;
+*iroot = \&root;    # probably, truncate first?
 
 =head2 broot / biroot
 
@@ -1265,7 +1269,7 @@ multimethod broot => qw(Math::BigNum::Inf $) => sub {
 multimethod broot => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&bone;
 multimethod broot => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 
-*biroot = \&broot;
+*biroot = \&broot;    # probably, truncate first?
 
 =head2 binomial
 
@@ -1341,6 +1345,8 @@ Inverse value of +/-Infinity. Always returns zero.
 
 *mod        = \&nan;
 *bmod       = \&bnan;
+*imod       = \&nan;
+*bimod      = \&nan;
 *modpow     = \&nan;
 *modinv     = \&nan;
 *next_prime = \&nan;

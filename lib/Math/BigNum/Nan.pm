@@ -218,7 +218,7 @@ Always returns Nan.
 *bdiv  = \&_self;
 *bidiv = \&_self;
 
-=head2 pow / bpow
+=head2 pow / ipow / bpow / bipow
 
     $x->pow(Any)                   # => Nan
     $x->bpow(Any)                  # => Nan
@@ -227,10 +227,12 @@ Always returns Nan.
 
 =cut
 
-*pow  = \&nan;
-*bpow = \&_self;
+*pow   = \&nan;
+*bpow  = \&_self;
+*ipow  = \&nan;
+*bipow = \&_self;
 
-=head2 mod / bmod
+=head2 mod / imod / bmod / bimod
 
     $x->mod(Any)                   # => Nan
     $x->bmod(Any)                  # => Nan
@@ -239,8 +241,10 @@ Always returns Nan.
 
 =cut
 
-*mod  = \&nan;
-*bmod = \&_self;
+*mod   = \&nan;
+*bmod  = \&_self;
+*imod  = \&nan;
+*bimod = \&_self;
 
 =head2 fac / bfac
 

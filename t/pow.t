@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 144;
+plan tests => 154;
 
 use Math::BigNum;
 
@@ -18,14 +18,35 @@ my $int2 = Math::BigNum->new(-4);
 my $r = $int1**$int1;
 is("$r", "27");
 
+$r = $int1->ipow($int1);
+is("$r", "27");
+
 $r = $int1**4;
+is("$r", "81");
+
+$r = $int1->ipow(4);
 is("$r", "81");
 
 $r = 4**$int1;
 is("$r", "64");
 
+$r = $int2**$int1;
+is("$r", "-64");
+
+$r = $int2**2;
+is("$r", "16");
+
 $r = $int1**$int2;
 ok($r == 1 / ($int1**abs($int2)));
+
+$r = $int1->ipow($int2);
+is("$r", "0");
+
+$r = $int2->ipow($int1);
+is("$r", "-64");
+
+$r = $int2->ipow(2);
+is("$r", "16");
 
 $r = (-$int1)**($int2);
 ok($r == 1 / ($int1**abs($int2)));
@@ -102,25 +123,44 @@ is(lc("$r"), 'inf');
 #################################################################
 # bpow() -- int
 
-$r = $int1->copy->bpow($int1);
+$r = $int1->copy;
+$r->bpow($int1);
 is("$r", "27");
 
-$r = $int1->copy->bpow(4);
+$r = $int1->copy;
+$r->bipow($int1);
+is("$r", "27");
+
+$r = $int1->copy;
+$r->bpow(4);
 is("$r", "81");
 
-$r = $int1->copy->bpow($int2);
+$r = $int1->copy;
+$r->bipow(4);
+is("$r", "81");
+
+$r = $int1->copy;
+$r->bpow($int2);
 ok($r == 1 / ($int1**abs($int2)));
 
-$r = (-$int1)->copy->bpow($int2);
+$r = $int1->copy;
+$r->bipow($int2);
+is("$r", "0");
+
+$r = (-$int1)->copy;
+$r->bpow($int2);
 ok($r == 1 / ($int1**abs($int2)));
 
-$r = (-$int1)->copy->bpow($int2 - 1);
+$r = (-$int1)->copy;
+$r->bpow($int2 - 1);
 ok($r == -(1 / ($int1**abs($int2 - 1))));
 
-$r = $int2->copy->bpow(-$int1);
+$r = $int2->copy;
+$r->bpow(-$int1);
 is("$r", "-0.015625");
 
-$r = $int2->copy->bpow(-$int1 + 1);
+$r = $int2->copy;
+$r->bpow(-$int1 + 1);
 is("$r", "0.0625");
 
 #################################################################
