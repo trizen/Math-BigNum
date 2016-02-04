@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 58;
+plan tests => 64;
 
 use Math::BigNum qw(:constant);
 
@@ -50,7 +50,13 @@ is(("-$f1" % $f2)->round(-1), 12.2);
 # extreme
 
 is($x % Inf,      $x);
+is("$x" % Inf,    $x);
+is(-$x % Inf,     -$x);
+is("-$x" % Inf,   -$x);
 is($x % -Inf,     $x);
+is("$x" % -Inf,   $x);
+is(-$x % -Inf,    -$x);
+is("-$x" % -Inf,  -$x);
 is(Inf % $x,      NaN);
 is(-Inf % $x,     NaN);
 is(Inf % Inf,     NaN);

@@ -417,8 +417,7 @@ Addition of C<$x> and C<$y>.
 
 =cut
 
-multimethod add => qw(Math::BigNum::Inf Math::BigNum) => \&copy;
-multimethod add => qw(Math::BigNum::Inf $)            => \&copy;
+multimethod add => qw(Math::BigNum::Inf *) => \&copy;
 
 multimethod add => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     $_[0]->eq($_[1]) ? $_[0]->copy : nan();
@@ -468,9 +467,8 @@ Subtraction of C<$x> and C<$y>.
 
 =cut
 
-multimethod sub => qw(Math::BigNum::Inf Math::BigNum) => \&copy;
-multimethod sub => qw(Math::BigNum::Inf $)            => \&copy;
-multimethod sub => qw($ Math::BigNum::Inf)            => sub { $_[1]->neg };
+multimethod sub => qw(Math::BigNum::Inf *) => \&copy;
+multimethod sub => qw($ Math::BigNum::Inf) => sub { $_[1]->neg };
 
 multimethod sub => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     $_[0]->eq($_[1]) ? nan() : $_[0]->copy;
@@ -494,8 +492,7 @@ Subtraction of C<$x> and C<$y>, changing C<$x> in-place.
 
 =cut
 
-multimethod bsub => qw(Math::BigNum::Inf Math::BigNum) => \&_self;
-multimethod bsub => qw(Math::BigNum::Inf $)            => \&_self;
+multimethod bsub => qw(Math::BigNum::Inf *) => \&_self;
 
 multimethod bsub => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     $_[0]->eq($_[1]) ? $_[0]->bnan : $_[0];
@@ -520,20 +517,12 @@ Multiplication of C<$x> and C<$y>.
 
 =cut
 
-multimethod mul => qw(Math::BigNum::Inf Math::BigNum) => sub {
-    $_[0]->copy->bmul($_[1]);
-};
-
-multimethod mul => qw(Math::BigNum::Inf $) => sub {
+multimethod mul => qw(Math::BigNum::Inf *) => sub {
     $_[0]->copy->bmul($_[1]);
 };
 
 multimethod mul => qw($ Math::BigNum::Inf) => sub {
     $_[1]->copy->bmul($_[0]);
-};
-
-multimethod mul => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
-    $_[0]->copy->bmul($_[1]);
 };
 
 multimethod mul => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
@@ -677,8 +666,7 @@ multimethod eq => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) == Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-multimethod eq => qw(Math::BigNum::Inf Math::BigNum)      => sub { 0 };
-multimethod eq => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub { 0 };
+multimethod eq => qw(Math::BigNum::Inf *) => sub { 0 };
 
 =head2 ne
 
@@ -701,8 +689,7 @@ multimethod ne => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) != Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-multimethod ne => qw(Math::BigNum::Inf Math::BigNum)      => sub { 1 };
-multimethod ne => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub { 1 };
+multimethod ne => qw(Math::BigNum::Inf *) => sub { 1 };
 
 =head2 cmp
 
@@ -710,9 +697,8 @@ multimethod ne => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub { 1 };
     $x->cmp(BigNum)                # => Scalar
     $x->cmp(Nan)                   # => undef
 
-    Scalar <=> Inf                 # => Scalar
-    Inf <=> BigNum                 # => Scalar
-    Inf <=> Scalar                 # => Scalar
+    Inf <=> Any                    # => Scalar
+    Any <=> Inf                    # => Scalar
     Inf <=> Nan                    # => undef
 
 Compares C<$x> to C<$y> and returns a positive value when C<$x> is greater than C<$y>,
@@ -724,15 +710,11 @@ multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) <=> Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-multimethod cmp => qw(Math::BigNum::Inf Math::BigNum) => sub {
+multimethod cmp => qw(Math::BigNum::Inf *) => sub {
     (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0) ? 1 : -1;
 };
 
-multimethod cmp => qw(Math::BigNum::Inf $) => sub {
-    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0) ? 1 : -1;
-};
-
-multimethod cmp => qw($ Math::BigNum::Inf) => sub {
+multimethod cmp => qw(* Math::BigNum::Inf) => sub {
     (Math::GMPq::Rmpq_sgn(${$_[1]}) > 0) ? -1 : 1;
 };
 
@@ -768,9 +750,9 @@ multimethod acmp => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub {
 
 =head2 gt
 
-    $x->gt(BigNum)                 # => Bool
-    $x->gt(Inf)                    # => Bool
-    $x > $y                        # => Bool
+    $x->gt(Any)                    # => Bool
+    Inf > Any                      # => Bool
+    Any > Inf                      # => Bool
 
 Returns true if C<$x> is greater than C<$y>.
 
@@ -780,15 +762,11 @@ multimethod gt => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) > Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-multimethod gt => qw(Math::BigNum::Inf Math::BigNum) => sub {
+multimethod gt => qw(Math::BigNum::Inf *) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
 };
 
-multimethod gt => qw(Math::BigNum::Inf $) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
-};
-
-multimethod gt => qw($ Math::BigNum::Inf) => sub {
+multimethod gt => qw(* Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[1]}) < 0;
 };
 
@@ -802,9 +780,9 @@ multimethod gt => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub { 0 };
 
 =head2 ge
 
-    $x->ge(BigNum)                 # => Bool
-    $x->ge(Inf)                    # => Bool
-    $x >= $y                       # => Bool
+    $x->ge(Any)                    # => Bool
+    Inf >= Any                     # => Bool
+    Any >= Inf                     # => Bool
 
 Returns true if C<$x> is greater or equal to C<$y>.
 
@@ -814,15 +792,11 @@ multimethod ge => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) >= Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-multimethod ge => qw(Math::BigNum::Inf Math::BigNum) => sub {
+multimethod ge => qw(Math::BigNum::Inf *) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
 };
 
-multimethod ge => qw(Math::BigNum::Inf $) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
-};
-
-multimethod ge => qw($ Math::BigNum::Inf) => sub {
+multimethod ge => qw(* Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[1]}) < 0;
 };
 
@@ -836,9 +810,9 @@ multimethod ge => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub { 0 };
 
 =head2 lt
 
-    $x->lt(BigNum)                 # => Bool
-    $x->lt(Inf)                    # => Bool
-    $x < $y                        # => Bool
+    $x->lt(Any)                    # => Bool
+    Inf < Any                      # => Bool
+    Any > Inf                      # => Bool
 
 Returns true if C<$x> is less than C<$y>.
 
@@ -848,15 +822,11 @@ multimethod lt => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) < Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-multimethod lt => qw(Math::BigNum::Inf Math::BigNum) => sub {
+multimethod lt => qw(Math::BigNum::Inf *) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
 };
 
-multimethod lt => qw(Math::BigNum::Inf $) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
-};
-
-multimethod lt => qw($ Math::BigNum::Inf) => sub {
+multimethod lt => qw(* Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[1]}) > 0;
 };
 
@@ -870,9 +840,9 @@ multimethod lt => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub { 0 };
 
 =head2 le
 
-    $x->le(BigNum)                 # => Bool
-    $x->le(Inf)                    # => Bool
-    $x <= $y                       # => Bool
+    $x->le(Any)                    # => Bool
+    Inf <= Any                     # => Bool
+    Any <= Inf                     # => Bool
 
 Returns true if C<$x> is less than or equal to C<$y>.
 
@@ -882,15 +852,11 @@ multimethod le => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) <= Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-multimethod le => qw(Math::BigNum::Inf Math::BigNum) => sub {
+multimethod le => qw(Math::BigNum::Inf *) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
 };
 
-multimethod le => qw(Math::BigNum::Inf $) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
-};
-
-multimethod le => qw($ Math::BigNum::Inf) => sub {
+multimethod le => qw(* Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[1]}) > 0;
 };
 
@@ -911,11 +877,7 @@ Returns C<$x> if C<$x> is lower than C<$y>. Returns C<$y> otherwise.
 
 =cut
 
-multimethod min => qw(Math::BigNum::Inf Math::BigNum) => sub {
-    $_[0]->is_neg ? $_[0] : $_[1];
-};
-
-multimethod min => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+multimethod min => qw(Math::BigNum::Inf *) => sub {
     $_[0]->is_neg ? $_[0] : $_[1];
 };
 
@@ -932,11 +894,7 @@ Returns C<$x> if C<$x> is greater than C<$y>. Returns C<$y> otherwise.
 
 =cut
 
-multimethod max => qw(Math::BigNum::Inf Math::BigNum) => sub {
-    $_[0]->is_pos ? $_[0] : $_[1];
-};
-
-multimethod max => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+multimethod max => qw(Math::BigNum::Inf *) => sub {
     $_[0]->is_pos ? $_[0] : $_[1];
 };
 
@@ -1157,15 +1115,7 @@ Raises C<$x> to the power C<$y>.
 
 =cut
 
-multimethod pow => qw(Math::BigNum::Inf Math::BigNum) => sub {
-    $_[0]->copy->bpow($_[1]);
-};
-
-multimethod pow => qw(Math::BigNum::Inf $) => sub {
-    $_[0]->copy->bpow($_[1]);
-};
-
-multimethod pow => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+multimethod pow => qw(Math::BigNum::Inf *) => sub {
     $_[0]->copy->bpow($_[1]);
 };
 
@@ -1339,14 +1289,41 @@ Inverse value of +/-Infinity. Always returns zero.
 
 *inv = \&zero;
 
+=head2 mod / imod
+
+    $x->mod(BigNum)                # => Nan
+    $x->mod(Inf)                   # => Nan
+
+    Scalar % Inf                   # => BigNum
+
+Returns the remained of C<$x> divided by C<$y>.
+
+=cut
+
+multimethod mod => qw($ Math::BigNum::Inf) => sub {
+    Math::BigNum->new($_[0]);
+};
+
+multimethod mod => qw(Math::BigNum::Inf *) => \&nan;
+
+*imod = \&mod;
+
+=head2 bmod / bimod
+
+    $x->bmod(Any)                  # => NaN
+
+Sets C<$x> to the reminder of C<$x> divided by <$y>, which
+is always Nan.
+
+=cut
+
+*bmod  = \&bnan;
+*bimod = \&bnan;
+
 #
 ## Other methods
 #
 
-*mod        = \&nan;
-*bmod       = \&bnan;
-*imod       = \&nan;
-*bimod      = \&nan;
 *modpow     = \&nan;
 *modinv     = \&nan;
 *next_prime = \&nan;

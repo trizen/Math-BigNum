@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+use 5.010;
+use strict;
+use warnings;
+
 use lib qw(../lib);
 use Math::BigNum qw(:constant);
 
@@ -87,15 +91,15 @@ foreach my $group (
   ) {
     my ($pos, $num, $bool) = @{$group};
 
-    is_fib($pos, $num) == $bool or die "Validation error (1)!";
-    is_prob_fib($num) == $bool or die "Validation error (2)!";
+    is_fib($pos, $num) == $bool or say "Validation error (1)!";
+    is_prob_fib($num) == $bool or say "Validation error (2)!";
 
     $fib_pos_funcs[rand @fib_pos_funcs]->($num) == $fib_pos_funcs[rand @fib_pos_funcs]->($num)
-      or die "Error in rand pos 1";
+      or say "Error in rand pos 1";
 
     if ($bool) {
         $fib_pos_funcs[rand @fib_pos_funcs]->($num) == $pos
-          or die "Error in rand pos 2";
+          or say "Error in rand pos 2";
     }
 
     printf("%21s is on position %3s in the fibonacci sequence: %s\n", $num, $pos, $bool);

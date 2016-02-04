@@ -127,8 +127,9 @@ The returned types are noted as follows:
     BigNum      #-> a "Math::BigNum" object
     Inf         #-> a "Math::BigNum::Inf" object
     Nan         #-> a "Math::BigNum::Nan" object
-    Scalar      #-> a Perl number or a string
+    Scalar      #-> a Perl number or string
     Bool        #-> true or false (actually: 1 or 0)
+    Any         #-> any value, including a reference
 
 When two or more types are separated with pipe characters (B<|>), it means that the corresponding function can
 return any of the specified types.
