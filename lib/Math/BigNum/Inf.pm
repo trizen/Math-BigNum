@@ -153,7 +153,7 @@ sub _big2ninf {
 
 =head2 neg
 
-    $x->neg     # => BigNum
+    $x->neg      # => BigNum
     -$x          # => BigNum
 
 Negative value of C<$x>. Returns C<abs($x)> when C<$x> is negative,
@@ -197,7 +197,7 @@ sub abs {
 
 =head2 babs
 
-    $x->babs        # => Inf
+    $x->babs          # => Inf
 
 Sets C<$x> in-place to its absolute value.
 
@@ -221,7 +221,7 @@ Returns a deep copy of the self object.
 
 =head2 mone
 
-    $x->mone         # => BigNum
+    $x->mone        # => BigNum
 
 Returns a BigNum object which stores the value C<-1>.
 
@@ -231,7 +231,7 @@ Returns a BigNum object which stores the value C<-1>.
 
 =head2 zero
 
-    $x->zero         # => BigNum
+    $x->zero        # => BigNum
 
 Returns a BigNum object which stores the value C<0>.
 
@@ -251,7 +251,7 @@ Returns a BigNum object which stores the value C<+1>.
 
 =head2 bmone
 
-    $x->bmone         # => BigNum
+    $x->bmone       # => BigNum
 
 Promotes C<$x> to a BigNum object which stores the value C<-1>.
 
@@ -261,7 +261,7 @@ Promotes C<$x> to a BigNum object which stores the value C<-1>.
 
 =head2 bzero
 
-    $x->bzero         # => BigNum
+    $x->bzero       # => BigNum
 
 Promotes C<$x> to a BigNum object which stores the value C<0>.
 
@@ -271,7 +271,7 @@ Promotes C<$x> to a BigNum object which stores the value C<0>.
 
 =head2 bone
 
-    $x->bone         # => BigNum
+    $x->bone        # => BigNum
 
 Promotes C<$x> to a BigNum object which stores the value C<+1>.
 
@@ -1119,7 +1119,7 @@ Returns the result of C<$x**2>.
 
 sub sqr { $_[0]->mul($_[0]) }
 
-=head2 sqrt
+=head2 sqrt / isqrt
 
     $x->sqrt           => Inf | Nan
 
@@ -1131,7 +1131,9 @@ sub sqrt {
     $_[0]->is_neg ? nan() : $_[0]->copy;
 }
 
-=head2 bsqrt
+*isqrt = \&sqrt;
+
+=head2 bsqrt / bisqrt
 
 Square root of C<$x>, changing C<$x> in-place.
 
@@ -1139,9 +1141,141 @@ Square root of C<$x>, changing C<$x> in-place.
 
 sub bsqrt { $_[0]->is_neg ? $_[0]->bnan : $_[0] }
 
-#####################################
-#!!! TODO: add root() and pow()  !!!!
-#####################################
+*bisqrt = \&bsqrt;
+
+=head2 pow
+
+    $x->pow(BigNum)         # => Inf | Nan | BigNum
+    $x->pow(Scalar)         # => Inf | Nan | BigNum
+    $x->pow(Inf)            # => Inf | Nan | BigNum
+
+    Scalar ** Inf           # => Inf | BigNum(0)
+    Inf ** BigNum           # => Inf | Nan | BigNum
+    Inf ** Scalar           # => Inf | Nan | BigNum
+
+Raises C<$x> to the power C<$y>.
+
+=cut
+
+multimethod pow => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    $_[0]->copy->bpow($_[1]);
+};
+
+multimethod pow => qw(Math::BigNum::Inf $) => sub {
+    $_[0]->copy->bpow($_[1]);
+};
+
+multimethod pow => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+    $_[0]->copy->bpow($_[1]);
+};
+
+multimethod pow => qw($ Math::BigNum::Inf) => sub {
+    CORE::abs($_[0]) == 1 ? one()
+      : $_[1]->is_neg     ? zero()
+      :                     inf();
+};
+
+multimethod pow => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
+
+=head2 bpow
+
+    $x->bpow(BigNum)         # => Inf | Nan | BigNum
+    $x->bpow(Scalar)         # => Inf | Nan | BigNum
+    $x->bpow(Inf)            # => Inf | Nan | BigNum
+
+    Inf **= BigNum           # => Inf | Nan | BigNum
+    Inf **= Scalar           # => Inf | Nan | BigNum
+
+Same C<pow()>, except that it changes C<$x> in-place.
+
+=cut
+
+multimethod bpow => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    $y->is_neg      ? $x->bzero
+      : $y->is_zero ? $x->bone
+      : $x->is_neg  ? $y->is_int
+          ? $y->is_even
+              ? $x->bneg
+              : $x
+          : $x->bnan
+      : $x;
+};
+
+multimethod bpow => qw(Math::BigNum::Inf $) => sub {
+    my ($x, $y) = @_;
+    $y < 0         ? $x->bzero
+      : $y == 0    ? $x->bone
+      : $x->is_neg ? CORE::int($y) eq $y
+          ? ($y % 2 == 0)
+              ? $x->bneg
+              : $x
+          : $x->bnan()
+      : $x;
+};
+
+# (+/-Inf) ** (-Inf) = 0
+# (+/-Inf) ** (+Inf) = +Inf
+
+multimethod bpow => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
+    $_[1]->is_neg ? $_[0]->bzero : $_[0]->binf;
+};
+
+multimethod bpow => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
+
+=head2 root / iroot
+
+    $x->root(BigNum)      # => BigNum | Inf | Nan
+    $x->root(Scalar)      # => BigNum | Inf | Nan
+
+Nth root of C<$x>. Same as C<$x ** (1/$y)>.
+
+=cut
+
+multimethod root => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    $_[0]->pow($_[1]->inv);
+};
+
+multimethod root => qw(Math::BigNum::Inf $) => sub {
+    $_[0]->pow(Math::BigNum->new($_[1])->inv);
+};
+
+multimethod root => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&one;
+multimethod root => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
+
+*iroot = \&root;
+
+=head2 broot / biroot
+
+    $x->broot(BigNum)      # => BigNum | Inf | Nan
+    $x->broot(Scalar)      # => BigNum | Inf | Nan
+
+Nth root of C<$x>, changing C<$x> in-place.
+
+=cut
+
+multimethod broot => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    $_[0]->bpow($_[1]->inv);
+};
+
+multimethod broot => qw(Math::BigNum::Inf $) => sub {
+    $_[0]->bpow(Math::BigNum->new($_[1])->inv);
+};
+
+multimethod broot => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&bone;
+multimethod broot => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
+
+*biroot = \&broot;
+
+=head2 binomial
+
+    $x->binomial(BigNum)        # => BigNum | Inf
+    $x->binomial(Scalar)        # => BigNum | Inf
+    $x->binomial(Inf)           # => BigNum | Inf
+
+Binomial coefficient of C<$x> and C<$y>.
+
+=cut
 
 #
 ## binomial(+/-inf, x) = 0       | for x < 0

@@ -286,8 +286,9 @@ sub cmp { }
 *sqrt  = \&nan;
 *bsqrt = \&_self;
 
-*isqrt = \&nan;
-*cbrt  = \&nan;
+*isqrt  = \&nan;
+*bisqrt = \&_self;
+*cbrt   = \&nan;
 
 *root  = \&nan;
 *broot = \&_self;

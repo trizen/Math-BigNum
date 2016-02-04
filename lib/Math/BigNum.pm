@@ -117,6 +117,22 @@ A rational number never losses precision in rational operations, therefore if we
 
 ...the results are exactly what we expect.
 
+=head1 NOTATIONS
+
+Methods that begin with a B<b> followed by the actual name (such as C<bsqrt>), are mutable methods that change the self
+object in-place, while their counter-parts (such as C<sqrt>) do not. Instead, they will create and return a new object.
+
+The returned types are noted as follows:
+
+    BigNum      #-> a "Math::BigNum" object
+    Inf         #-> a "Math::BigNum::Inf" object
+    Nan         #-> a "Math::BigNum::Nan" object
+    Scalar      #-> a Perl number or a string
+    Bool        #-> true or false (actually: 1 or 0)
+
+When two or more types are separated with pipe characters (B<|>), it means that the corresponding function can
+return any of the specified types.
+
 =head1 SUBROUTINES/METHODS
 
 =cut
@@ -374,7 +390,7 @@ For setting an hexadecimal number, we can say:
 
     my $x = Math::BigNum->new("deadbeef", 16);
 
-B<NOTE:> no prefix, such as C<"0x"> or C<"0b">, is allowed in front of the number.
+B<NOTE:> no prefix, such as C<"0x"> or C<"0b">, is allowed as part of the number.
 
 =cut
 
@@ -487,10 +503,24 @@ multimethod new => qw($ Math::BigRat) => sub {
     bless \$r, $_[0];
 };
 
+multimethod new => qw($ Math::GMPz) => sub {
+    _mpz2big($_[1]);
+};
+
+multimethod new => qw($ Math::MPFR) => sub {
+    _mpfr2big($_[1]);
+};
+
+multimethod new => qw($ Math::GMPq) => sub {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set($r, $_[1]);
+    bless \$r, $_[0];
+};
+
 # TODO: find a better solution (maybe)
 # This solution is very slow for literals with absolute big exponents, such as: "1e-10000000"
 sub _str2rat {
-    my $str = lc($_[0]);
+    my $str = lc($_[0] || "0");
 
     my $sign = substr($str, 0, 1);
     if ($sign eq '-') {
@@ -506,6 +536,17 @@ sub _str2rat {
     if (($i = index($str, 'e')) != -1) {
 
         my $exp = substr($str, $i + 1);
+
+        # Handle specially numbers with very big exponents
+        # (it's not a very good solution, but I hope it's only temporary)
+        if (CORE::abs($exp) >= 1000000) {
+            my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
+            Math::MPFR::Rmpfr_set_str($mpfr, "$sign$str", 10, $ROUND);
+            my $mpq = Math::GMPq::Rmpq_init();
+            Math::MPFR::Rmpfr_get_q($mpq, $mpfr);
+            return Math::GMPq::Rmpq_get_str($mpq, 10);
+        }
+
         my ($before, $after) = split(/\./, substr($str, 0, $i));
 
         if (CORE::not defined($after)) {    # return faster for numbers like "13e2"
@@ -630,7 +671,7 @@ sub _mpfr2x {
     $_[0];
 }
 
-sub _mpz2rat {
+sub _mpz2big {
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_set_z($r, $_[0]);
     bless \$r, __PACKAGE__;
@@ -1088,7 +1129,7 @@ are truncated to integers before addition.
 multimethod iadd => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_add($r, $r, _big2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod iadd => qw(Math::BigNum $) => sub {
@@ -1097,7 +1138,7 @@ multimethod iadd => qw(Math::BigNum $) => sub {
     $y < 0
       ? Math::GMPz::Rmpz_sub_ui($r, $r, CORE::abs($y))
       : Math::GMPz::Rmpz_add_ui($r, $r, $y);
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod iadd => qw(Math::BigNum Math::BigNum::Inf) => \&_big2inf;
@@ -1216,7 +1257,7 @@ are truncated to integers before subtraction.
 multimethod isub => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_sub($r, $r, _big2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod isub => qw(Math::BigNum $) => sub {
@@ -1225,7 +1266,7 @@ multimethod isub => qw(Math::BigNum $) => sub {
     $y < 0
       ? Math::GMPz::Rmpz_add_ui($r, $r, CORE::abs($y))
       : Math::GMPz::Rmpz_sub_ui($r, $r, $y);
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod isub => qw(Math::BigNum Math::BigNum::Inf) => sub {
@@ -1351,7 +1392,7 @@ are truncated to integers before multiplication.
 multimethod imul => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_mul($r, $r, _big2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod imul => qw(Math::BigNum $) => sub {
@@ -1360,7 +1401,7 @@ multimethod imul => qw(Math::BigNum $) => sub {
     $y < 0
       ? Math::GMPz::Rmpz_mul_si($r, $r, $y)
       : Math::GMPz::Rmpz_mul_ui($r, $r, $y);
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod imul => qw(Math::BigNum Math::BigNum::Inf) => sub {
@@ -1549,7 +1590,7 @@ multimethod idiv => qw(Math::BigNum Math::BigNum) => sub {
 
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_div($r, $r, _big2mpz($y));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod idiv => qw(Math::BigNum $) => sub {
@@ -1563,12 +1604,12 @@ multimethod idiv => qw(Math::BigNum $) => sub {
     if (CORE::int($y) eq $y and $y >= 0) {
         my $r = _big2mpz($x);
         Math::GMPz::Rmpz_div_ui($r, $r, $y);
-        return _mpz2rat($r);
+        return _mpz2big($r);
     }
 
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_div($r, $r, _str2mpz($y));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod idiv => qw(Math::BigNum Math::BigNum::Inf) => \&zero;
@@ -1635,8 +1676,6 @@ multimethod bidiv => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 Negative value of C<$x>. Returns C<abs($x)> when C<$x> is negative, and C<-$x> when C<$x> is positive.
 
 =cut
-
-# TODO: add the muladd() method? (maybe)
 
 sub neg {
     my ($x) = @_;
@@ -1768,7 +1807,24 @@ sub isqrt {
     my $r = _big2mpz($_[0]);
     return nan() if Math::GMPz::Rmpz_sgn($r) < 0;
     Math::GMPz::Rmpz_sqrt($r, $r);
-    _mpz2rat($r);
+    _mpz2big($r);
+}
+
+=head2 bisqrt
+
+    $x->bisqrt       # => BigNum | Nan
+
+Integer square root of C<$x>, changing C<$x> in-place. Promotes C<$x> to Nan when C<$x> is negative.
+
+=cut
+
+sub bisqrt {
+    my ($x) = @_;
+    my $r = _big2mpz($x);
+    return $x->bnan() if Math::GMPz::Rmpz_sgn($r) < 0;
+    Math::GMPz::Rmpz_sqrt($r, $r);
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
 }
 
 =head2 cbrt
@@ -1969,9 +2025,16 @@ multimethod pow => qw($ Math::BigNum) => sub {
     Math::BigNum->new($_[0])->pow($_[1]);
 };
 
+# (+/-1) ** (+/-Inf) = 1
+# x ** (-Inf) = 0
+# x ** Inf = Inf
+
 multimethod pow => qw(Math::BigNum Math::BigNum::Inf) => sub {
-    $_[1]->is_neg ? zero : inf;
+        $_[0]->is_one || $_[0]->is_mone ? one()
+      : $_[1]->is_neg ? zero
+      :                 inf;
 };
+
 multimethod pow => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bpow
@@ -2052,8 +2115,11 @@ multimethod bpow => qw(Math::BigNum $) => sub {
 };
 
 multimethod bpow => qw(Math::BigNum Math::BigNum::Inf) => sub {
-    $_[1]->is_neg ? $_[0]->bzero : $_[0]->binf;
+        $_[0]->is_one || $_[0]->is_mone ? $_[0]->bone()
+      : $_[1]->is_neg ? $_[0]->bzero
+      :                 $_[0]->binf;
 };
+
 multimethod bpow => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 ln
@@ -3066,7 +3132,7 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
         elsif ($sign_y < 0) {
             Math::GMPz::Rmpz_add($r, $r, $yz);
         }
-        _mpz2rat($r);
+        _mpz2big($r);
     }
     else {
         my $r  = _big2mpfr($x);
@@ -3099,7 +3165,7 @@ multimethod mod => qw(Math::BigNum $) => sub {
         elsif ($neg_y) {
             Math::GMPz::Rmpz_sub_ui($r, $r, $y);
         }
-        _mpz2rat($r);
+        _mpz2big($r);
     }
     else {
         my $r  = _big2mpfr($x);
@@ -3223,7 +3289,7 @@ multimethod divmod => qw(Math::BigNum Math::BigNum) => sub {
     Math::GMPz::Rmpz_sgn($$y) || return (nan, nan);
 
     Math::GMPz::Rmpz_divmod($r1, $r2, $r1, $r2);
-    (_mpz2rat($r1), _mpz2rat($r2));
+    (_mpz2big($r1), _mpz2big($r2));
 };
 
 multimethod divmod => qw(Math::BigNum $) => sub {
@@ -3235,7 +3301,7 @@ multimethod divmod => qw(Math::BigNum $) => sub {
     my $r2 = Math::GMPz::Rmpz_init();
 
     Math::GMPz::Rmpz_divmod_ui($r1, $r2, $r1, CORE::int($y));
-    (_mpz2rat($r1), _mpz2rat($r2));
+    (_mpz2big($r1), _mpz2big($r2));
 };
 
 =head2 modinv
@@ -3252,14 +3318,14 @@ multimethod modinv => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_invert($r, $r, _big2mpz($y)) || return nan;
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod modinv => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_invert($r, $r, _str2mpz($y)) || return nan;
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 modpow
@@ -3270,12 +3336,42 @@ Calculates C<($x ** $y) % $z>, where all three values are integers.
 
 =cut
 
-# TODO: make `modpow` to also support scalars.
 multimethod modpow => qw(Math::BigNum Math::BigNum Math::BigNum) => sub {
     my ($x, $y, $z) = @_;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), _big2mpz($z));
-    _mpz2rat($r);
+    _mpz2big($r);
+};
+
+multimethod modpow => qw(Math::BigNum Math::BigNum $) => sub {
+    my ($x, $y, $z) = @_;
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), _str2mpz($z));
+    _mpz2big($r);
+};
+
+multimethod modpow => qw(Math::BigNum $ $) => sub {
+    my ($x, $y, $z) = @_;
+    my $r = _big2mpz($x);
+    if ($y >= 0) {
+        Math::GMPz::Rmpz_powm_ui($r, $r, CORE::int($y), _str2mpz($z));
+    }
+    else {
+        Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y), _str2mpz($z));
+    }
+    _mpz2big($r);
+};
+
+multimethod modpow => qw(Math::BigNum $ Math::BigNum) => sub {
+    my ($x, $y, $z) = @_;
+    my $r = _big2mpz($x);
+    if ($y >= 0) {
+        Math::GMPz::Rmpz_powm_ui($r, $r, CORE::int($y), _big2mpz($z));
+    }
+    else {
+        Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y), _big2mpz($z));
+    }
+    _mpz2big($r);
 };
 
 #
@@ -3556,14 +3652,14 @@ multimethod gcd => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_gcd($r, $r, _big2mpz($y));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod gcd => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_gcd($r, $r, _str2mpz($y));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod gcd => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
@@ -3582,14 +3678,14 @@ multimethod lcm => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_lcm($r, $r, _big2mpz($y));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod lcm => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_lcm($r, $r, _str2mpz($y));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod lcm => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
@@ -3607,7 +3703,7 @@ Returns a truncated integer from the value of C<$x>.
 sub int {
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
-    _mpz2rat($z);
+    _mpz2big($z);
 }
 
 =head2 bint
@@ -3829,7 +3925,7 @@ sub numerator {
     my ($x) = @_;
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPq::Rmpq_get_num($z, $$x);
-    _mpz2rat($z);
+    _mpz2big($z);
 }
 
 =head2 denominator
@@ -3844,7 +3940,7 @@ sub denominator {
     my ($x) = @_;
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPq::Rmpq_get_den($z, $$x);
-    _mpz2rat($z);
+    _mpz2big($z);
 }
 
 =head2 floor
@@ -3863,13 +3959,13 @@ sub floor {
     if (Math::GMPq::Rmpq_sgn($$x) > 0) {
         my $z = Math::GMPz::Rmpz_init();
         Math::GMPz::Rmpz_set_q($z, $$x);
-        _mpz2rat($z);
+        _mpz2big($z);
     }
     else {
         my $z = Math::GMPz::Rmpz_init();
         Math::GMPz::Rmpz_set_q($z, $$x);
         Math::GMPz::Rmpz_sub_ui($z, $z, 1);
-        _mpz2rat($z);
+        _mpz2big($z);
     }
 }
 
@@ -3890,12 +3986,12 @@ sub ceil {
         my $z = Math::GMPz::Rmpz_init();
         Math::GMPz::Rmpz_set_q($z, $$x);
         Math::GMPz::Rmpz_add_ui($z, $z, 1);
-        _mpz2rat($z);
+        _mpz2big($z);
     }
     else {
         my $z = Math::GMPz::Rmpz_init();
         Math::GMPz::Rmpz_set_q($z, $$x);
-        _mpz2rat($z);
+        _mpz2big($z);
     }
 }
 
@@ -4065,19 +4161,19 @@ Integer logical-and operation.
 multimethod and => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_and($r, $r, _big2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod and => qw(Math::BigNum $) => sub {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_and($r, $r, _str2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod and => qw($ Math::BigNum) => sub {
     my $r = _str2mpz($_[0]);
     Math::GMPz::Rmpz_and($r, $r, _big2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 band
@@ -4122,19 +4218,19 @@ Integer logical inclusive-or operation.
 multimethod ior => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_ior($r, $r, _big2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod ior => qw(Math::BigNum $) => sub {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_ior($r, $r, _str2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod ior => qw($ Math::BigNum) => sub {
     my $r = _str2mpz($_[0]);
     Math::GMPz::Rmpz_ior($r, $r, _big2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 bior
@@ -4179,19 +4275,19 @@ Integer logical exclusive-or operation.
 multimethod xor => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_xor($r, $r, _big2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod xor => qw(Math::BigNum $) => sub {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_xor($r, $r, _str2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod xor => qw($ Math::BigNum) => sub {
     my $r = _str2mpz($_[0]);
     Math::GMPz::Rmpz_xor($r, $r, _big2mpz($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 bxor
@@ -4232,7 +4328,7 @@ Integer logical-not operation. (The one's complement of $x).
 sub not {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_com($r, $r);
-    _mpz2rat($r);
+    _mpz2big($r);
 }
 
 =head2 bnot
@@ -4272,7 +4368,7 @@ multimethod lsft => qw(Math::BigNum Math::BigNum) => sub {
     else {
         Math::GMPz::Rmpz_mul_2exp($r, $r, $i);
     }
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod lsft => qw(Math::BigNum $) => sub {
@@ -4284,7 +4380,7 @@ multimethod lsft => qw(Math::BigNum $) => sub {
     else {
         Math::GMPz::Rmpz_mul_2exp($r, $r, $i);
     }
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod lsft => qw($ Math::BigNum) => sub {
@@ -4296,7 +4392,7 @@ multimethod lsft => qw($ Math::BigNum) => sub {
     else {
         Math::GMPz::Rmpz_mul_2exp($r, $r, $i);
     }
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 blsft
@@ -4360,7 +4456,7 @@ multimethod rsft => qw(Math::BigNum Math::BigNum) => sub {
     else {
         Math::GMPz::Rmpz_div_2exp($r, $r, $i);
     }
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod rsft => qw(Math::BigNum $) => sub {
@@ -4372,7 +4468,7 @@ multimethod rsft => qw(Math::BigNum $) => sub {
     else {
         Math::GMPz::Rmpz_div_2exp($r, $r, $i);
     }
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod rsft => qw($ Math::BigNum) => sub {
@@ -4384,7 +4480,7 @@ multimethod rsft => qw($ Math::BigNum) => sub {
     else {
         Math::GMPz::Rmpz_div_2exp($r, $r, $i);
     }
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 brsft
@@ -4439,7 +4535,7 @@ multimethod fac => qw(Math::BigNum) => sub {
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_fac_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod fac => qw($) => sub {
@@ -4447,7 +4543,7 @@ multimethod fac => qw($) => sub {
     return nan if $x < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_fac_ui($r, CORE::int($x));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 bfac
@@ -4481,7 +4577,7 @@ multimethod dfac => qw(Math::BigNum) => sub {
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_2fac_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod dfac => qw($) => sub {
@@ -4489,7 +4585,7 @@ multimethod dfac => qw($) => sub {
     return nan if $x < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_2fac_ui($r, CORE::int($x));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 primorial
@@ -4506,7 +4602,7 @@ multimethod primorial => qw(Math::BigNum) => sub {
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_primorial_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod primorial => qw($) => sub {
@@ -4514,7 +4610,7 @@ multimethod primorial => qw($) => sub {
     return nan if $x < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_primorial_ui($r, CORE::int($x));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 fib
@@ -4531,7 +4627,7 @@ multimethod fib => qw(Math::BigNum) => sub {
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_fib_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod fib => qw($) => sub {
@@ -4539,7 +4635,7 @@ multimethod fib => qw($) => sub {
     return nan if $x < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_fib_ui($r, CORE::int($x));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 lucas
@@ -4556,7 +4652,7 @@ multimethod lucas => qw(Math::BigNum) => sub {
     return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_lucnum_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod lucas => qw($) => sub {
@@ -4564,7 +4660,7 @@ multimethod lucas => qw($) => sub {
     return nan if $x < 0;
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_lucnum_ui($r, CORE::int($x));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 binomial
@@ -4585,13 +4681,13 @@ multimethod binomial => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_bin_si($r, $r, CORE::int(Math::GMPq::Rmpq_get_d($$y)));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 multimethod binomial => qw(Math::BigNum $) => sub {
     my $r = _big2mpz($_[0]);
     Math::GMPz::Rmpz_bin_si($r, $r, CORE::int($_[1]));
-    _mpz2rat($r);
+    _mpz2big($r);
 };
 
 =head2 is_prime
@@ -4635,7 +4731,7 @@ sub next_prime {
     my ($x) = @_;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_nextprime($r, $r);
-    _mpz2rat($r);
+    _mpz2big($r);
 }
 
 #

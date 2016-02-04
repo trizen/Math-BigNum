@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 223;
+plan tests => 225;
 
 # Initialization
 
@@ -110,20 +110,20 @@ plan tests => 223;
 
     # Addition
     $z = $x + $y;
-    is("$z", "4.6");
+    is($z, 4.6);
 
     # Subtraction
     $z = $y - $x;
-    is("$z", "2.2");
+    is($z, 2.2);
 
     # Multiplication
     $z = $x * $y;
-    is("$z", "4.08");
+    is($z, 4.08);
 
     # Division
     $y += 0.2;
     $z = $y / $x;
-    is("$z", "3");
+    is($z, 3);
 
     # Square root
     $z = sqrt(25);
@@ -132,6 +132,15 @@ plan tests => 223;
     # Cube root
     $z = 125->cbrt;
     is("$z", "5");
+
+    # Integer square root
+    $z = 26->isqrt;
+    is($z, 5);
+
+    # bisqrt()
+    $z = 1234;
+    $z->bisqrt;
+    is($z, 35);
 
     # Sqr
     $z = 3->sqr;

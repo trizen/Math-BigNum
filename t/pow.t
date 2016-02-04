@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 93;
+plan tests => 144;
 
 use Math::BigNum;
 
@@ -175,6 +175,69 @@ $r = Math::BigNum->new(0);
 $r->bpow(-2);
 is(ref($r),  'Math::BigNum::Inf');
 is(lc("$r"), "inf");
+
+##############################################################
+# special values
+# See: https://en.wikipedia.org/wiki/NaN#Operations_generating_NaN
+
+{
+    use Math::BigNum qw(:constant);
+
+    # BigNum
+    is(0**0,               1);
+    is(ref(0**0),          'Math::BigNum');    # make sure we're getting BigNum objects
+    is(1**Inf,             1);
+    is((-1)**Inf,          1);
+    is(1**(-Inf),          1);
+    is((-1)**(-Inf),       1);
+    is(Inf**0,             1);
+    is((-Inf)**0,          1);
+    is((-Inf)**2,          Inf);
+    is((-Inf)**3,          -Inf);
+    is((-Inf)**2.3,        NaN);
+    is(Inf**2.3,           Inf);
+    is(Inf**-2.3,          0);
+    is((-Inf)**-3,         0);
+    is(Inf**Inf,           Inf);
+    is((-Inf)**Inf,        Inf);
+    is((-Inf)**(-Inf),     0);
+    is(Inf**(-Inf),        0);
+    is(100**(-Inf),        0);
+    is((-100)**(-Inf),     0);
+    is(((0**(1 / 0))**0),  1);
+    is(0->root(0)->pow(0), 1);
+    is((Inf)**(1 / (-12)), 0);
+    is((-Inf)**(1 / (-12)), 0);
+    is((Inf)**(1 / (2)), Inf);
+    is((-Inf)**(1 / (2)), NaN);    # sqrt(-Inf)
+    is((Inf)**(1 / (Inf)), 1);
+    is((-Inf)**(1 / (Inf)), 1);
+    is((Inf)**(1 / (-Inf)), 1);
+    is((-Inf)**(1 / (-Inf)), 1);
+
+    # Scalar
+    is("1"**Inf,               1);
+    is("-1"**Inf,              1);
+    is("1"**(-Inf),            1);
+    is("-1"**(-Inf),           1);
+    is(Inf**"0",               1);
+    is((-Inf)**"0",            1);
+    is((-Inf)**"2",            Inf);
+    is((-Inf)**"3",            -Inf);
+    is((-Inf)**"2.3",          NaN);
+    is(Inf**"2.3",             Inf);
+    is(Inf**"-2.3",            0);
+    is((-Inf)**"-3",           0);
+    is("100"**(-Inf),          0);
+    is("-100"**(-Inf),         0);
+    is(((0**(1 / 0))**"0"),    1);
+    is((("0"**(1 / 0))**"0"),  1);
+    is(0->root("0")->pow("0"), 1);
+    is((Inf)**("1" / (Inf)), 1);
+    is((-Inf)**("1" / (Inf)), 1);
+    is((Inf)**("1" / (-Inf)), 1);
+    is((-Inf)**("1" / (-Inf)), 1);
+}
 
 ##############################################################
 # real test
