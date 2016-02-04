@@ -41,7 +41,7 @@ numbers, focusing on performance and transparency.
 
 This module came into existence as a response to Dana Jacobsen's request for a transparent
 interface to I<Math::GMPz> and I<Math::MPFR>, that he talked about at the YAPC NA, in 2015.
-See he's presentation at: L<https://www.youtube.com/watch?v=Dhl4_Chvm_g>.
+See he's great presentation at: L<https://www.youtube.com/watch?v=Dhl4_Chvm_g>.
 
 The main aim of this module is to provide a fast and correct alternative to I<Math::Big{Float,Int,Rat}>.
 
@@ -71,6 +71,8 @@ I<Math::BigNum> does not export anything by default, but it recognizes the follo
     phi             # Golden ratio constant (1.618...)
     G               # Catalan's constant (0.91596...)
     Y               # Euler-Mascheroni constant (0.57721...)
+    Inf             # +Infinity constant
+    NaN             # Not-a-Number constant
 
 The syntax for importing something, is:
 
@@ -235,6 +237,8 @@ use overload
                      pi  => \&pi,
                      Y   => \&Y,
                      G   => \&G,
+                     Inf => \&inf,
+                     NaN => \&nan,
                     );
 
     sub import {
@@ -260,13 +264,13 @@ use overload
                 no strict 'refs';
 
                 my $inf_sub = $caller . '::' . 'Inf';
-                if (CORE::not defined &$inf_sub) {
+                if (!defined &$inf_sub) {
                     my $inf = inf();
                     *$inf_sub = sub () { $inf };
                 }
 
                 my $nan_sub = $caller . '::' . 'NaN';
-                if (CORE::not defined &$nan_sub) {
+                if (!defined &$nan_sub) {
                     my $nan = nan();
                     *$nan_sub = sub () { $nan };
                 }
@@ -274,7 +278,7 @@ use overload
             elsif (exists $constants{$name}) {
                 no strict 'refs';
                 my $caller_sub = $caller . '::' . $name;
-                if (CORE::not defined &$caller_sub) {
+                if (!defined &$caller_sub) {
                     my $sub   = $constants{$name};
                     my $value = Math::BigNum->$sub;
                     *$caller_sub = sub() { $value }
@@ -289,6 +293,8 @@ use overload
     }
 }
 
+# Converts a string representing a floating-point number into a rational representation
+# Example: "1.234" is converted into "1234/1000"
 # TODO: find a better solution (maybe)
 # This solution is very slow for literals with absolute big exponents, such as: "1e-10000000"
 sub _str2rat {
@@ -321,7 +327,7 @@ sub _str2rat {
 
         my ($before, $after) = split(/\./, substr($str, 0, $i));
 
-        if (CORE::not defined($after)) {    # return faster for numbers like "13e2"
+        if (!defined($after)) {    # return faster for numbers like "13e2"
             if ($exp >= 0) {
                 return ("$sign$before" . ('0' x $exp));
             }
@@ -362,12 +368,14 @@ sub _str2rat {
     }
 }
 
+# Converts a string into an mpfr object
 sub _str2mpfr {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_set_str($r, $_[0], 10, $ROUND);
     $r;
 }
 
+# Converts a string into an mpq object
 sub _str2mpq {
     my $r = Math::GMPq::Rmpq_init();
 
@@ -388,22 +396,26 @@ sub _str2mpq {
     $r;
 }
 
+# Converts a string into an mpz object
 sub _str2mpz {
     Math::GMPz::Rmpz_init_set_str($_[0], 10);
 }
 
+# Converts a BigNum object to mpfr
 sub _big2mpfr {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_set_q($r, ${$_[0]}, $ROUND);
     $r;
 }
 
+# Converts a BigNum object to mpz
 sub _big2mpz {
     my $i = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($i, ${$_[0]});
     $i;
 }
 
+# Converts an mpfr object to BigNum
 sub _mpfr2big {
 
     if (Math::MPFR::Rmpfr_inf_p($_[0])) {
@@ -424,6 +436,7 @@ sub _mpfr2big {
     bless \$r, __PACKAGE__;
 }
 
+# Converts an mpfr object to mpq and puts it in $x
 sub _mpfr2x {
 
     if (Math::MPFR::Rmpfr_inf_p($_[1])) {
@@ -443,6 +456,7 @@ sub _mpfr2x {
     $_[0];
 }
 
+# Converts an mpz object to BigNum
 sub _mpz2big {
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_set_z($r, $_[0]);
@@ -810,33 +824,6 @@ Returns a true value when the number is not zero. False otherwise.
 sub boolify {
     !!Math::GMPq::Rmpq_sgn(${$_[0]});
 }
-
-=head2 in_base
-
-    $x->in_base(BigNum)            # => Scalar
-    $x->in_base(Scalar)            # => Scalar
-
-Returns a string with the value of C<$x> in a given base,
-where the base can range from 2 to 36 inclusive. If C<$x>
-is not an integer, the result is returned in rationalized
-form.
-
-=cut
-
-multimethod in_base => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
-
-    if ($y < 2 or $y > 36) {
-        require Carp;
-        Carp::croak("base must be between 2 and 36, got $y");
-    }
-
-    Math::GMPq::Rmpq_get_str(${$_[0]}, $y);
-};
-
-multimethod in_base => qw(Math::BigNum Math::BigNum) => sub {
-    $_[0]->in_base(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
-};
 
 =head2 copy
 
@@ -3880,6 +3867,33 @@ sub as_hex {
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
     Math::GMPz::Rmpz_get_str($z, 16);
 }
+
+=head2 in_base
+
+    $x->in_base(BigNum)            # => Scalar
+    $x->in_base(Scalar)            # => Scalar
+
+Returns a string with the value of C<$x> in a given base,
+where the base can range from 2 to 36 inclusive. If C<$x>
+is not an integer, the result is returned in rationalized
+form.
+
+=cut
+
+multimethod in_base => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    if ($y < 2 or $y > 36) {
+        require Carp;
+        Carp::croak("base must be between 2 and 36, got $y");
+    }
+
+    Math::GMPq::Rmpq_get_str(${$_[0]}, $y);
+};
+
+multimethod in_base => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->in_base(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
+};
 
 =head2 digits
 
