@@ -47,3 +47,5 @@ t/rand.t
 t/root.t
 t/round.t
 t/trignometric.t
+utils/align_types.pl
+utils/auto_perltidy.sh

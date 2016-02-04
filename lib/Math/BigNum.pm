@@ -40,10 +40,10 @@ numbers, focusing on performance and transparency.
 =head1 MOTIVATION
 
 This module came into existence as a response to Dana Jacobsen's request for a transparent
-interface to I<Math::GMPz> and I<Math::MPFR>, which he talked about at the YAPC NA, in 2015.
-See the talk at: L<https://www.youtube.com/watch?v=Dhl4_Chvm_g>.
+interface to I<Math::GMPz> and I<Math::MPFR>, that he talked about at the YAPC NA, in 2015.
+See he's presentation at: L<https://www.youtube.com/watch?v=Dhl4_Chvm_g>.
 
-The aim of this module is to provide a correct and fast alternative to I<Math::Big{Float,Int,Rat}>.
+The main aim of this module is to provide a fast and correct alternative to I<Math::Big{Float,Int,Rat}>.
 
 =head1 HOW IT WORKS
 
@@ -101,9 +101,9 @@ of floating-point numbers.
 For example, let's change the precision to 3 decimal digits (where C<4> is the conversion factor):
 
     local $Math::BigNum::PREC = 3*4
-    say sqrt(2);                        # => 1.414
-    say 98**7;                          # => 86812553324672
-    say 1 / 98**7                       # => 1.15e-14
+    say sqrt(2);                   # => 1.414
+    say 98**7;                     # => 86812553324672
+    say 1 / 98**7                  # => 1.15e-14
 
 As shown above, integers do not obey the global precision, as they can grow or shrink, virtually, without any limit.
 This is true for rational numbers as well.
@@ -111,9 +111,9 @@ This is true for rational numbers as well.
 A rational number never losses precision in rational operations, therefore if we say:
 
     my $x = 1 / 3;
-    say $x * 3;         # => 1
-    say 1 / $x;         # => 3
-    say 3 / $x;         # => 9
+    say $x * 3;                    # => 1
+    say 1 / $x;                    # => 3
+    say 3 / $x;                    # => 9
 
 ...the results are exactly what we expect.
 
@@ -166,78 +166,6 @@ my $ONE = do {
     Math::GMPq::Rmpq_set_ui($r, 1, 1);
     $r;
 };
-
-=head2 nan
-
-    BigNum->nan        # => Nan
-
-Returns a new Nan object.
-
-=cut
-
-BEGIN { *nan = \&Math::BigNum::Nan::nan }
-
-=head2 inf
-
-    BigNum->inf        # => Inf
-
-Returns a new Inf object to represent positive Infinity.
-
-=cut
-
-BEGIN { *inf = \&Math::BigNum::Inf::inf }
-
-=head2 ninf
-
-    BigNum->ninf       # => -Inf
-
-Returns an Inf object to represent negative Infinity.
-
-=cut
-
-BEGIN { *ninf = \&Math::BigNum::Inf::ninf }
-
-=head2 one
-
-    BigNum->one       # => BigNum
-
-Returns a BigNum object containing the value C<1>.
-
-=cut
-
-sub one {
-    my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set($r, $ONE);
-    bless \$r, __PACKAGE__;
-}
-
-=head2 zero
-
-    BigNum->zero        # => BigNum
-
-Returns a BigNum object containing the value C<0>.
-
-=cut
-
-sub zero {
-    my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set($r, $ZERO);
-    bless \$r, __PACKAGE__;
-}
-
-=head2 mone
-
-    BigNum->mone        # => BigNum
-
-Returns a BigNum object containing the value C<-1>.
-
-=cut
-
-sub mone {
-    my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set($r, $MONE);
-    bless \$r, __PACKAGE__;
-}
 
 use overload
   '""' => \&stringify,
@@ -361,6 +289,171 @@ use overload
     }
 }
 
+# TODO: find a better solution (maybe)
+# This solution is very slow for literals with absolute big exponents, such as: "1e-10000000"
+sub _str2rat {
+    my $str = lc($_[0] || "0");
+
+    my $sign = substr($str, 0, 1);
+    if ($sign eq '-') {
+        substr($str, 0, 1, '');
+        $sign = '-';
+    }
+    else {
+        substr($str, 0, 1, '') if ($sign eq '+');
+        $sign = '';
+    }
+
+    my $i;
+    if (($i = index($str, 'e')) != -1) {
+
+        my $exp = substr($str, $i + 1);
+
+        # Handle specially numbers with very big exponents
+        # (it's not a very good solution, but I hope it's only temporary)
+        if (CORE::abs($exp) >= 1000000) {
+            my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
+            Math::MPFR::Rmpfr_set_str($mpfr, "$sign$str", 10, $ROUND);
+            my $mpq = Math::GMPq::Rmpq_init();
+            Math::MPFR::Rmpfr_get_q($mpq, $mpfr);
+            return Math::GMPq::Rmpq_get_str($mpq, 10);
+        }
+
+        my ($before, $after) = split(/\./, substr($str, 0, $i));
+
+        if (CORE::not defined($after)) {    # return faster for numbers like "13e2"
+            if ($exp >= 0) {
+                return ("$sign$before" . ('0' x $exp));
+            }
+            else {
+                $after = '';
+            }
+        }
+
+        my $numerator   = "$before$after";
+        my $denominator = "1";
+
+        if ($exp < 1) {
+            $denominator .= '0' x (CORE::abs($exp) + length($after));
+        }
+        else {
+            my $diff = ($exp - length($after));
+            if ($diff >= 0) {
+                $numerator .= '0' x $diff;
+            }
+            else {
+                my $s = "$before$after";
+                substr($s, $exp + length($before), 0, '.');
+                return _str2rat("$sign$s");
+            }
+        }
+
+        "$sign$numerator/$denominator";
+    }
+    elsif (($i = index($str, '.')) != -1) {
+        my ($before, $after) = (substr($str, 0, $i), substr($str, $i + 1));
+        if ($after =~ tr/0// == length($after)) {
+            return "$sign$before";
+        }
+        $sign . ("$before$after/1" =~ s/^0+//r) . ('0' x length($after));
+    }
+    else {
+        "$sign$str";
+    }
+}
+
+sub _str2mpfr {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_set_str($r, $_[0], 10, $ROUND);
+    $r;
+}
+
+sub _str2mpq {
+    my $r = Math::GMPq::Rmpq_init();
+
+    if ((~$_[0] & $_[0]) eq '0' and CORE::int($_[0]) eq $_[0]) {
+        if ($_[0] >= 0) {
+            Math::GMPq::Rmpq_set_ui($r, $_[0], 1);
+        }
+        else {
+            Math::GMPq::Rmpq_set_si($r, $_[0], 1);
+        }
+    }
+    else {
+        my $rat = _str2rat($_[0]);
+        Math::GMPq::Rmpq_set_str($r, $rat, 10);
+        Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
+    }
+
+    $r;
+}
+
+sub _str2mpz {
+    Math::GMPz::Rmpz_init_set_str($_[0], 10);
+}
+
+sub _big2mpfr {
+    my $r = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_set_q($r, ${$_[0]}, $ROUND);
+    $r;
+}
+
+sub _big2mpz {
+    my $i = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_set_q($i, ${$_[0]});
+    $i;
+}
+
+sub _mpfr2big {
+
+    if (Math::MPFR::Rmpfr_inf_p($_[0])) {
+        if (Math::MPFR::Rmpfr_sgn($_[0]) > 0) {
+            return inf();
+        }
+        else {
+            return ninf();
+        }
+    }
+
+    if (Math::MPFR::Rmpfr_nan_p($_[0])) {
+        return nan();
+    }
+
+    my $r = Math::GMPq::Rmpq_init();
+    Math::MPFR::Rmpfr_get_q($r, $_[0]);
+    bless \$r, __PACKAGE__;
+}
+
+sub _mpfr2x {
+
+    if (Math::MPFR::Rmpfr_inf_p($_[1])) {
+        if (Math::MPFR::Rmpfr_sgn($_[1]) > 0) {
+            return $_[0]->binf;
+        }
+        else {
+            return $_[0]->bninf;
+        }
+    }
+
+    if (Math::MPFR::Rmpfr_nan_p($_[1])) {
+        return $_[0]->bnan;
+    }
+
+    Math::MPFR::Rmpfr_get_q(${$_[0]}, $_[1]);
+    $_[0];
+}
+
+sub _mpz2big {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_z($r, $_[0]);
+    bless \$r, __PACKAGE__;
+}
+
+*_big2inf  = \&Math::BigNum::Inf::_big2inf;
+*_big2ninf = \&Math::BigNum::Inf::_big2ninf;
+
+#*_big2cplx = \&Math::BigNum::Complex::_big2cplx;
+
 sub _new_int {
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_set_si($r, $_[0], 1);
@@ -375,8 +468,8 @@ sub _new_uint {
 
 =head2 new
 
-    BigNum->new(Scalar)              # => BigNum
-    BigNum->new(Scalar, Scalar)      # => BigNum
+    BigNum->new(Scalar)            # => BigNum
+    BigNum->new(Scalar, Scalar)    # => BigNum
 
 Returns a new BigNum object with the value specified in the first argument,
 which can be a Perl numerical value, a string representing a number in a
@@ -517,174 +610,81 @@ multimethod new => qw($ Math::GMPq) => sub {
     bless \$r, $_[0];
 };
 
-# TODO: find a better solution (maybe)
-# This solution is very slow for literals with absolute big exponents, such as: "1e-10000000"
-sub _str2rat {
-    my $str = lc($_[0] || "0");
+=head2 nan
 
-    my $sign = substr($str, 0, 1);
-    if ($sign eq '-') {
-        substr($str, 0, 1, '');
-        $sign = '-';
-    }
-    else {
-        substr($str, 0, 1, '') if ($sign eq '+');
-        $sign = '';
-    }
+    BigNum->nan                    # => Nan
 
-    my $i;
-    if (($i = index($str, 'e')) != -1) {
+Returns a new Nan object.
 
-        my $exp = substr($str, $i + 1);
+=cut
 
-        # Handle specially numbers with very big exponents
-        # (it's not a very good solution, but I hope it's only temporary)
-        if (CORE::abs($exp) >= 1000000) {
-            my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
-            Math::MPFR::Rmpfr_set_str($mpfr, "$sign$str", 10, $ROUND);
-            my $mpq = Math::GMPq::Rmpq_init();
-            Math::MPFR::Rmpfr_get_q($mpq, $mpfr);
-            return Math::GMPq::Rmpq_get_str($mpq, 10);
-        }
+BEGIN { *nan = \&Math::BigNum::Nan::nan }
 
-        my ($before, $after) = split(/\./, substr($str, 0, $i));
+=head2 inf
 
-        if (CORE::not defined($after)) {    # return faster for numbers like "13e2"
-            if ($exp >= 0) {
-                return ("$sign$before" . ('0' x $exp));
-            }
-            else {
-                $after = '';
-            }
-        }
+    BigNum->inf                    # => Inf
 
-        my $numerator   = "$before$after";
-        my $denominator = "1";
+Returns a new Inf object to represent positive Infinity.
 
-        if ($exp < 1) {
-            $denominator .= '0' x (CORE::abs($exp) + length($after));
-        }
-        else {
-            my $diff = ($exp - length($after));
-            if ($diff >= 0) {
-                $numerator .= '0' x $diff;
-            }
-            else {
-                my $s = "$before$after";
-                substr($s, $exp + length($before), 0, '.');
-                return _str2rat("$sign$s");
-            }
-        }
+=cut
 
-        "$sign$numerator/$denominator";
-    }
-    elsif (($i = index($str, '.')) != -1) {
-        my ($before, $after) = (substr($str, 0, $i), substr($str, $i + 1));
-        if ($after =~ tr/0// == length($after)) {
-            return "$sign$before";
-        }
-        $sign . ("$before$after/1" =~ s/^0+//r) . ('0' x length($after));
-    }
-    else {
-        "$sign$str";
-    }
-}
+BEGIN { *inf = \&Math::BigNum::Inf::inf }
 
-sub _str2mpfr {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_set_str($r, $_[0], 10, $ROUND);
-    $r;
-}
+=head2 ninf
 
-sub _str2mpq {
+    BigNum->ninf                   # => -Inf
+
+Returns an Inf object to represent negative Infinity.
+
+=cut
+
+BEGIN { *ninf = \&Math::BigNum::Inf::ninf }
+
+=head2 one
+
+    BigNum->one                    # => BigNum
+
+Returns a BigNum object containing the value C<1>.
+
+=cut
+
+sub one {
     my $r = Math::GMPq::Rmpq_init();
-
-    if ((~$_[0] & $_[0]) eq '0' and CORE::int($_[0]) eq $_[0]) {
-        if ($_[0] >= 0) {
-            Math::GMPq::Rmpq_set_ui($r, $_[0], 1);
-        }
-        else {
-            Math::GMPq::Rmpq_set_si($r, $_[0], 1);
-        }
-    }
-    else {
-        my $rat = _str2rat($_[0]);
-        Math::GMPq::Rmpq_set_str($r, $rat, 10);
-        Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
-    }
-
-    $r;
-}
-
-sub _str2mpz {
-    Math::GMPz::Rmpz_init_set_str($_[0], 10);
-}
-
-sub _big2mpfr {
-    my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_set_q($r, ${$_[0]}, $ROUND);
-    $r;
-}
-
-sub _big2mpz {
-    my $i = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_set_q($i, ${$_[0]});
-    $i;
-}
-
-sub _mpfr2big {
-
-    if (Math::MPFR::Rmpfr_inf_p($_[0])) {
-        if (Math::MPFR::Rmpfr_sgn($_[0]) > 0) {
-            return inf;
-        }
-        else {
-            return ninf;
-        }
-    }
-
-    if (Math::MPFR::Rmpfr_nan_p($_[0])) {
-        return nan;
-    }
-
-    my $r = Math::GMPq::Rmpq_init();
-    Math::MPFR::Rmpfr_get_q($r, $_[0]);
+    Math::GMPq::Rmpq_set($r, $ONE);
     bless \$r, __PACKAGE__;
 }
 
-sub _mpfr2x {
+=head2 zero
 
-    if (Math::MPFR::Rmpfr_inf_p($_[1])) {
-        if (Math::MPFR::Rmpfr_sgn($_[1]) > 0) {
-            return $_[0]->binf;
-        }
-        else {
-            return $_[0]->bninf;
-        }
-    }
+    BigNum->zero                   # => BigNum
 
-    if (Math::MPFR::Rmpfr_nan_p($_[1])) {
-        return $_[0]->bnan;
-    }
+Returns a BigNum object containing the value C<0>.
 
-    Math::MPFR::Rmpfr_get_q(${$_[0]}, $_[1]);
-    $_[0];
-}
+=cut
 
-sub _mpz2big {
+sub zero {
     my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set_z($r, $_[0]);
+    Math::GMPq::Rmpq_set($r, $ZERO);
     bless \$r, __PACKAGE__;
 }
 
-*_big2inf  = \&Math::BigNum::Inf::_big2inf;
-*_big2ninf = \&Math::BigNum::Inf::_big2ninf;
+=head2 mone
 
-#*_big2cplx = \&Math::BigNum::Complex::_big2cplx;
+    BigNum->mone                   # => BigNum
+
+Returns a BigNum object containing the value C<-1>.
+
+=cut
+
+sub mone {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set($r, $MONE);
+    bless \$r, __PACKAGE__;
+}
 
 =head2 stringify
 
-    $x->stringify       # => Scalar
+    $x->stringify                  # => Scalar
 
 Returns a string representing the value of C<$x>, either as an integer
 or as a floating-point number. For C<$x=1/2>, it returns C<"0.5">.
@@ -789,7 +789,7 @@ sub stringify {
 
 =head2 numify
 
-    $x->numify      # => Scalar
+    $x->numify                     # => Scalar
 
 Returns a Perl numerical scalar with the value of C<$x>, truncated if needed.
 
@@ -801,7 +801,7 @@ sub numify {
 
 =head2 boolify
 
-    $x->boolify     # => Bool
+    $x->boolify                    # => Bool
 
 Returns a true value when the number is not zero. False otherwise.
 
@@ -813,8 +813,8 @@ sub boolify {
 
 =head2 in_base
 
-    $x->in_base(BigNum)     # => Scalar
-    $x->in_base(Scalar)     # => Scalar
+    $x->in_base(BigNum)            # => Scalar
+    $x->in_base(Scalar)            # => Scalar
 
 Returns a string with the value of C<$x> in a given base,
 where the base can range from 2 to 36 inclusive. If C<$x>
@@ -840,7 +840,7 @@ multimethod in_base => qw(Math::BigNum Math::BigNum) => sub {
 
 =head2 copy
 
-    $x->copy        # => BigNum
+    $x->copy                       # => BigNum
 
 Returns a deep copy of C<$x>.
 
@@ -858,7 +858,7 @@ sub copy {
 
 =head2 pi
 
-    BigNum->pi      # => BigNum
+    BigNum->pi                     # => BigNum
 
 Returns the number PI, which is C<3.1415...>.
 
@@ -872,7 +872,7 @@ sub pi {
 
 =head2 tau
 
-    BigNum->tau      # => BigNum
+    BigNum->tau                    # => BigNum
 
 Returns the number TAU, which is C<2*PI>.
 
@@ -887,7 +887,7 @@ sub tau {
 
 =head2 ln2
 
-    BigNum->ln2      # => BigNum
+    BigNum->ln2                    # => BigNum
 
 Returns the natural logarithm of C<2>.
 
@@ -901,7 +901,7 @@ sub ln2 {
 
 =head2 Y
 
-    BigNum->Y       # => BigNum
+    BigNum->Y                      # => BigNum
 
 Returns the Euler-Mascheroni constant, which is C<0.57721...>.
 
@@ -915,7 +915,7 @@ sub Y {
 
 =head2 G
 
-    BigNum->G       # => BigNum
+    BigNum->G                      # => BigNum
 
 Returns the value of Catalan's constant, also known
 as Beta(2) or G, and starts as: C<0.91596...>.
@@ -930,7 +930,7 @@ sub G {
 
 =head2 e
 
-    BigNum->e      # => BigNum
+    BigNum->e                      # => BigNum
 
 Returns the e mathematical constant, which is C<2.718...>.
 
@@ -945,7 +945,7 @@ sub e {
 
 =head2 phi
 
-    BigNum->phi     # => BigNum
+    BigNum->phi                    # => BigNum
 
 Returns the value of the golden ratio, which is C<1.61803...>.
 
@@ -970,7 +970,7 @@ sub phi {
 
 =head2 bzero
 
-    $x->bzero     # => BigNum
+    $x->bzero                      # => BigNum
 
 Changes C<$x> in-place to hold the value 0.
 
@@ -987,7 +987,7 @@ sub bzero {
 
 =head2 bone
 
-    $x->bone      # => BigNum
+    $x->bone                       # => BigNum
 
 Changes C<$x> in-place to hold the value +1.
 
@@ -1004,7 +1004,7 @@ sub bone {
 
 =head2 bmone
 
-    $x->bmone      # => BigNum
+    $x->bmone                      # => BigNum
 
 Changes C<$x> in-place to hold the value -1.
 
@@ -1021,7 +1021,7 @@ sub bmone {
 
 =head2 binf
 
-    $x->binf        # => Inf
+    $x->binf                       # => Inf
 
 Changes C<$x> in-place to positive Infinity.
 
@@ -1031,7 +1031,7 @@ Changes C<$x> in-place to positive Infinity.
 
 =head2 bninf
 
-    $x->bninf       # => -Inf
+    $x->bninf                      # => -Inf
 
 Changes C<$x> in-place to negative Infinity.
 
@@ -1041,7 +1041,7 @@ Changes C<$x> in-place to negative Infinity.
 
 =head2 bnan
 
-    $x->bnan        # => Nan
+    $x->bnan                       # => Nan
 
 Changes C<$x> in-place to the special Not-A-Number value.
 
@@ -1055,12 +1055,12 @@ Changes C<$x> in-place to the special Not-A-Number value.
 
 =head2 add
 
-    $x->add(BigNum)       # => BigNum
-    $x->add(Scalar)       # => BigNum
+    $x->add(BigNum)                # => BigNum
+    $x->add(Scalar)                # => BigNum
 
-    BigNum + BigNum       # => BigNum
-    BigNum + Scalar       # => BigNum
-    Scalar + BigNum       # => BigNum
+    BigNum + BigNum                # => BigNum
+    BigNum + Scalar                # => BigNum
+    Scalar + BigNum                # => BigNum
 
 Adds C<$y> to C<$x> and returns the result.
 
@@ -1091,11 +1091,11 @@ multimethod add => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 badd
 
-    $x->badd(BigNum)      # => BigNum
-    $x->badd(Scalar)      # => BigNum
+    $x->badd(BigNum)               # => BigNum
+    $x->badd(Scalar)               # => BigNum
 
-    BigNum += BigNum      # => BigNum
-    BigNum += Scalar      # => BigNum
+    BigNum += BigNum               # => BigNum
+    BigNum += Scalar               # => BigNum
 
 Adds C<$y> to C<$x>, changing C<$x> in-place.
 
@@ -1118,8 +1118,8 @@ multimethod badd => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 iadd
 
-    $x->iadd(BigNum)        # => BigNum
-    $x->iadd(Scalar)        # => BigNum
+    $x->iadd(BigNum)               # => BigNum
+    $x->iadd(Scalar)               # => BigNum
 
 Integer addition of C<$y> to C<$x>. Both values
 are truncated to integers before addition.
@@ -1146,8 +1146,8 @@ multimethod iadd => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 biadd
 
-    $x->biadd(BigNum)        # => BigNum
-    $x->biadd(Scalar)        # => BigNum
+    $x->biadd(BigNum)              # => BigNum
+    $x->biadd(Scalar)              # => BigNum
 
 Integer addition of C<$y> from C<$x>, changing C<$x> in-place.
 Both values are truncated to integers before addition.
@@ -1176,12 +1176,12 @@ multimethod biadd => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 sub
 
-    $x->sub(BigNum)       # => BigNum
-    $x->sub(Scalar)       # => BigNum
+    $x->sub(BigNum)                # => BigNum
+    $x->sub(Scalar)                # => BigNum
 
-    BigNum - BigNum       # => BigNum
-    BigNum - Scalar       # => BigNum
-    Scalar - BigNum       # => BigNum
+    BigNum - BigNum                # => BigNum
+    BigNum - Scalar                # => BigNum
+    Scalar - BigNum                # => BigNum
 
 Subtracts C<$y> from C<$x> and returns the result.
 
@@ -1219,11 +1219,11 @@ multimethod sub => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bsub
 
-    $x->bsub(BigNum)      # => BigNum
-    $x->bsub(Scalar)      # => BigNum
+    $x->bsub(BigNum)               # => BigNum
+    $x->bsub(Scalar)               # => BigNum
 
-    BigNum -= BigNum      # => BigNum
-    BigNum -= Scalar      # => BigNum
+    BigNum -= BigNum               # => BigNum
+    BigNum -= Scalar               # => BigNum
 
 Subtracts C<$y> from C<$x> by changing C<$x> in-place.
 
@@ -1246,8 +1246,8 @@ multimethod bsub => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 isub
 
-    $x->isub(BigNum)        # => BigNum
-    $x->isub(Scalar)        # => BigNum
+    $x->isub(BigNum)               # => BigNum
+    $x->isub(Scalar)               # => BigNum
 
 Integer subtraction of C<$y> from C<$x>. Both values
 are truncated to integers before subtraction.
@@ -1276,8 +1276,8 @@ multimethod isub => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bisub
 
-    $x->bisub(BigNum)        # => BigNum
-    $x->bisub(Scalar)        # => BigNum
+    $x->bisub(BigNum)              # => BigNum
+    $x->bisub(Scalar)              # => BigNum
 
 Integer subtraction of C<$y> from $x, changing C<$x> in-place.
 Both values are truncated to integers before subtraction.
@@ -1306,12 +1306,12 @@ multimethod bisub => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 mul
 
-    $x->mul(BigNum)       # => BigNum
-    $x->mul(Scalar)       # => BigNum
+    $x->mul(BigNum)                # => BigNum
+    $x->mul(Scalar)                # => BigNum
 
-    BigNum * BigNum       # => BigNum
-    BigNum * Scalar       # => BigNum
-    Scalar * BigNum       # => BigNum
+    BigNum * BigNum                # => BigNum
+    BigNum * Scalar                # => BigNum
+    Scalar * BigNum                # => BigNum
 
 Multiplies C<$x> by C<$y> and returns the result.
 
@@ -1346,11 +1346,11 @@ multimethod mul => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bmul
 
-    $x->bmul(BigNum)        # => BigNum
-    $x->bmul(Scalar)        # => BigNum
+    $x->bmul(BigNum)               # => BigNum
+    $x->bmul(Scalar)               # => BigNum
 
-    BigNum *= BigNum        # => BigNum
-    BigNum *= Scalar        # => BigNum
+    BigNum *= BigNum               # => BigNum
+    BigNum *= Scalar               # => BigNum
 
 Multiply C<$x> by C<$y>, changing C<$x> in-place.
 
@@ -1381,8 +1381,8 @@ multimethod bmul => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 imul
 
-    $x->imul(BigNum)        # => BigNum
-    $x->imul(Scalar)        # => BigNum
+    $x->imul(BigNum)               # => BigNum
+    $x->imul(Scalar)               # => BigNum
 
 Integer multiplication of C<$x> by C<$y>. Both values
 are truncated to integers before multiplication.
@@ -1413,8 +1413,8 @@ multimethod imul => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bimul
 
-    $x->bimul(BigNum)        # => BigNum
-    $x->bimul(Scalar)        # => BigNum
+    $x->bimul(BigNum)              # => BigNum
+    $x->bimul(Scalar)              # => BigNum
 
 Integer multiplication of C<$x> by C<$y>, changing C<$x> in-place.
 Both values are truncated to integers before multiplication.
@@ -1448,12 +1448,12 @@ multimethod bimul => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 div
 
-    $x->div(BigNum)       # => BigNum | Inf | Nan
-    $x->div(Scalar)       # => BigNum | Inf | Nan
+    $x->div(BigNum)                # => BigNum | Inf | Nan
+    $x->div(Scalar)                # => BigNum | Inf | Nan
 
-    BigNum / BigNum       # => BigNum | Inf | Nan
-    BigNum / Scalar       # => BigNum | Inf | Nan
-    Scalar / BigNum       # => BigNum | Inf | Nan
+    BigNum / BigNum                # => BigNum | Inf | Nan
+    BigNum / Scalar                # => BigNum | Inf | Nan
+    Scalar / BigNum                # => BigNum | Inf | Nan
 
 Divides C<$x> by C<$y> and returns the result. Returns Nan when C<$x> and C<$y> are 0,
 Inf when C<$y> is $zero and C<$x> is positive, -Inf when C<$y> is zero and C<$x> is negative.
@@ -1528,11 +1528,11 @@ multimethod div => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bdiv
 
-    $x->bdiv(BigNum)        # => BigNum | Nan | Inf
-    $x->bdiv(Scalar)        # => BigNum | Nan | Inf
+    $x->bdiv(BigNum)               # => BigNum | Nan | Inf
+    $x->bdiv(Scalar)               # => BigNum | Nan | Inf
 
-    BigNum /= BigNum        # => BigNum | Nan | Inf
-    BigNum /= Scalar        # => BigNum | Nan | Inf
+    BigNum /= BigNum               # => BigNum | Nan | Inf
+    BigNum /= Scalar               # => BigNum | Nan | Inf
 
 Divide C<$x> by C<$y>, changing C<$x> in-place. The return values are the same as for C<div()>.
 
@@ -1573,8 +1573,8 @@ multimethod bdiv => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 idiv
 
-    $x->idiv(BigNum)        # => BigNum | Nan | Inf
-    $x->idiv(Scalar)        # => BigNum | Nan | Inf
+    $x->idiv(BigNum)               # => BigNum | Nan | Inf
+    $x->idiv(Scalar)               # => BigNum | Nan | Inf
 
 Integer division of C<$x> by C<$y>.
 
@@ -1617,8 +1617,8 @@ multimethod idiv => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bidiv
 
-    $x->bidiv(BigNum)       # => BigNum | Nan | Inf
-    $x->bidiv(Scalar)       # => BigNum | Nan | Inf
+    $x->bidiv(BigNum)              # => BigNum | Nan | Inf
+    $x->bidiv(Scalar)              # => BigNum | Nan | Inf
 
 Integer division of C<$x> by C<$y>, changing C<$x> in-place.
 
@@ -1670,8 +1670,8 @@ multimethod bidiv => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 neg
 
-    $x->neg     # => BigNum
-    -$x         # => BigNum
+    $x->neg                        # => BigNum
+    -$x                            # => BigNum
 
 Negative value of C<$x>. Returns C<abs($x)> when C<$x> is negative, and C<-$x> when C<$x> is positive.
 
@@ -1686,7 +1686,7 @@ sub neg {
 
 =head2 bneg
 
-    $x->bneg     # => BigNum
+    $x->bneg                       # => BigNum
 
 Negative value of C<$x>, changing C<$x> in-place.
 
@@ -1700,8 +1700,8 @@ sub bneg {
 
 =head2 abs
 
-    $x->abs     # => BigNum
-    abs($x)     # => BigNum
+    $x->abs                        # => BigNum
+    abs($x)                        # => BigNum
 
 Absolute value of C<$x>.
 
@@ -1716,7 +1716,7 @@ sub abs {
 
 =head2 babs
 
-    $x->babs     # => BigNum
+    $x->babs                       # => BigNum
 
 Absolute value of C<$x>, changing C<$x> in-place.
 
@@ -1730,7 +1730,7 @@ sub babs {
 
 =head2 inv
 
-    $x->inv     # => BigNum | Inf
+    $x->inv                        # => BigNum | Inf
 
 Inverse value of C<$x>. Return Inf when C<$x> is zero. (C<1/$x>)
 
@@ -1751,7 +1751,7 @@ sub inv {
 
 =head2 sqr
 
-    $x->sqr    # => BigNum
+    $x->sqr                        # => BigNum
 
 Raise C<$x> to the power of 2 and return the result. (C<$x**2>)
 
@@ -1766,8 +1766,8 @@ sub sqr {
 
 =head2 sqrt
 
-    $x->sqrt        # => BigNum | Nan
-    sqrt($x)        # => BigNum | Nan
+    $x->sqrt                       # => BigNum | Nan
+    sqrt($x)                       # => BigNum | Nan
 
 Square root of C<$x>. Returns Nan when C<$x> is negative.
 
@@ -1782,7 +1782,7 @@ sub sqrt {
 
 =head2 bsqrt
 
-    $x->bsqrt       # => BigNum | Nan
+    $x->bsqrt                      # => BigNum | Nan
 
 Square root of C<$x>, changing C<$x> in-place. Promotes C<$x> to Nan when C<$x> is negative.
 
@@ -1797,7 +1797,7 @@ sub bsqrt {
 
 =head2 isqrt
 
-    $x->isqrt       # => BigNum | Nan
+    $x->isqrt                      # => BigNum | Nan
 
 Integer square root of C<$x>. Returns Nan when C<$x> is negative.
 
@@ -1812,7 +1812,7 @@ sub isqrt {
 
 =head2 bisqrt
 
-    $x->bisqrt       # => BigNum | Nan
+    $x->bisqrt                     # => BigNum | Nan
 
 Integer square root of C<$x>, changing C<$x> in-place. Promotes C<$x> to Nan when C<$x> is negative.
 
@@ -1829,7 +1829,7 @@ sub bisqrt {
 
 =head2 cbrt
 
-    $x->cbrt    # => BigNum | Nan
+    $x->cbrt                       # => BigNum | Nan
 
 Cube root of C<$x>. Returns Nan when C<$x> is negative.
 
@@ -1844,8 +1844,8 @@ sub cbrt {
 
 =head2 root
 
-    $x->root(BigNum)      # => BigNum | Nan
-    $x->root(Scalar)      # => BigNum | Nan
+    $x->root(BigNum)               # => BigNum | Nan
+    $x->root(Scalar)               # => BigNum | Nan
 
 Nth root of C<$x>. Returns Nan when C<$x> is negative.
 
@@ -1870,8 +1870,8 @@ multimethod root => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 broot
 
-    $x->broot(BigNum)      # => BigNum | Nan
-    $x->broot(Scalar)      # => BigNum(1)
+    $x->broot(BigNum)              # => BigNum | Nan
+    $x->broot(Scalar)              # => BigNum(1)
 
 Nth root of C<$x>, changing C<$x> in-place. Promotes
 C<$x> to Nan when C<$x> is negative.
@@ -1898,8 +1898,8 @@ multimethod broot => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 iroot
 
-    $x->iroot(BigNum)       # => BigNum | Nan
-    $x->iroot(Scalar)       # => BigNum | Nan
+    $x->iroot(BigNum)              # => BigNum | Nan
+    $x->iroot(Scalar)              # => BigNum | Nan
 
 Nth integer root of C<$x> (C<$x**(1/$n)>). Returns
 Nan when C<$x> is negative and C<$y> is even.
@@ -1919,8 +1919,8 @@ multimethod iroot => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 biroot
 
-    $x->biroot(BigNum)       # => BigNum | Nan
-    $x->biroot(Scalar)       # => BigNum | Nan
+    $x->biroot(BigNum)             # => BigNum | Nan
+    $x->biroot(Scalar)             # => BigNum | Nan
 
 Nth integer root of C<$x>, changing C<$x> in-place. Promotes
 C<$x> to Nan when C<$x> is negative and C<$y> is even.
@@ -1948,12 +1948,12 @@ multimethod biroot => qw(Math::BigNum Math::BigNum) => sub {
 
 =head2 pow
 
-    $x->pow(BigNum)     # => BigNum | Nan
-    $x->pow(Scalar)     # => BigNum | Nan
+    $x->pow(BigNum)                # => BigNum | Nan
+    $x->pow(Scalar)                # => BigNum | Nan
 
-    BigNum ** BigNum    # => BigNum | Nan
-    BigNum ** Scalar    # => BigNum | Nan
-    Scalar ** BigNum    # => BigNum | Nan
+    BigNum ** BigNum               # => BigNum | Nan
+    BigNum ** Scalar               # => BigNum | Nan
+    Scalar ** BigNum               # => BigNum | Nan
 
 Raise C<$x> to power C<$y>. Returns Nan when C<$x> is negative
 and C<$y> is not an integer.
@@ -2039,8 +2039,8 @@ multimethod pow => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bpow
 
-    $x->bpow(BigNum)     # => BigNum | Nan
-    $x->bpow(Scalar)     # => BigNum | Nan
+    $x->bpow(BigNum)               # => BigNum | Nan
+    $x->bpow(Scalar)               # => BigNum | Nan
 
 Raise C<$x> to power C<$y>, changing C<$x> in-place.
 
@@ -2124,7 +2124,7 @@ multimethod bpow => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 ln
 
-    $x->ln          # => BigNum | Nan
+    $x->ln                         # => BigNum | Nan
 
 Logarithm of C<$x> in base e. Returns Nan when C<$x> is negative.
 
@@ -2139,10 +2139,10 @@ sub ln {
 
 =head2 log
 
-    $x->log              # => BigNum | Nan
-    $x->log(BigNum)      # => BigNum | Nan
-    $x->log(Scalar)      # => BigNum | Nan
-    log(BigNum)          # => BigNum | Nan
+    $x->log                        # => BigNum | Nan
+    $x->log(BigNum)                # => BigNum | Nan
+    $x->log(Scalar)                # => BigNum | Nan
+    log(BigNum)                    # => BigNum | Nan
 
 Logarithm of C<$x> in base C<$y>. When C<$y> is not specified, it defaults to base e.
 Returns Nan when C<$x> is negative and -Inf when C<$x> is zero.
@@ -2187,9 +2187,9 @@ multimethod log => qw(Math::BigNum) => \&ln;
 
 =head2 blog
 
-    $x->blog            # => BigNum | Nan
-    $x->blog(BigNum)    # => BigNum | Nan
-    $x->log(Scalar)     # => BigNum | Nan
+    $x->blog                       # => BigNum | Nan
+    $x->blog(BigNum)               # => BigNum | Nan
+    $x->log(Scalar)                # => BigNum | Nan
 
 Logarithm of C<$x> in base C<$y>, changing the C<$x> in-place.
 When C<$y> is not specified, it defaults to base e.
@@ -2230,7 +2230,7 @@ multimethod blog => qw(Math::BigNum) => sub {
 
 =head2 log2
 
-    $x->log2        # => BigNum | Nan
+    $x->log2                       # => BigNum | Nan
 
 Logarithm of C<$x> in base 2. Returns Nan when C<$x> is negative.
 
@@ -2245,7 +2245,7 @@ sub log2 {
 
 =head2 log10
 
-    $x->log10       # => BigNum | Nan
+    $x->log10                      # => BigNum | Nan
 
 Logarithm of C<$x> in base 10. Returns Nan when C<$x> is negative.
 
@@ -2260,7 +2260,7 @@ sub log10 {
 
 =head2 exp
 
-    $x->exp         # => BigNum
+    $x->exp                        # => BigNum
 
 Exponential of C<$x> in base e. (C<e**$x>)
 
@@ -2274,7 +2274,7 @@ sub exp {
 
 =head2 bexp
 
-    $x->bexp        # => BigNum
+    $x->bexp                       # => BigNum
 
 Exponential of C<$x> in base e, changing C<$x> in-place.
 
@@ -2290,7 +2290,7 @@ sub bexp {
 
 =head2 exp2
 
-    $x->exp2        # => BigNum
+    $x->exp2                       # => BigNum
 
 Exponential of C<$x> in base 2. (C<2**$x>)
 
@@ -2304,7 +2304,7 @@ sub exp2 {
 
 =head2 exp10
 
-    $x->exp10       # => BigNum
+    $x->exp10                      # => BigNum
 
 Exponential of C<$x> in base 10. (C<10**$x>)
 
@@ -2322,7 +2322,7 @@ sub exp10 {
 
 =head2 sin
 
-    $x->sin       # => BigNum
+    $x->sin                        # => BigNum
 
 Returns the sine of C<$x>.
 
@@ -2336,7 +2336,7 @@ sub sin {
 
 =head2 asin
 
-    $x->asin       # => BigNum | Nan
+    $x->asin                       # => BigNum | Nan
 
 Returns the inverse sine of C<$x>.
 Returns Nan for C<<$x < -1>> or C<<$x > 1>>.
@@ -2352,7 +2352,7 @@ sub asin {
 
 =head2 sinh
 
-    $x->sinh       # => BigNum
+    $x->sinh                       # => BigNum
 
 Returns the hyperbolic sine of C<$x>.
 
@@ -2366,7 +2366,7 @@ sub sinh {
 
 =head2 asinh
 
-    $x->asinh       # => BigNum
+    $x->asinh                      # => BigNum
 
 Returns the inverse hyperbolic sine of C<$x>.
 
@@ -2380,7 +2380,7 @@ sub asinh {
 
 =head2 cos
 
-    $x->cos       # => BigNum
+    $x->cos                        # => BigNum
 
 Returns the cosine of C<$x>.
 
@@ -2394,7 +2394,7 @@ sub cos {
 
 =head2 acos
 
-    $x->acos       # => BigNum | Nan
+    $x->acos                       # => BigNum | Nan
 
 Returns the inverse cosine of C<$x>.
 Returns Nan for C<<$x < -1>> or C<<$x > 1>>.
@@ -2410,7 +2410,7 @@ sub acos {
 
 =head2 cosh
 
-    $x->cosh       # => BigNum
+    $x->cosh                       # => BigNum
 
 Returns the hyperbolic cosine of C<$x>.
 
@@ -2424,7 +2424,7 @@ sub cosh {
 
 =head2 acosh
 
-    $x->acosh       # => BigNum | Nan
+    $x->acosh                      # => BigNum | Nan
 
 Returns the inverse hyperbolic cosine of C<$x>.
 Returns Nan for C<<$x < 1>>.
@@ -2440,7 +2440,7 @@ sub acosh {
 
 =head2 tan
 
-    $x->tan       # => BigNum
+    $x->tan                        # => BigNum
 
 Returns the tangent of C<$x>.
 
@@ -2454,7 +2454,7 @@ sub tan {
 
 =head2 atan
 
-    $x->atan       # => BigNum
+    $x->atan                       # => BigNum
 
 Returns the inverse tangent of C<$x>.
 
@@ -2468,7 +2468,7 @@ sub atan {
 
 =head2 tanh
 
-    $x->tanh       # => BigNum
+    $x->tanh                       # => BigNum
 
 Returns the hyperbolic tangent of C<$x>.
 
@@ -2482,7 +2482,7 @@ sub tanh {
 
 =head2 atanh
 
-    $x->atanh       # => BigNum | Nan
+    $x->atanh                      # => BigNum | Nan
 
 Returns the inverse hyperbolic tangent of C<$x>.
 Returns Nan for C<<$x <= -1>> or C<<$x >= 1>>.
@@ -2498,7 +2498,7 @@ sub atanh {
 
 =head2 sec
 
-    $x->sec       # => BigNum
+    $x->sec                        # => BigNum
 
 Returns the secant of C<$x>.
 
@@ -2512,7 +2512,7 @@ sub sec {
 
 =head2 asec
 
-    $x->asec       # => BigNum | Nan
+    $x->asec                       # => BigNum | Nan
 
 Returns the inverse secant of C<$x>.
 Returns Nan for C<<$x > -1>> and C<<$x < 1>>.
@@ -2533,7 +2533,7 @@ sub asec {
 
 =head2 sech
 
-    $x->sech       # => BigNum
+    $x->sech                       # => BigNum
 
 Returns the hyperbolic secant of C<$x>.
 
@@ -2547,7 +2547,7 @@ sub sech {
 
 =head2 asech
 
-    $x->asech       # => BigNum | Nan
+    $x->asech                      # => BigNum | Nan
 
 Returns the inverse hyperbolic secant of C<$x>.
 Returns a Nan for C<<$x < 0>> or C<<$x > 1>>.
@@ -2568,7 +2568,7 @@ sub asech {
 
 =head2 csc
 
-    $x->csc       # => BigNum
+    $x->csc                        # => BigNum
 
 Returns the cosecant of C<$x>.
 
@@ -2582,7 +2582,7 @@ sub csc {
 
 =head2 acsc
 
-    $x->acsc       # => BigNum | Nan
+    $x->acsc                       # => BigNum | Nan
 
 Returns the inverse cosecant of C<$x>.
 Returns Nan for C<<$x > -1>> and C<<$x < 1>>.
@@ -2603,7 +2603,7 @@ sub acsc {
 
 =head2 csch
 
-    $x->csch       # => BigNum
+    $x->csch                       # => BigNum
 
 Returns the hyperbolic cosecant of C<$x>.
 
@@ -2617,7 +2617,7 @@ sub csch {
 
 =head2 acsch
 
-    $x->acsch       # => BigNum
+    $x->acsch                      # => BigNum
 
 Returns the inverse hyperbolic cosecant of C<$x>.
 
@@ -2637,7 +2637,7 @@ sub acsch {
 
 =head2 cot
 
-    $x->cot       # => BigNum
+    $x->cot                        # => BigNum
 
 Returns the cotangent of C<$x>.
 
@@ -2651,7 +2651,7 @@ sub cot {
 
 =head2 acot
 
-    $x->acot       # => BigNum
+    $x->acot                       # => BigNum
 
 Returns the inverse cotangent of C<$x>.
 
@@ -2671,7 +2671,7 @@ sub acot {
 
 =head2 coth
 
-    $x->coth       # => BigNum
+    $x->coth                       # => BigNum
 
 Returns the hyperbolic cotangent of C<$x>.
 
@@ -2685,7 +2685,7 @@ sub coth {
 
 =head2 acoth
 
-    $x->acoth       # => BigNum
+    $x->acoth                      # => BigNum
 
 Returns the inverse hyperbolic cotangent of C<$x>.
 
@@ -2704,12 +2704,12 @@ sub acoth {
 
 =head2 atan2
 
-    $x->atan2(BigNum)           # => BigNum
-    $x->atan2(Scalar)           # => BigNum
+    $x->atan2(BigNum)              # => BigNum
+    $x->atan2(Scalar)              # => BigNum
 
-    atan2(BigNum, BigNum)       # => BigNum
-    atan2(BigNum, Scalar)       # => BigNum
-    atan2(Scalar, BigNum)       # => BigNum
+    atan2(BigNum, BigNum)          # => BigNum
+    atan2(BigNum, Scalar)          # => BigNum
+    atan2(Scalar, BigNum)          # => BigNum
 
 Arctangent of C<$x> and C<$y>. When C<$y> is -Inf returns PI when C<<$x >= 0>>, or C<-PI> when C<<$x < 0>>.
 
@@ -2746,10 +2746,10 @@ multimethod atan2 => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 eq
 
-    $x->eq(BigNum)       # => Bool
-    $x->eq(Scalar)       # => Bool
+    $x->eq(BigNum)                 # => Bool
+    $x->eq(Scalar)                 # => Bool
 
-    $x == $y             # => Bool
+    $x == $y                       # => Bool
 
 Equality check: returns a true value when C<$x> and C<$y> are equal.
 
@@ -2775,10 +2775,10 @@ multimethod eq => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
 
 =head2 ne
 
-    $x->ne(BigNum)       # => Bool
-    $x->ne(Scalar)       # => Bool
+    $x->ne(BigNum)                 # => Bool
+    $x->ne(Scalar)                 # => Bool
 
-    $x != $y             # => Bool
+    $x != $y                       # => Bool
 
 Inequality check: returns a true value when C<$x> and C<$y> are not equal.
 
@@ -2805,12 +2805,12 @@ multimethod ne => qw(Math::BigNum Math::BigNum::Nan) => sub { 1 };
 
 =head2 gt
 
-    $x->gt(BigNum)             # => Bool
-    $x->gt(Scalar)             # => Bool
+    $x->gt(BigNum)                 # => Bool
+    $x->gt(Scalar)                 # => Bool
 
-    BigNum > BigNum            # => Bool
-    BigNum > Scalar            # => Bool
-    Scalar > BigNum            # => Bool
+    BigNum > BigNum                # => Bool
+    BigNum > Scalar                # => Bool
+    Scalar > BigNum                # => Bool
 
 Returns a true value when C<$x> is greater than C<$y>.
 
@@ -2839,12 +2839,12 @@ multimethod gt => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
 
 =head2 ge
 
-    $x->ge(BigNum)               # => Bool
-    $x->ge(Scalar)               # => Bool
+    $x->ge(BigNum)                 # => Bool
+    $x->ge(Scalar)                 # => Bool
 
-    BigNum >= BigNum             # => Bool
-    BigNum >= Scalar             # => Bool
-    Scalar >= BigNum             # => Bool
+    BigNum >= BigNum               # => Bool
+    BigNum >= Scalar               # => Bool
+    Scalar >= BigNum               # => Bool
 
 Returns a true value when C<$x> is equal or greater than C<$y>.
 
@@ -2873,12 +2873,12 @@ multimethod ge => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
 
 =head2 lt
 
-    $x->lt(BigNum)             # => Bool
-    $x->lt(Scalar)             # => Bool
+    $x->lt(BigNum)                 # => Bool
+    $x->lt(Scalar)                 # => Bool
 
-    BigNum < BigNum            # => Bool
-    BigNum < Scalar            # => Bool
-    Scalar < BigNum            # => Bool
+    BigNum < BigNum                # => Bool
+    BigNum < Scalar                # => Bool
+    Scalar < BigNum                # => Bool
 
 Returns a true value when C<$x> is less than C<$y>.
 
@@ -2907,12 +2907,12 @@ multimethod lt => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
 
 =head2 le
 
-    $x->le(BigNum)                # => Bool
-    $x->le(Scalar)                # => Bool
+    $x->le(BigNum)                 # => Bool
+    $x->le(Scalar)                 # => Bool
 
-    BigNum <= BigNum              # => Bool
-    BigNum <= Scalar              # => Bool
-    Scalar <= BigNum              # => Bool
+    BigNum <= BigNum               # => Bool
+    BigNum <= Scalar               # => Bool
+    Scalar <= BigNum               # => Bool
 
 Returns a true value when C<$x> is equal or less than C<$y>.
 
@@ -2941,12 +2941,12 @@ multimethod le => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
 
 =head2 cmp
 
-    $x->cmp(BigNum)              # => Scalar
-    $x->cmp(Scalar)              # => Scalar
+    $x->cmp(BigNum)                # => Scalar
+    $x->cmp(Scalar)                # => Scalar
 
-    BigNum <=> BigNum            # => Scalar
-    BigNum <=> Scalar            # => Scalar
-    Scalar <=> BigNum            # => Scalar
+    BigNum <=> BigNum              # => Scalar
+    BigNum <=> Scalar              # => Scalar
+    Scalar <=> BigNum              # => Scalar
 
 Compares C<$x> to C<$y> and returns a negative value when C<$x> is less than C<$y>,
 0 when C<$x> and C<$y> are equal, and a positive value when C<$x> is greater than C<$y>.
@@ -2990,8 +2990,8 @@ multimethod cmp => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
 
 =head2 acmp
 
-    $x->acmp(BigNum)         # => Scalar
-    cmp(Scalar, BigNum)      # => Scalar
+    $x->acmp(BigNum)               # => Scalar
+    cmp(Scalar, BigNum)            # => Scalar
 
 Compares the absolute values of C<$x> and C<$y>. Returns a negative value
 when the absolute value of C<$x> is less than the absolute value of C<$y>,
@@ -3045,9 +3045,9 @@ multimethod acmp => qw(Math::BigNum $) => sub {
 
 =head2 rand
 
-    $x->rand               # => BigNum
-    $x->rand(BigNum)       # => BigNum
-    $x->rand(Scalar)       # => BigNum
+    $x->rand                       # => BigNum
+    $x->rand(BigNum)               # => BigNum
+    $x->rand(Scalar)               # => BigNum
 
 Returns a random floating-point number. If an argument is provided,
 it returns a number between C<$x> and C<$y>, otherwise returns a number lower
@@ -3104,12 +3104,12 @@ Example:
 
 =head2 mod
 
-    $x->mod(BigNum)      # => BigNum | Nan
-    $x->mod(Scalar)      # => BigNum | Nan
+    $x->mod(BigNum)                # => BigNum | Nan
+    $x->mod(Scalar)                # => BigNum | Nan
 
-    BigNum % BigNum      # => BigNum | Nan
-    BigNum % Scalar      # => BigNum | Nan
-    Scalar % BigNum      # => BigNum | Nan
+    BigNum % BigNum                # => BigNum | Nan
+    BigNum % Scalar                # => BigNum | Nan
+    Scalar % BigNum                # => BigNum | Nan
 
 Remainder of C<$x> divided by C<$y>. Returns Nan when C<$y> is zero.
 
@@ -3192,11 +3192,11 @@ multimethod mod => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bmod
 
-    $x->bmod(BigNum)      # => BigNum | Nan
-    $x->bmod(Scalar)      # => BigNum | Nan
+    $x->bmod(BigNum)               # => BigNum | Nan
+    $x->bmod(Scalar)               # => BigNum | Nan
 
-    BigNum %= BigNum      # => BigNum | Nan
-    BigNum %= Scalar      # => BigNum | Nan
+    BigNum %= BigNum               # => BigNum | Nan
+    BigNum %= Scalar               # => BigNum | Nan
 
 Sets C<$x> to the remainder of C<$x> divided by C<$y>. Sets C<$x> to Nan when C<$y> is zero.
 
@@ -3272,8 +3272,8 @@ multimethod bmod => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 divmod
 
-    $x->divmod(BigNum)      # => (BigNum, BigNum) | (Nan, Nan)
-    $x->divmod(Scalar)      # => (BigNum, BigNum) | (Nan, Nan)
+    $x->divmod(BigNum)             # => (BigNum, BigNum) | (Nan, Nan)
+    $x->divmod(Scalar)             # => (BigNum, BigNum) | (Nan, Nan)
 
 Returns the quotient and the remainder from division of C<$x> by C<$y>,
 where both are integers. When C<$y> is zero, it returns two Nan values.
@@ -3306,8 +3306,8 @@ multimethod divmod => qw(Math::BigNum $) => sub {
 
 =head2 modinv
 
-    $x->modinv(BigNum)      # => BigNum | Nan
-    $x->modinv(Scalar)      # => BigNum | Nan
+    $x->modinv(BigNum)             # => BigNum | Nan
+    $x->modinv(Scalar)             # => BigNum | Nan
 
 Computes the inverse of C<$x> modulo C<$y> and returns the result.
 If an inverse doesn't exist the Nan value is returned.
@@ -3330,7 +3330,7 @@ multimethod modinv => qw(Math::BigNum $) => sub {
 
 =head2 modpow
 
-    $x->modpow(BigNum, BigNum)      # => BigNum
+    $x->modpow(BigNum, BigNum)     # => BigNum
 
 Calculates C<($x ** $y) % $z>, where all three values are integers.
 
@@ -3380,7 +3380,7 @@ multimethod modpow => qw(Math::BigNum $ Math::BigNum) => sub {
 
 =head2 is_zero
 
-    $x->is_zero          # => Bool
+    $x->is_zero                    # => Bool
 
 Returns a true value when C<$x> is 0.
 
@@ -3392,7 +3392,7 @@ sub is_zero {
 
 =head2 is_one
 
-    $x->is_one           # => Bool
+    $x->is_one                     # => Bool
 
 Returns a true value when C<$x> is +1.
 
@@ -3404,7 +3404,7 @@ sub is_one {
 
 =head2 is_mone
 
-    $x->is_mone         # => Bool
+    $x->is_mone                    # => Bool
 
 Returns a true value when C<$x> is -1.
 
@@ -3416,7 +3416,7 @@ sub is_mone {
 
 =head2 is_pos
 
-    $x->is_pos          # => Bool
+    $x->is_pos                     # => Bool
 
 Returns a true value when C<$x> is greater than zero.
 
@@ -3428,7 +3428,7 @@ sub is_pos {
 
 =head2 is_neg
 
-    $x->is_neg          # => Bool
+    $x->is_neg                     # => Bool
 
 Returns a true value when C<$x> is less than zero.
 
@@ -3440,7 +3440,7 @@ sub is_neg {
 
 =head2 is_int
 
-    $x->is_int          # => Bool
+    $x->is_int                     # => Bool
 
 Returns a true value when C<$x> is an integer.
 
@@ -3452,7 +3452,7 @@ sub is_int {
 
 =head2 is_real
 
-    $x->is_real         # => Bool
+    $x->is_real                    # => Bool
 
 Always returns a true value when invoked on a Math::BigNum object.
 
@@ -3462,7 +3462,7 @@ sub is_real { 1 }
 
 =head2 is_inf
 
-    $x->is_inf          # => Bool
+    $x->is_inf                     # => Bool
 
 Always returns a false value when invoked on a Math::BigNum object.
 
@@ -3472,7 +3472,7 @@ sub is_inf { 0 }
 
 =head2 is_nan
 
-    $x->is_nan          # => Bool
+    $x->is_nan                     # => Bool
 
 Always returns a false value when invoked on a Math::BigNum object.
 
@@ -3482,7 +3482,7 @@ sub is_nan { 0 }
 
 =head2 is_ninf
 
-    $x->is_ninf          # => Bool
+    $x->is_ninf                    # => Bool
 
 Always returns a false value when invoked on a Math::BigNum object.
 
@@ -3492,7 +3492,7 @@ sub is_ninf { 0 }
 
 =head2 is_even
 
-    $x->is_even          # => Bool
+    $x->is_even                    # => Bool
 
 Returns a true value when C<$x> is divisible by 2. Returns C<0> if C<$x> is NOT an integer.
 
@@ -3508,7 +3508,7 @@ sub is_even {
 
 =head2 is_odd
 
-    $x->is_odd          # => Bool
+    $x->is_odd                     # => Bool
 
 Returns a true value when C<$x> is NOT divisible by 2. Returns C<0> if C<$x> is NOT an integer.
 
@@ -3524,8 +3524,8 @@ sub is_odd {
 
 =head2 is_div
 
-    $x->is_div(BigNum)      # => Bool
-    $x->is_div(Scalar)      # => Bool
+    $x->is_div(BigNum)             # => Bool
+    $x->is_div(Scalar)             # => Bool
 
 Returns a true value if C<$x> is divisible by C<$y>. False otherwise.
 If C<$y> is zero, returns C<0>.
@@ -3562,7 +3562,7 @@ multimethod is_div => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
 
 =head2 is_psqr
 
-    $n->is_psqr         # => Bool
+    $n->is_psqr                    # => Bool
 
 Returns a true value when C<$n> is a perfect square. False otherwise.
 When C<$n> is not an integer, returns C<0>.
@@ -3579,7 +3579,7 @@ sub is_psqr {
 
 =head2 is_ppow
 
-    $n->is_ppow         # => Bool
+    $n->is_ppow                    # => Bool
 
 Returns a true value when C<$n> is a perfect power. False otherwise.
 When C<$n> is not an integer, returns C<0>.
@@ -3596,7 +3596,7 @@ sub is_ppow {
 
 =head2 sign
 
-    $x->sign            # => Scalar
+    $x->sign                       # => Scalar
 
 Returns C<'-'> when C<$x> is negative, C<'+'> when C<$x> is positive, and C<''> when C<$x> is zero.
 
@@ -3609,7 +3609,7 @@ sub sign {
 
 =head2 min
 
-    $x->min(BigNum)         # => BigNum
+    $x->min(BigNum)                # => BigNum
 
 Returns C<$x> if C<$x> is lower than C<$y>. Returns C<$y> otherwise.
 
@@ -3625,7 +3625,7 @@ multimethod min => qw(Math::BigNum Math::BigNum::Nan) => sub { $_[1] };
 
 =head2 max
 
-    $x->max(BigNum)         # => BigNum
+    $x->max(BigNum)                # => BigNum
 
 Returns C<$x> if C<$x> is greater than C<$y>. Returns C<$y> otherwise.
 
@@ -3641,8 +3641,8 @@ multimethod max => qw(Math::BigNum Math::BigNum::Nan) => sub { $_[1] };
 
 =head2 gcd
 
-    $x->gcd(BigNum)         # => BigNum
-    $x->gcd(Scalar)         # => BigNum
+    $x->gcd(BigNum)                # => BigNum
+    $x->gcd(Scalar)                # => BigNum
 
 The greatest common divisor of C<$x> and C<$y>.
 
@@ -3667,8 +3667,8 @@ multimethod gcd => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 lcm
 
-    $x->lcd(BigNum)         # => BigNum
-    $x->lcd(Scalar)         # => BigNum
+    $x->lcd(BigNum)                # => BigNum
+    $x->lcd(Scalar)                # => BigNum
 
 The least common multiple of C<$x> and C<$y>.
 
@@ -3693,8 +3693,8 @@ multimethod lcm => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 int
 
-    $x->int         # => BigNum
-    int($x)         # => BigNum
+    $x->int                        # => BigNum
+    int($x)                        # => BigNum
 
 Returns a truncated integer from the value of C<$x>.
 
@@ -3708,7 +3708,7 @@ sub int {
 
 =head2 bint
 
-    $x->bint        # => BigNum
+    $x->bint                       # => BigNum
 
 Truncates C<$x> to an integer in-place.
 
@@ -3724,7 +3724,7 @@ sub bint {
 
 =head2 float
 
-    $x->float       # => BigNum
+    $x->float                      # => BigNum
 
 Returns a truncated number that fits inside
 number of bits specified in C<$Math::BigNum::PREC>.
@@ -3739,7 +3739,7 @@ sub float {
 
 =head2 as_frac
 
-    $x->as_frac       # => Scalar
+    $x->as_frac                    # => Scalar
 
 Returns a string representing the number as a fraction.
 For C<$x=0.5>, it returns C<"1/2">. For C<$x=3>, it returns C<"3/1">.
@@ -3753,7 +3753,7 @@ sub as_frac {
 
 =head2 as_rat
 
-    $x->as_rat     # => Scalar
+    $x->as_rat                     # => Scalar
 
 Almost the same as C<as_frac()>, except that integers are returned as they are,
 without adding the "1" denominator. For C<$x=0.5>, it returns C<"1/2">. For
@@ -3767,9 +3767,9 @@ sub as_rat {
 
 =head2 as_float
 
-    $x->as_float                # => Scalar
-    $x->as_float(Scalar)        # => Scalar
-    $x->as_float(BigNum)        # => Scalar
+    $x->as_float                   # => Scalar
+    $x->as_float(Scalar)           # => Scalar
+    $x->as_float(BigNum)           # => Scalar
 
 Returns the self-number as a floating-point scalar. The method also accepts
 an optional argument for precision after the decimal point. When no argument
@@ -3799,9 +3799,9 @@ multimethod as_float => qw(Math::BigNum Math::BigNum) => sub {
 
 =head2 as_int
 
-    $x->as_int                # => Scalar
-    $x->as_int(Scalar)        # => Scalar
-    $x->as_int(BigNum)        # => Scalar
+    $x->as_int                     # => Scalar
+    $x->as_int(Scalar)             # => Scalar
+    $x->as_int(BigNum)             # => Scalar
 
 Returns the self-number as an integer in a given base. When the base is omitted, it
 defaults to 10.
@@ -3838,7 +3838,7 @@ multimethod as_int => qw(Math::BigNum Math::BigNum) => sub {
 
 =head2 as_bin
 
-    $x->as_bin      # => Scalar
+    $x->as_bin                     # => Scalar
 
 Returns a string representing the value of C<$x> in binary.
 For C<$x=42>, it returns C<"101010">.
@@ -3853,7 +3853,7 @@ sub as_bin {
 
 =head2 as_oct
 
-    $x->as_oct      # => Scalar
+    $x->as_oct                     # => Scalar
 
 Returns a string representing the value of C<$x> in octal.
 For C<$x=42>, it returns C<"52">.
@@ -3868,7 +3868,7 @@ sub as_oct {
 
 =head2 as_hex
 
-    $x->as_hex      # => Scalar
+    $x->as_hex                     # => Scalar
 
 Returns a string representing the value of C<$x> in hexadecimal.
 For C<$x=42>, it returns C<"2a">.
@@ -3883,7 +3883,7 @@ sub as_hex {
 
 =head2 digits
 
-    $x->digits      # => List of scalars
+    $x->digits                     # => List of scalars
 
 Returns a list with the digits of C<$x> in base 10 before the decimal point.
 For C<$x=-1234.56>, it returns C<(1,2,3,4)>
@@ -3899,7 +3899,7 @@ sub digits {
 
 =head2 length
 
-    $x->length        # => Scalar
+    $x->length                     # => Scalar
 
 Returns the number of digits of C<$x> in base 10 before the decimal point.
 For C<$x=-1234.56>, it returns C<4>.
@@ -3915,7 +3915,7 @@ sub length {
 
 =head2 numerator
 
-    $x->numerator       # => BigNum
+    $x->numerator                  # => BigNum
 
 Returns a copy of the numerator as signed BigNum.
 
@@ -3930,7 +3930,7 @@ sub numerator {
 
 =head2 denominator
 
-    $x->denominator     # => BigNum
+    $x->denominator                # => BigNum
 
 Returns a copy of the denominator as positive BigNum.
 
@@ -3945,7 +3945,7 @@ sub denominator {
 
 =head2 floor
 
-    $x->floor       # => BigNum
+    $x->floor                      # => BigNum
 
 Returns C<$x> if C<$x> is an integer, otherwise it rounds C<$x> towards -Infinity.
 For C<$x=2.5>, returns C<2>, and for C<$x=-2.5>, returns C<-3>.
@@ -3971,7 +3971,7 @@ sub floor {
 
 =head2 ceil
 
-    $x->ceil       # => BigNum
+    $x->ceil                       # => BigNum
 
 Returns C<$x> if C<$x> is an integer, otherwise it rounds C<$x> towards +Infinity.
 For C<$x=2.5>, returns C<3>, and for C<$x=-2.5>, returns C<-2>.
@@ -3997,8 +3997,8 @@ sub ceil {
 
 =head2 round
 
-    $x->round(BigNum)      # => BigNum
-    $x->round(Scalar)      # => BigNum
+    $x->round(BigNum)              # => BigNum
+    $x->round(Scalar)              # => BigNum
 
 Rounds C<$x> to the nth place. A negative argument rounds that many digits
 after the decimal point, while a positive argument rounds before the decimal
@@ -4017,8 +4017,8 @@ multimethod round => qw(Math::BigNum Math::BigNum) => sub {
 
 =head2 bround
 
-    $x->bround(BigNum)      # => BigNum
-    $x->bround(Scalar)      # => BigNum
+    $x->bround(BigNum)             # => BigNum
+    $x->bround(Scalar)             # => BigNum
 
 Rounds C<$x> in-place to nth places.
 
@@ -4081,7 +4081,7 @@ multimethod bround => qw(Math::BigNum Math::BigNum) => sub {
 
 =head2 inc
 
-    $x->inc     # => BigNum
+    $x->inc                        # => BigNum
 
 Returns C<$x + 1>.
 
@@ -4096,9 +4096,9 @@ sub inc {
 
 =head2 binc
 
-    $x->binc     # => BigNum
-    ++$x         # => BigNum
-    $x++         # => BigNum
+    $x->binc                       # => BigNum
+    ++$x                           # => BigNum
+    $x++                           # => BigNum
 
 Increments C<$x> in-place by 1.
 
@@ -4112,7 +4112,7 @@ sub binc {
 
 =head2 dec
 
-    $x->dec     # => BigNum
+    $x->dec                        # => BigNum
 
 Returns C<$x - 1>.
 
@@ -4127,9 +4127,9 @@ sub dec {
 
 =head2 bdec
 
-    $x->bdec     # => BigNum
-    --$x         # => BigNum
-    $x--         # => BigNum
+    $x->bdec                       # => BigNum
+    --$x                           # => BigNum
+    $x--                           # => BigNum
 
 Decrements C<$x> in-place by 1.
 
@@ -4147,12 +4147,12 @@ sub bdec {
 
 =head2 and
 
-    $x->and(BigNum)         # => BigNum
-    $x->and(Scalar)         # => BigNum
+    $x->and(BigNum)                # => BigNum
+    $x->and(Scalar)                # => BigNum
 
-    BigNum & BigNum         # => BigNum
-    BigNum & Scalar         # => BigNum
-    Scalar & BigNum         # => BigNum
+    BigNum & BigNum                # => BigNum
+    BigNum & Scalar                # => BigNum
+    Scalar & BigNum                # => BigNum
 
 Integer logical-and operation.
 
@@ -4178,11 +4178,11 @@ multimethod and => qw($ Math::BigNum) => sub {
 
 =head2 band
 
-    $x->band(BigNum)        # => BigNum
-    $x->band(Scalar)        # => BigNum
+    $x->band(BigNum)               # => BigNum
+    $x->band(Scalar)               # => BigNum
 
-    BigNum &= BigNum        # => BigNum
-    BigNum &= Scalar        # => BigNum
+    BigNum &= BigNum               # => BigNum
+    BigNum &= Scalar               # => BigNum
 
 Integer logical-and operation, changing C<$x> in-place.
 
@@ -4204,12 +4204,12 @@ multimethod band => qw(Math::BigNum $) => sub {
 
 =head2 ior
 
-    $x->ior(BigNum)         # => BigNum
-    $x->ior(Scalar)         # => BigNum
+    $x->ior(BigNum)                # => BigNum
+    $x->ior(Scalar)                # => BigNum
 
-    BigNum | BigNum         # => BigNum
-    BigNum | Scalar         # => BigNum
-    Scalar | BigNum         # => BigNum
+    BigNum | BigNum                # => BigNum
+    BigNum | Scalar                # => BigNum
+    Scalar | BigNum                # => BigNum
 
 Integer logical inclusive-or operation.
 
@@ -4235,11 +4235,11 @@ multimethod ior => qw($ Math::BigNum) => sub {
 
 =head2 bior
 
-    $x->bior(BigNum)         # => BigNum
-    $x->bior(Scalar)         # => BigNum
+    $x->bior(BigNum)               # => BigNum
+    $x->bior(Scalar)               # => BigNum
 
-    BigNum |= BigNum         # => BigNum
-    BigNum |= Scalar         # => BigNum
+    BigNum |= BigNum               # => BigNum
+    BigNum |= Scalar               # => BigNum
 
 Integer logical inclusive-or operation, changing C<$x> in-place.
 
@@ -4261,12 +4261,12 @@ multimethod bior => qw(Math::BigNum $) => sub {
 
 =head2 xor
 
-    $x->xor(BigNum)         # => BigNum
-    $x->xor(Scalar)         # => BigNum
+    $x->xor(BigNum)                # => BigNum
+    $x->xor(Scalar)                # => BigNum
 
-    BigNum ^ BigNum         # => BigNum
-    BigNum ^ Scalar         # => BigNum
-    Scalar ^ BigNum         # => BigNum
+    BigNum ^ BigNum                # => BigNum
+    BigNum ^ Scalar                # => BigNum
+    Scalar ^ BigNum                # => BigNum
 
 Integer logical exclusive-or operation.
 
@@ -4292,11 +4292,11 @@ multimethod xor => qw($ Math::BigNum) => sub {
 
 =head2 bxor
 
-    $x->bxor(BigNum)         # => BigNum
-    $x->bxor(Scalar)         # => BigNum
+    $x->bxor(BigNum)               # => BigNum
+    $x->bxor(Scalar)               # => BigNum
 
-    BigNum ^= BigNum         # => BigNum
-    BigNum ^= Scalar         # => BigNum
+    BigNum ^= BigNum               # => BigNum
+    BigNum ^= Scalar               # => BigNum
 
 Integer logical exclusive-or operation, changing C<$x> in-place.
 
@@ -4318,8 +4318,8 @@ multimethod bxor => qw(Math::BigNum $) => sub {
 
 =head2 not
 
-    $x->not         # => BigNum
-    ~BigNum         # => BigNum
+    $x->not                        # => BigNum
+    ~BigNum                        # => BigNum
 
 Integer logical-not operation. (The one's complement of $x).
 
@@ -4333,7 +4333,7 @@ sub not {
 
 =head2 bnot
 
-    $x->bnot        # => BigNum
+    $x->bnot                       # => BigNum
 
 Integer logical-not operation, changing C<$x> in-place.
 
@@ -4348,12 +4348,12 @@ sub bnot {
 
 =head2 lsft
 
-    $x->lsft(BigNum)         # => BigNum
-    $x->lsft(Scalar)         # => BigNum
+    $x->lsft(BigNum)               # => BigNum
+    $x->lsft(Scalar)               # => BigNum
 
-    BigNum << BigNum         # => BigNum
-    BigNum << Scalar         # => BigNum
-    Scalar << BigNum         # => BigNum
+    BigNum << BigNum               # => BigNum
+    BigNum << Scalar               # => BigNum
+    Scalar << BigNum               # => BigNum
 
 Integer left-shift operation. (C<$x * (2 ** $y)>)
 
@@ -4397,11 +4397,11 @@ multimethod lsft => qw($ Math::BigNum) => sub {
 
 =head2 blsft
 
-    $x->blsft(BigNum)         # => BigNum
-    $x->blsft(Scalar)         # => BigNum
+    $x->blsft(BigNum)              # => BigNum
+    $x->blsft(Scalar)              # => BigNum
 
-    BigNum <<= BigNum         # => BigNum
-    BigNum <<= Scalar         # => BigNum
+    BigNum <<= BigNum              # => BigNum
+    BigNum <<= Scalar              # => BigNum
 
 Integer left-shift operation, changing C<$x> in-place. Promotes C<$x> to Nan when C<$y> is negative.
 (C<$x * (2 ** $y)>)
@@ -4436,12 +4436,12 @@ multimethod blsft => qw(Math::BigNum $) => sub {
 
 =head2 rsft
 
-    $x->rsft(BigNum)         # => BigNum
-    $x->rsft(Scalar)         # => BigNum
+    $x->rsft(BigNum)               # => BigNum
+    $x->rsft(Scalar)               # => BigNum
 
-    BigNum >> BigNum         # => BigNum
-    BigNum >> Scalar         # => BigNum
-    Scalar >> BigNum         # => BigNum
+    BigNum >> BigNum               # => BigNum
+    BigNum >> Scalar               # => BigNum
+    Scalar >> BigNum               # => BigNum
 
 Integer right-shift operation. (C<$x / (2 ** $y)>)
 
@@ -4485,11 +4485,11 @@ multimethod rsft => qw($ Math::BigNum) => sub {
 
 =head2 brsft
 
-    $x->brsft(BigNum)         # => BigNum
-    $x->brsft(Scalar)         # => BigNum
+    $x->brsft(BigNum)              # => BigNum
+    $x->brsft(Scalar)              # => BigNum
 
-    BigNum >>= BigNum         # => BigNum
-    BigNum >>= Scalar         # => BigNum
+    BigNum >>= BigNum              # => BigNum
+    BigNum >>= Scalar              # => BigNum
 
 Integer right-shift operation, changing C<$x> in-place. (C<$x / (2 ** $y)>)
 
@@ -4523,8 +4523,8 @@ multimethod brsft => qw(Math::BigNum $) => sub {
 
 =head2 fac
 
-    $n->fac           # => BigNum | Nan
-    fac(Scalar)       # => BigNum | Nan
+    $n->fac                        # => BigNum | Nan
+    fac(Scalar)                    # => BigNum | Nan
 
 Factorial of C<$n>. Returns Nan when C<$n> is negative. (C<1*2*3*...*$n>)
 
@@ -4548,7 +4548,7 @@ multimethod fac => qw($) => sub {
 
 =head2 bfac
 
-    $n->bfac           # => BigNum | Nan
+    $n->bfac                       # => BigNum | Nan
 
 Factorial of C<$n>, by changing C<$n> in-place.
 
@@ -4565,8 +4565,8 @@ sub bfac {
 
 =head2 dfac
 
-    $n->dfac            # => BigNum | Nan
-    dfac(Scalar)        # => BigNum | Nan
+    $n->dfac                       # => BigNum | Nan
+    dfac(Scalar)                   # => BigNum | Nan
 
 Double factorial of C<$n>. Returns Nan when C<$n> is negative.
 
@@ -4590,8 +4590,8 @@ multimethod dfac => qw($) => sub {
 
 =head2 primorial
 
-    $n->primorial            # => BigNum | Nan
-    primorial(Scalar)        # => BigNum | Nan
+    $n->primorial                  # => BigNum | Nan
+    primorial(Scalar)              # => BigNum | Nan
 
 Returns the product of all the primes less than or equal to C<$n>.
 
@@ -4615,8 +4615,8 @@ multimethod primorial => qw($) => sub {
 
 =head2 fib
 
-    $n->fib          # => BigNum | Nan
-    fib(Scalar)      # => BigNum | Nan
+    $n->fib                        # => BigNum | Nan
+    fib(Scalar)                    # => BigNum | Nan
 
 The $n'th Fibonacci number. Returns Nan when C<$n> is negative.
 
@@ -4640,8 +4640,8 @@ multimethod fib => qw($) => sub {
 
 =head2 lucas
 
-    $n->lucas        # => BigNum | Nan
-    lucas(Scalar)    # => BigNum | Nan
+    $n->lucas                      # => BigNum | Nan
+    lucas(Scalar)                  # => BigNum | Nan
 
 The $n'th Lucas number. Returns Nan when C<$n> is negative.
 
@@ -4665,8 +4665,8 @@ multimethod lucas => qw($) => sub {
 
 =head2 binomial
 
-    $n->binomial(BigNum)    # => BigNum
-    $n->binomial(Scalar)    # => BigNum
+    $n->binomial(BigNum)           # => BigNum
+    $n->binomial(Scalar)           # => BigNum
 
 Calculates the binomial coefficient n over k, also called the
 "choose" function. The result is equivalent to:
@@ -4692,9 +4692,9 @@ multimethod binomial => qw(Math::BigNum $) => sub {
 
 =head2 is_prime
 
-    $n->is_prime                # => Scalar
-    $x->is_prime(BigNum)        # => Scalar
-    $n->is_prime(Scalar)        # => Scalar
+    $n->is_prime                   # => Scalar
+    $x->is_prime(BigNum)           # => Scalar
+    $n->is_prime(Scalar)           # => Scalar
 
 Returns 2 if $n is definitely prime, 1 if $n is probably prime (without
 being certain), or 0 if $n is definitely composite. This method does some
@@ -4721,7 +4721,7 @@ multimethod is_prime => qw(Math::BigNum Math::BigNum) => sub {
 
 =head2 next_prime
 
-    $n->next_prime      # => BigNum
+    $n->next_prime                 # => BigNum
 
 Returns the next prime after $n.
 
@@ -4740,9 +4740,9 @@ sub next_prime {
 
 =head2 agm
 
-    $x->agm(BigNum)            # => BigNum
-    $x->agm(Scalar)            # => BigNum
-    agm(Scalar, Scalar)        # => BigNum
+    $x->agm(BigNum)                # => BigNum
+    $x->agm(Scalar)                # => BigNum
+    agm(Scalar, Scalar)            # => BigNum
 
 Arithmetic-geometric mean of C<$x> and C<$y>.
 
@@ -4768,9 +4768,9 @@ multimethod agm => qw($ $) => sub {
 
 =head2 hypot
 
-    $x->hypot(BigNum)          # => BigNum
-    $x->hypot(Scalar)          # => BigNum
-    hypot(Scalar, Scalar)      # => BigNum
+    $x->hypot(BigNum)              # => BigNum
+    $x->hypot(Scalar)              # => BigNum
+    hypot(Scalar, Scalar)          # => BigNum
 
 The value of the hypotenuse for catheti C<$x> and C<$y>. (C<sqrt($x**2 + $y**2)>)
 
@@ -4796,8 +4796,8 @@ multimethod hypot => qw($ $) => sub {
 
 =head2 gamma
 
-    $x->gamma        # => BigNum | Inf | Nan
-    gamma(Scalar)    # => BigNum | Inf | Nan
+    $x->gamma                      # => BigNum | Inf | Nan
+    gamma(Scalar)                  # => BigNum | Inf | Nan
 
 The Gamma function on C<$x>. Returns Inf when C<$x> is zero, and Nan when C<$x> is negative.
 
@@ -4817,8 +4817,8 @@ multimethod gamma => qw($) => sub {
 
 =head2 lngamma
 
-    $x->lngamma          # => BigNum | Inf
-    lngamma(Scalar)      # => BigNum | Inf
+    $x->lngamma                    # => BigNum | Inf
+    lngamma(Scalar)                # => BigNum | Inf
 
 The natural logarithm of the Gamma function on C<$x>.
 Returns Inf when C<$x> is negative or equal to zero.
@@ -4839,8 +4839,8 @@ multimethod lngamma => qw($) => sub {
 
 =head2 lgamma
 
-    $x->lgamma          # => BigNum | Inf
-    lgamma(Scalar)      # => BigNum | Inf
+    $x->lgamma                     # => BigNum | Inf
+    lgamma(Scalar)                 # => BigNum | Inf
 
 The logarithm of the absolute value of the Gamma function.
 Returns Inf when C<$x> is negative or equal to zero.
@@ -4861,8 +4861,8 @@ multimethod lgamma => qw($) => sub {
 
 =head2 digamma
 
-    $x->digamma          # => BigNum | Inf | Nan
-    digamma(Scalar)      # => BigNum | Inf | Nan
+    $x->digamma                    # => BigNum | Inf | Nan
+    digamma(Scalar)                # => BigNum | Inf | Nan
 
 The Digamma function (sometimes also called Psi).
 Returns Nan when C<$x> is negative, and -Inf when C<$x> is 0.
@@ -4883,8 +4883,8 @@ multimethod digamma => qw($) => sub {
 
 =head2 zeta
 
-    $x->zeta        # => BigNum | Inf
-    zeta(Scalar)    # => BigNum | Inf
+    $x->zeta                       # => BigNum | Inf
+    zeta(Scalar)                   # => BigNum | Inf
 
 The zeta function on C<$x>. Returns Inf when C<$x> is 1.
 
@@ -4904,8 +4904,8 @@ multimethod zeta => qw($) => sub {
 
 =head2 erf
 
-    $x->erf          # => BigNum
-    erf(Scalar)      # => BigNum
+    $x->erf                        # => BigNum
+    erf(Scalar)                    # => BigNum
 
 The error function on C<$x>.
 
@@ -4925,8 +4925,8 @@ multimethod erf => qw($) => sub {
 
 =head2 erfc
 
-    $x->erfc        # => BigNum
-    erfc(Scalar)    # => BigNum
+    $x->erfc                       # => BigNum
+    erfc(Scalar)                   # => BigNum
 
 Complementary error function on C<$x>.
 
@@ -4946,8 +4946,8 @@ multimethod erfc => qw($) => sub {
 
 =head2 eint
 
-    $x->eint            # => BigNum | Inf | Nan
-    eint(Scalar)        # => BigNum | Inf | Nan
+    $x->eint                       # => BigNum | Inf | Nan
+    eint(Scalar)                   # => BigNum | Inf | Nan
 
 Exponential integral of C<$x>. Returns -Inf when C<$x> is zero, and Nan when C<$x> is negative.
 
@@ -4967,8 +4967,8 @@ multimethod eint => qw($) => sub {
 
 =head2 li2
 
-    $x->li2         # => BigNum
-    li(Scalar)      # => BigNum
+    $x->li2                        # => BigNum
+    li(Scalar)                     # => BigNum
 
 The dilogarithm function, defined as the integral of C<-log(1-t)/t> from 0 to C<$x>.
 

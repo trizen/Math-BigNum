@@ -132,8 +132,8 @@ sub in_base { '@NaN@' }
 
 =head2 eq
 
-    $x->eq($y)          # => Bool
-    $x == $y            # => Bool
+    $x->eq($y)                     # => Bool
+    $x == $y                       # => Bool
 
 Equality test: always returns a false value.
 
@@ -143,8 +143,8 @@ sub eq { 0 }
 
 =head2 ne
 
-    $x->ne($y)        # => Bool
-    $x != $y          # => Bool
+    $x->ne($y)                     # => Bool
+    $x != $y                       # => Bool
 
 Inequality test: always returns a true value.
 
@@ -154,8 +154,8 @@ sub ne { 1 }
 
 =head2 neg / bneg
 
-    $x->neg     # => Nan
-    $x->bneg    # => Nan
+    $x->neg                        # => Nan
+    $x->bneg                       # => Nan
 
 Always returns Nan.
 
@@ -166,8 +166,8 @@ Always returns Nan.
 
 =head2 abs / babs
 
-    $x->abs     # => Nan
-    $x->babs    # => Nan
+    $x->abs                        # => Nan
+    $x->babs                       # => Nan
 
 Always returns Nan.
 
@@ -178,8 +178,8 @@ Always returns Nan.
 
 =head2 add / badd
 
-    $x->add(Any)        # => Nan
-    $x->badd(Any)       # => Nan
+    $x->add(Any)                   # => Nan
+    $x->badd(Any)                  # => Nan
 
 Always returns Nan.
 
@@ -192,8 +192,8 @@ Always returns Nan.
 
 =head2 sub / bsub
 
-    $x->sub(Any)        # => Nan
-    $x->bsub(Any)       # => Nan
+    $x->sub(Any)                   # => Nan
+    $x->bsub(Any)                  # => Nan
 
 Always returns Nan.
 
@@ -206,8 +206,8 @@ Always returns Nan.
 
 =head2 div / bdiv
 
-    $x->div(Any)        # => Nan
-    $x->bdiv(Any)       # => Nan
+    $x->div(Any)                   # => Nan
+    $x->bdiv(Any)                  # => Nan
 
 Always returns Nan.
 
@@ -220,8 +220,8 @@ Always returns Nan.
 
 =head2 pow / bpow
 
-    $x->pow(Any)        # => Nan
-    $x->bpow(Any)       # => Nan
+    $x->pow(Any)                   # => Nan
+    $x->bpow(Any)                  # => Nan
 
 Always returns Nan.
 
@@ -232,8 +232,8 @@ Always returns Nan.
 
 =head2 mod / bmod
 
-    $x->mod(Any)        # => Nan
-    $x->bmod(Any)       # => Nan
+    $x->mod(Any)                   # => Nan
+    $x->bmod(Any)                  # => Nan
 
 Always returns Nan.
 
@@ -244,8 +244,8 @@ Always returns Nan.
 
 =head2 fac / bfac
 
-    $x->fac        # => Nan
-    $x->bfac       # => Nan
+    $x->fac                        # => Nan
+    $x->bfac                       # => Nan
 
 Always returns Nan.
 
@@ -256,7 +256,7 @@ Always returns Nan.
 
 =head2 primorial
 
-    $x->primorial        # => Nan
+    $x->primorial                  # => Nan
 
 Always returns Nan.
 
@@ -266,7 +266,7 @@ Always returns Nan.
 
 =head2 cmp
 
-    $x->cmp(Any)        # => undef
+    $x->cmp(Any)                   # => undef
 
 Always returns C<undef>.
 
