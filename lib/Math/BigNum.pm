@@ -341,8 +341,7 @@ use overload
                 }
             }
             else {
-                require Carp;
-                Carp::croak("unknown import: $name");
+                die "unknown import: <<$name>>";
             }
         }
         return;
@@ -433,8 +432,11 @@ sub _str2mpfr {
 
 # Converts a string into an mpq object
 sub _str2mpq {
+    $_[0] // return $ZERO;
+
     my $r = Math::GMPq::Rmpq_init();
 
+    # Performance improvement for Perl integers
     if ((~$_[0] & $_[0]) eq '0' and CORE::int($_[0]) eq $_[0]) {
         if ($_[0] >= 0) {
             Math::GMPq::Rmpq_set_ui($r, $_[0], 1);
@@ -443,8 +445,14 @@ sub _str2mpq {
             Math::GMPq::Rmpq_set_si($r, $_[0], 1);
         }
     }
+
+    # Otherwise, it's a string (this is slightly slower)
     else {
         my $rat = _str2rat($_[0]);
+        if ($rat !~ m{^\s*[-+]?[0-9]+(?>/[1-9]+[0-9]*)?\s*\z}) {
+            require Carp;
+            Carp::confess("Unexpected scalar value <<$rat>>");
+        }
         Math::GMPq::Rmpq_set_str($r, $rat, 10);
         Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
     }
@@ -562,9 +570,23 @@ sub new {
 
     my $ref = ref($num);
 
-    # Be forgetful
+    # Be forgetful about undefined values or empty strings
     if (!defined($num) or ($ref eq '' and $num eq '')) {
         return zero();
+    }
+
+    # Special string values
+    elsif ($ref eq '') {
+        my $lc = lc($num);
+        if ($lc eq 'inf' or $lc eq '+inf') {
+            return inf();
+        }
+        elsif ($lc eq '-inf') {
+            return ninf();
+        }
+        elsif ($lc eq 'nan') {
+            return nan();
+        }
     }
 
     # Special objects
