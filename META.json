@@ -47,7 +47,7 @@
          "file" : "lib/Math/BigNum/Nan.pm"
       }
    },
-   "release_status" : "unstable",
+   "release_status" : "stable",
    "resources" : {
       "license" : [
          "http://www.perlfoundation.org/artistic_license_2_0"

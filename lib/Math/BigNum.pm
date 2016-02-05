@@ -173,7 +173,11 @@ use the B<i*> methods wherever applicable.
 
 =item *
 
-pass Perl scalars as arguments to methods, whenever you can.
+pass Perl numbers as arguments to methods, whenever you can.
+
+=item *
+
+avoid the stringification of B<BigNum> objects as much as possible.
 
 =item *
 
