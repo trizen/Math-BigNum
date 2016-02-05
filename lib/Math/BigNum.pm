@@ -5135,7 +5135,6 @@ sub eint {
 =head2 li2
 
     $x->li2                        # => BigNum
-    li(Scalar)                     # => BigNum
 
 The dilogarithm function, defined as the integral of C<-log(1-t)/t> from 0 to C<$x>.
 
