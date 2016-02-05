@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 82;
+plan tests => 108;
 
 use Math::BigNum;
 
@@ -45,6 +45,47 @@ like("$ninf", qr/^-inf/i);
 
 $p = $ninf * $inf;
 like("$p", qr/^-inf/i);
+
+###################################################
+# operations on Infinity
+
+{
+    use Math::BigNum qw(:constant);
+
+    # BigNum
+    is(-1 * (-Inf), Inf);
+    is(-2 - (-Inf), Inf);
+    is(-2 - Inf, -Inf);
+    is(2 - (-Inf), Inf);
+    is(2 - Inf, -Inf);
+
+    is(-2 + (-Inf), -Inf);
+    is(-2 + Inf, Inf);
+    is(2 + (-Inf), -Inf);
+    is(2 + Inf, Inf);
+
+    is(-2 / (-Inf), 0);
+    is(-2 / Inf, 0);    # should be '-0.0'
+    is(2 / (-Inf), 0);  # should be '-0.0'
+    is(2 / Inf, 0);
+
+    # Scalar
+    is("-1" * -Inf, Inf);
+    is("-2" - (-Inf), Inf);
+    is("-2" - Inf, -Inf);
+    is("2" - (-Inf), Inf);
+    is("2" - Inf, -Inf);
+
+    is("-2" + (-Inf), -Inf);
+    is("-2" + Inf, Inf);
+    is("2" + (-Inf), -Inf);
+    is("2" + Inf, Inf);
+
+    is("-2" / (-Inf), 0);
+    is("-2" / Inf, 0);    # should be '-0.0'
+    is("2" / (-Inf), 0);  # should be '-0.0'
+    is("2" / Inf, 0);
+}
 
 ###################################################
 # Check b* methods

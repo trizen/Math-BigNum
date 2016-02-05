@@ -1381,7 +1381,7 @@ multimethod mul => qw(Math::BigNum Math::BigNum::Complex) => sub {
 
 multimethod mul => qw(Math::BigNum Math::BigNum::Inf) => sub {
     my $sign = Math::GMPq::Rmpq_sgn(${$_[0]});
-    $sign < 0 ? ninf : $sign > 0 ? inf : nan;
+    $sign < 0 ? $_[1]->neg : $sign > 0 ? $_[1]->copy : nan;
 };
 
 multimethod mul => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
