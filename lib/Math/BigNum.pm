@@ -18,7 +18,7 @@ Math::BigNum - Arbitrary size precision for integers, rationals and floating-poi
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =head1 SYNOPSIS
 
@@ -189,7 +189,7 @@ don't use B<copy> followed by a B<b*> method! Just leave out the B<b>.
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 our ($ROUND, $PREC);
 
@@ -448,7 +448,7 @@ sub _str2mpq {
 
     # Otherwise, it's a string (this is slightly slower)
     else {
-        my $rat = _str2rat($_[0]);
+        my $rat = _str2rat($_[0] =~ tr/_//dr);
         if ($rat !~ m{^\s*[-+]?[0-9]+(?>\s*/\s*[1-9]+[0-9]*)?\s*\z}) {
             require Carp;
             Carp::confess("Not a base-10 numerical value: <<$rat>>");

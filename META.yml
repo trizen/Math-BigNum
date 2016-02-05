@@ -16,7 +16,7 @@ name: Math-BigNum
 provides:
   Math::BigNum:
     file: lib/Math/BigNum.pm
-    version: '0.01'
+    version: '0.02'
   Math::BigNum::Inf:
     file: lib/Math/BigNum/Inf.pm
   Math::BigNum::Nan:
@@ -31,5 +31,5 @@ requires:
 resources:
   license: http://www.perlfoundation.org/artistic_license_2_0
   repository: https://github.com/trizen/Math-BigNum
-version: '0.01'
+version: '0.02'
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'

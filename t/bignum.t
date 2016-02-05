@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 225;
+plan tests => 228;
 
 # Initialization
 
@@ -70,6 +70,11 @@ plan tests => 225;
 
     # Base conversion
     is(10->in_base(2), "1010");
+
+    # Numbers with underscores
+    is("1_00" + 2,                  102);
+    is(Math::BigNum->new("1_00_2"), 1002);
+    is(1_000_100,                   1000100);
 }
 
 =for comment
