@@ -449,9 +449,9 @@ sub _str2mpq {
     # Otherwise, it's a string (this is slightly slower)
     else {
         my $rat = _str2rat($_[0]);
-        if ($rat !~ m{^\s*[-+]?[0-9]+(?>/[1-9]+[0-9]*)?\s*\z}) {
+        if ($rat !~ m{^\s*[-+]?[0-9]+(?>\s*/\s*[1-9]+[0-9]*)?\s*\z}) {
             require Carp;
-            Carp::confess("Unexpected scalar value <<$rat>>");
+            Carp::confess("Not a base-10 numerical value: <<$rat>>");
         }
         Math::GMPq::Rmpq_set_str($r, $rat, 10);
         Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
@@ -621,18 +621,16 @@ sub new {
         return _mpfr2big($num);
     }
 
-    # New GMPq object
-    my $r = Math::GMPq::Rmpq_init();
-
     # Plain scalar
-    if ($ref eq '' and !defined($base)) {    # it's a scalar
-        my $rat = _str2rat($num);
-        Math::GMPq::Rmpq_set_str($r, $rat, 10);
-        Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
+    if ($ref eq '' and (!defined($base) or $base == 10)) {    # it's a base 10 scalar
+        return bless \_str2mpq($num), $class;                 # so we can return faster
     }
 
+    # Create a new GMPq object
+    my $r = Math::GMPq::Rmpq_init();
+
     # BigFloat
-    elsif ($ref eq 'Math::BigInt') {
+    if ($ref eq 'Math::BigInt') {
         Math::GMPq::Rmpq_set_str($r, $num->bstr, 10);
     }
 
@@ -653,7 +651,7 @@ sub new {
         Math::GMPq::Rmpq_set($r, $num);
     }
 
-    # number with base
+    # Number with base
     elsif ($ref eq '' and defined($base)) {
 
         if ($base < 2 or $base > 36) {
@@ -661,9 +659,8 @@ sub new {
             Carp::croak("base must be between 2 and 36, got $base");
         }
 
-        my $rat = $base == 10 ? _str2rat($num) : $num;
-        Math::GMPq::Rmpq_set_str($r, $rat, $base);
-        Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
+        Math::GMPq::Rmpq_set_str($r, $num, $base);
+        Math::GMPq::Rmpq_canonicalize($r) if (index($num, '/') != -1);
     }
 
     # Fatal error
@@ -672,6 +669,7 @@ sub new {
         Carp::croak("Invalid argument <<$num>> of type <<$ref>> provided to Math::BigNum::new()");
     }
 
+    # Return a bless BigNum object
     bless \$r, $class;
 }
 
