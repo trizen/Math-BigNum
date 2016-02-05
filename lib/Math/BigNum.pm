@@ -29,35 +29,36 @@ Version 0.01
 
 Math::BigNum provides a transparent interface to Math::GMPz, Math::GMPq and Math::MPFR.
 
-In most cases, I<Math::BigNum> can be used as a drop-in replacement for the I<bignum>
-and I<bigrat> pragmas.
+In most cases, B<Math::BigNum> can be used as a drop-in replacement for the L<bignum>
+and L<bigrat> pragmas.
 
-I<Math::BigNum> provides an arbitrary size precision for integers, rationals and floating-point
+B<Math::BigNum> provides an arbitrary size precision for integers, rationals and floating-point
 numbers, focusing on performance and transparency.
 
 =head1 MOTIVATION
 
 This module came into existence as a response to Dana Jacobsen's request for a transparent
-interface to I<Math::GMPz> and I<Math::MPFR>, that he talked about at the YAPC NA, in 2015.
-See he's great presentation at: L<https://www.youtube.com/watch?v=Dhl4_Chvm_g>.
+interface to L<Math::GMPz> and L<Math::MPFR>, that he talked about at the YAPC NA, in 2015.
+See his great presentation at: L<https://www.youtube.com/watch?v=Dhl4_Chvm_g>.
 
-The main aim of this module is to provide a fast and correct alternative to I<Math::Big{Float,Int,Rat}>.
+The main aim of this module is to provide a fast and correct alternative to L<Math::BigInt>,
+L<Maht::BigFloat> and L<Math::BigRat>, as well as to L<bigint>, L<bignum> and L<bigrat> pragmas.
 
 =head1 HOW IT WORKS
 
-I<Math::BigNum> tries really hard to do the right thing and as efficiently as possible.
-For example, if you say C<$x**$y>, it first checks to see if C<$x> and <$y> are integers,
+B<Math::BigNum> tries really hard to do the right thing and as efficiently as possible.
+For example, if you say C<$x**$y>, it first checks to see if C<$x> and C<$y> are integers,
 so it can optimize the operation to integer exponentiation, by calling the corresponding
-I<mpz> function. Otherwise, it will fallback to the corresponding C<mpfr> function.
+B<mpz> function. Otherwise, it will fallback to the corresponding B<mpfr> function.
 
-All numbers in I<Math::BigNum> are stored as rational I<Math::GMPq> objects. Each operation
-outside the functions provided by I<Math::GMPq>, is done by converting the internal objects to
-I<Math::GMPz> or I<Math::MPFR> objects and calling the corresponding functions, converting
-the results back to I<Math::GMPq> objects, without loosing any precision in the process.
+All numbers in B<Math::BigNum> are stored as rational L<Math::GMPq> objects. Each operation
+outside the functions provided by L<Math::GMPq>, is done by converting the internal objects to
+L<Math::GMPz> or L<Math::MPFR> objects and calling the corresponding functions, converting
+the results back to L<Math::GMPq> objects, without loosing any precision in the process.
 
 =head1 IMPORT/EXPORT
 
-I<Math::BigNum> does not export anything by default, but it recognizes the following list of words:
+B<Math::BigNum> does not export anything by default, but it recognizes the following list of words:
 
     :constant       # will make any number a Math::BigNum object
                     # it will also export the "Inf" and "NaN" constants,
@@ -88,23 +89,23 @@ The precision can be changed by modifying the C<$Math::BigNum::PREC> variable, s
 
     local $Math::BigNum::PREC = 1024;
 
-However, a very important thing to take into account, it's the fact that an individual number
-do B<*NOT*> have a specific precision stored inside, therefore it's not possible to create
-I<Math::BigNum> objects with a specific precision. All numbers can grow or shrink dynamically,
+However, an important thing to take into account, unlike the L<Math::MPFR> objects, B<Math::BigNum>
+objects do not have a fixed precision stored inside. Rather, they can grow or shrink dynamically,
 regardless of the global precision.
 
 The global precision controls only the precision of the floating-point functions and the stringification
 of floating-point numbers.
 
-For example, let's change the precision to 3 decimal digits (where C<4> is the conversion factor):
+For example, if we change the precision to 3 decimal digits (where C<4> is the conversion factor), we get the
+following results:
 
     local $Math::BigNum::PREC = 3*4
     say sqrt(2);                   # => 1.414
     say 98**7;                     # => 86812553324672
     say 1 / 98**7                  # => 1.15e-14
 
-As shown above, integers do not obey the global precision, as they can grow or shrink, virtually, without any limit.
-This is true for rational numbers as well.
+As shown above, integers do not obey the global precision, because they can grow or shrink dynamically, without
+a specific limit. This is true for rational numbers as well.
 
 A rational number never losses precision in rational operations, therefore if we say:
 
@@ -113,12 +114,15 @@ A rational number never losses precision in rational operations, therefore if we
     say 1 / $x;                    # => 3
     say 3 / $x;                    # => 9
 
-...the results are exactly what we expect.
+...the results are exactly what we expect to be.
 
 =head1 NOTATIONS
 
-Methods that begin with a B<b> followed by the actual name (such as C<bsqrt>), are mutable methods that change the self
-object in-place, while their counter-parts (such as C<sqrt>) do not. Instead, they will create and return a new object.
+Methods that begin with a B<b> followed by the actual name (e.g.: C<bsqrt>), are mutable methods that change the self
+object in-place, while their counter-parts (e.g.: C<sqrt>) do not. Instead, they will create and return a new object.
+
+Also, B<Math::BigNum> features another kind of methods that begin with an B<i> followed by the actual name (e.g.: C<isqrt>).
+This methods will do integer operations, by truncating their arguments to integers, whenever needed.
 
 The returned types are noted as follows:
 
@@ -131,6 +135,51 @@ The returned types are noted as follows:
 
 When two or more types are separated with pipe characters (B<|>), it means that the corresponding function can
 return any of the specified types.
+
+=head1 PERFORMANCE
+
+The performance varies greatly, but, in most cases, B<Math::BigNum> it's between 2x up to 10x faster than L<Math::BigFloat> with
+the B<GMP> backend, and about 100x faster than L<Math::BigFloat> without the B<GMP> backend (to be modest).
+
+B<Math::BigNum> is fast because of the following facts:
+
+=over 4
+
+=item *
+
+minimal overhead in object creation.
+
+=item *
+
+minimal Perl code is executed per operation.
+
+=item *
+
+the B<GMP> and B<MPFR> libraries are extremely efficient.
+
+=back
+
+To achieve the best performance, try to follow this rules:
+
+=over 4
+
+=item *
+
+use the B<b*> methods whenever you can.
+
+=item *
+
+use the B<i*> methods wherever applicable.
+
+=item *
+
+pass Perl scalars as arguments to methods, whenever you can.
+
+=item *
+
+don't use B<copy> followed by a B<b*> method! Just leave out the B<b>.
+
+=back
 
 =head1 SUBROUTINES/METHODS
 
