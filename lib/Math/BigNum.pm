@@ -1081,7 +1081,7 @@ Changes C<$x> in-place to negative Infinity.
 
     $x->bnan                       # => Nan
 
-Changes C<$x> in-place to the special Not-A-Number value.
+Changes C<$x> in-place to the special Not-a-Number value.
 
 =cut
 

@@ -282,7 +282,7 @@ Promotes C<$x> to a BigNum object which stores the value C<+1>.
 
     $x->nan                        # => Nan
 
-Returns a Nan object, which stores the Not-A-Number value.
+Returns a Nan object, which stores the Not-a-Number value.
 
 =cut
 
@@ -967,7 +967,6 @@ sub asech {
 ## asin(+inf) = -inf*i
 ## asin(-inf) = inf*i
 #
-
 sub asin {
     (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0)
       ? Math::BigNum::Complex->new(0, '-@Inf@')
@@ -982,7 +981,6 @@ sub asin {
 ## acos(+inf) = inf*i
 ## acos(-inf) = -inf*i
 #
-
 sub acos {
     (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0)
       ? Math::BigNum::Complex->new(0, '@Inf@')

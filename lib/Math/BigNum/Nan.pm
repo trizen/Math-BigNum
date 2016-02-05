@@ -11,7 +11,7 @@ use Math::BigNum qw();
 
 =head1 NAME
 
-Math::BigNum::Nan - Represents the Not-A-Number value.
+Math::BigNum::Nan - Represents the Not-a-Number value.
 
 =head1 VERSION
 
