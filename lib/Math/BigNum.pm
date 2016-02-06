@@ -454,7 +454,7 @@ sub _str2mpq {
         my $rat = $_[0] =~ tr/.Ee// ? _str2rat($_[0] =~ tr/_//dr) : ($_[0] =~ tr/_+//dr);
         if ($rat !~ m{^\s*[-+]?[0-9]+(?>\s*/\s*[1-9]+[0-9]*)?\s*\z}) {
             require Carp;
-            Carp::confess("Not a base-10 numerical value: <<$rat>>");
+            Carp::confess("Not a base-10 numerical value: <<$_[0]>>");
         }
         Math::GMPq::Rmpq_set_str($r, $rat, 10);
         Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
