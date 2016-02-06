@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 138;
+use Test::More tests => 137;
 use Math::BigNum;
 
 ###############################################################################
@@ -420,13 +420,13 @@ $x = $mbn->new('-33/8');
 is($x->numify() * 1000, -4125);
 
 $x = $mbn->inf;
-is($x->numify(), 'inf');
+like($x->numify(), qr/^[^-]*inf/i);
 
 $x = $mbn->ninf;
-is($x->numify(), '-inf');
+like($x->numify(), qr/-inf/i);
 
-$x = $mbn->nan;
-is($x->numify(), 'NaN');
+#$x = $mbn->nan;
+#like($x->numify(), qr/nan/i);      # this is not portable
 
 $x = $mbn->new('4/3');
 is($x->numify(), 4 / 3);

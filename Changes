@@ -2,6 +2,7 @@ Revision history for Math-BigNum
 
 0.02    2016-x-x
         - Support for decimal numbers with underscores (`_`)
+        - Fixed a non-portable test.
 
 0.01    2016-05-02
         - First version, released on an unsuspecting world.
