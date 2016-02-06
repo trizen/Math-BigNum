@@ -27,13 +27,9 @@ Version 0.02
 
 =head1 DESCRIPTION
 
-Math::BigNum provides a transparent interface to Math::GMPz, Math::GMPq and Math::MPFR.
-
-In most cases, B<Math::BigNum> can be used as a drop-in replacement for the L<bignum>
-and L<bigrat> pragmas.
-
-B<Math::BigNum> provides an arbitrary size precision for integers, rationals and floating-point
-numbers, focusing on performance and transparency.
+Math::BigNum provides a transparent interface to Math::GMPz, Math::GMPq and Math::MPFR, focusing
+on performance and easy-to-use. In most cases, it can be used as a drop-in replacement for the
+L<bignum> and L<bigrat> pragmas.
 
 =head1 MOTIVATION
 
@@ -46,19 +42,19 @@ L<Maht::BigFloat> and L<Math::BigRat>, as well as to L<bigint>, L<bignum> and L<
 
 =head1 HOW IT WORKS
 
-B<Math::BigNum> tries really hard to do the right thing and as efficiently as possible.
+Math::BigNum tries really hard to do the right thing and as efficiently as possible.
 For example, if you say C<$x**$y>, it first checks to see if C<$x> and C<$y> are integers,
 so it can optimize the operation to integer exponentiation, by calling the corresponding
-B<mpz> function. Otherwise, it will fallback to the corresponding B<mpfr> function.
+I<mpz> function. Otherwise, it will fallback to the corresponding I<mpfr> function.
 
-All numbers in B<Math::BigNum> are stored as rational L<Math::GMPq> objects. Each operation
+All numbers in Math::BigNum are stored as rational L<Math::GMPq> objects. Each operation
 outside the functions provided by L<Math::GMPq>, is done by converting the internal objects to
 L<Math::GMPz> or L<Math::MPFR> objects and calling the corresponding functions, converting
 the results back to L<Math::GMPq> objects, without loosing any precision in the process.
 
 =head1 IMPORT/EXPORT
 
-B<Math::BigNum> does not export anything by default, but it recognizes the following list of words:
+Math::BigNum does not export anything by default, but it recognizes the following list of words:
 
     :constant       # will make any number a Math::BigNum object
                     # it will also export the "Inf" and "NaN" constants,
@@ -89,23 +85,23 @@ The precision can be changed by modifying the C<$Math::BigNum::PREC> variable, s
 
     local $Math::BigNum::PREC = 1024;
 
-However, an important thing to take into account, unlike the L<Math::MPFR> objects, B<Math::BigNum>
+However, an important thing to take into account, unlike the L<Math::MPFR> objects, Math::BigNum
 objects do not have a fixed precision stored inside. Rather, they can grow or shrink dynamically,
 regardless of the global precision.
 
-The global precision controls only the precision of the floating-point functions and the stringification
-of floating-point numbers.
+The global precision controls only the precision of the floating-point functions and the
+stringification of floating-point numbers.
 
-For example, if we change the precision to 3 decimal digits (where C<4> is the conversion factor), we get the
-following results:
+For example, if we change the precision to 3 decimal digits (where C<4> is the conversion factor),
+we get the following results:
 
     local $Math::BigNum::PREC = 3*4
     say sqrt(2);                   # => 1.414
     say 98**7;                     # => 86812553324672
     say 1 / 98**7                  # => 1.15e-14
 
-As shown above, integers do not obey the global precision, because they can grow or shrink dynamically, without
-a specific limit. This is true for rational numbers as well.
+As shown above, integers do not obey the global precision, because they can grow or shrink
+dynamically, without a specific limit. This is true for rational numbers as well.
 
 A rational number never losses precision in rational operations, therefore if we say:
 
@@ -118,11 +114,13 @@ A rational number never losses precision in rational operations, therefore if we
 
 =head1 NOTATIONS
 
-Methods that begin with a B<b> followed by the actual name (e.g.: C<bsqrt>), are mutable methods that change the self
-object in-place, while their counter-parts (e.g.: C<sqrt>) do not. Instead, they will create and return a new object.
+Methods that begin with a B<b> followed by the actual name (e.g.: C<bsqrt>), are mutable
+methods that change the self object in-place, while their counter-parts (e.g.: C<sqrt>)
+do not. Instead, they will create and return a new object.
 
-Also, B<Math::BigNum> features another kind of methods that begin with an B<i> followed by the actual name (e.g.: C<isqrt>).
-This methods will do integer operations, by truncating their arguments to integers, whenever needed.
+Also, Math::BigNum features another kind of methods that begin with an B<i> followed by
+the actual name (e.g.: C<isqrt>). This methods will do integer operations, by truncating
+their arguments to integers, whenever needed.
 
 The returned types are noted as follows:
 
@@ -133,15 +131,16 @@ The returned types are noted as follows:
     Bool        #-> true or false (actually: 1 or 0)
     Any         #-> any value, including a reference
 
-When two or more types are separated with pipe characters (B<|>), it means that the corresponding function can
-return any of the specified types.
+When two or more types are separated with pipe characters (B<|>), it means that the
+corresponding function can return any of the specified types.
 
 =head1 PERFORMANCE
 
-The performance varies greatly, but, in most cases, B<Math::BigNum> it's between 2x up to 10x faster than L<Math::BigFloat> with
-the B<GMP> backend, and about 100x faster than L<Math::BigFloat> without the B<GMP> backend (to be modest).
+The performance varies greatly, but, in most cases, Math::BigNum it's between 2x up to 10x
+faster than L<Math::BigFloat> with the B<GMP> backend, and about 100x faster than L<Math::BigFloat>
+without the B<GMP> backend (to be modest).
 
-B<Math::BigNum> is fast because of the following facts:
+Math::BigNum is fast because of the following facts:
 
 =over 4
 
@@ -177,7 +176,7 @@ pass Perl numbers as arguments to methods, whenever you can.
 
 =item *
 
-avoid the stringification of B<BigNum> objects as much as possible.
+avoid the stringification of Math::BigNum objects as much as possible.
 
 =item *
 
