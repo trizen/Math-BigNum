@@ -432,9 +432,12 @@ sub _str2mpfr {
 
 # Converts a string into an mpq object
 sub _str2mpq {
-    $_[0] // return $ZERO;
-
     my $r = Math::GMPq::Rmpq_init();
+
+    $_[0] || do {
+        Math::GMPq::Rmpq_set($r, $ZERO);
+        return $r;
+    };
 
     # Performance improvement for Perl integers
     if ((~$_[0] & $_[0]) eq '0' and CORE::int($_[0]) eq $_[0]) {
@@ -446,9 +449,9 @@ sub _str2mpq {
         }
     }
 
-    # Otherwise, it's a string (this is slightly slower)
+    # Otherwise, it's a string or a float (this is slightly slower)
     else {
-        my $rat = _str2rat($_[0] =~ tr/_//dr);
+        my $rat = $_[0] =~ tr/.Ee// ? _str2rat($_[0] =~ tr/_//dr) : ($_[0] =~ tr/_+//dr);
         if ($rat !~ m{^\s*[-+]?[0-9]+(?>\s*/\s*[1-9]+[0-9]*)?\s*\z}) {
             require Carp;
             Carp::confess("Not a base-10 numerical value: <<$rat>>");

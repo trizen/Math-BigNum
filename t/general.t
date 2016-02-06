@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 137;
+use Test::More tests => 139;
 use Math::BigNum;
 
 ###############################################################################
@@ -122,6 +122,9 @@ my $mbn = 'Math::BigNum';
     is(2.1->ceil,  3);
     is(2->ceil,    2);
     like(2.3**5.4, qr/^89.811/);
+
+    is(Math::BigNum->new("+2"), 2);
+    is(Math::BigNum->new("-2"), -2);
 }
 
 ##############################################################################
