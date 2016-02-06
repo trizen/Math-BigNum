@@ -429,7 +429,7 @@ like($x->numify(), qr/-inf/i);
 #like($x->numify(), qr/nan/i);      # this is not portable
 
 $x = $mbn->new('4/3');
-is($x->numify(), 4 / 3);
+like($x->numify(), qr/^1\.33333/);
 
 ##############################################################################
 # done
