@@ -3340,7 +3340,9 @@ multimethod mod => qw($ Math::BigNum) => sub {
     Math::BigNum->new($_[0])->bmod($_[1]);
 };
 
-multimethod mod => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[0]->copy };
+multimethod mod => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[0]->copy->bmod($_[1]);
+};
 multimethod mod => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bmod
@@ -3420,7 +3422,15 @@ multimethod bmod => qw(Math::BigNum $) => sub {
     $x;
 };
 
-multimethod bmod => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[0] };
+# +x mod +Inf = x
+# +x mod -Inf = -Inf
+# -x mod +Inf = +Inf
+# -x mod -Inf = x
+multimethod bmod => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    my ($x, $y) = @_;
+    Math::GMPq::Rmpq_sgn($$x) == Math::GMPq::Rmpq_sgn($$y) ? $x : $y;
+};
+
 multimethod bmod => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 imod
@@ -3475,7 +3485,10 @@ multimethod imod => qw($ Math::BigNum) => sub {
     Math::BigNum->new($_[0])->bimod($_[1]);
 };
 
-multimethod imod => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[0]->copy };
+multimethod imod => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[0]->copy->bimod($_[1]);
+};
+
 multimethod imod => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 bimod
@@ -3522,7 +3535,15 @@ multimethod bimod => qw(Math::BigNum $) => sub {
     $x;
 };
 
-multimethod bimod => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[0] };
+# +x mod +Inf = x
+# +x mod -Inf = -Inf
+# -x mod +Inf = +Inf
+# -x mod -Inf = x
+multimethod bimod => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    my ($x, $y) = @_;
+    Math::GMPq::Rmpq_sgn($$x) == Math::GMPq::Rmpq_sgn($$y) ? $x->bint : $y;
+};
+
 multimethod bimod => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 divmod

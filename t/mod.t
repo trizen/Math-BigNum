@@ -51,10 +51,10 @@ is(("-$f1" % $f2)->round(-1), 12.2);
 
 is($x % Inf,      $x);
 is("$x" % Inf,    $x);
-is(-$x % Inf,     -$x);
-is("-$x" % Inf,   -$x);
-is($x % -Inf,     $x);
-is("$x" % -Inf,   $x);
+is(-$x % Inf,     Inf);
+is("-$x" % Inf,   Inf);
+is($x % -Inf,     -Inf);
+is("$x" % -Inf,   -Inf);
 is(-$x % -Inf,    -$x);
 is("-$x" % -Inf,  -$x);
 is(Inf % $x,      NaN);

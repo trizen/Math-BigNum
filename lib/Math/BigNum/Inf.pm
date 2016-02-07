@@ -1291,14 +1291,19 @@ Inverse value of +/-Infinity. Always returns zero.
     $x->mod(BigNum)                # => Nan
     $x->mod(Inf)                   # => Nan
 
-    Scalar % Inf                   # => BigNum
+    Scalar % Inf                   # => BigNum | Inf
 
 Returns the remained of C<$x> divided by C<$y>.
 
 =cut
 
+# +x mod +Inf = x
+# +x mod -Inf = -Inf
+# -x mod +Inf = +Inf
+# -x mod -Inf = x
 multimethod mod => qw($ Math::BigNum::Inf) => sub {
-    Math::BigNum->new($_[0]);
+    my ($x, $y) = @_;
+    ($x <=> 0) == Math::GMPq::Rmpq_sgn($$y) ? Math::BigNum->new($x) : $y->copy;
 };
 
 multimethod mod => qw(Math::BigNum::Inf *) => \&nan;
