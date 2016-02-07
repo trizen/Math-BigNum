@@ -1076,16 +1076,13 @@ sub sqr { $_[0]->mul($_[0]) }
 
 =head2 sqrt / isqrt
 
-    $x->sqrt           => Inf | Nan
+    $x->sqrt           => Inf
 
-Square root of C<$x>. Returns Nan when C<$x> is negative.
+Square root of C<$x>.
 
 =cut
 
-sub sqrt {
-    $_[0]->is_neg ? nan() : $_[0]->copy;
-}
-
+*sqrt  = \&inf;
 *isqrt = \&sqrt;
 
 =head2 bsqrt / bisqrt
@@ -1094,8 +1091,7 @@ Square root of C<$x>, changing C<$x> in-place.
 
 =cut
 
-sub bsqrt { $_[0]->is_neg ? $_[0]->bnan : $_[0] }
-
+*bsqrt  = \&binf;
 *bisqrt = \&bsqrt;
 
 =head2 pow / ipow
