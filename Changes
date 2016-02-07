@@ -2,6 +2,7 @@ Revision history for Math-BigNum
 
 0.03    2016-x-x
         - Minor performance improvement in the creation of BigNum objects with integers or fractions.
+        - Changed the result of (-Inf)^(Float) to be Inf instead of NaN.
 
 0.02    2016-06-02
         - Support for decimal numbers with underscores (`_`)

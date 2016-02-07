@@ -105,7 +105,7 @@ is((Inf)->iroot(-12),  0);
 is((-Inf)->root(-12),  0);
 is((Inf)->root(2),     Inf);
 is((Inf)->iroot(2),    Inf);
-is((-Inf)->root(2),    NaN);    # sqrt(-Inf)
+is((-Inf)->root(2),    Inf);    # sqrt(-Inf) -- shouldn't be NaN?
 is((Inf)->root(Inf),   1);
 is((-Inf)->root(Inf),  1);
 is((Inf)->root(-Inf),  1);
@@ -117,7 +117,7 @@ is((Inf)->iroot("-12"), 0);
 is((-Inf)->root("-12"), 0);
 is((Inf)->root("2"),    Inf);
 is((Inf)->iroot("2"),   Inf);
-is((-Inf)->root("2"),   NaN);    # sqrt(-Inf)
+is((-Inf)->root("2"),   Inf);    # sqrt(-Inf) -- shouldn't be NaN?
 
 #is(Math::BigNum->new('foo'), NaN);     # should be NaN?
 

@@ -234,7 +234,7 @@ is(lc("$r"), "inf");
     is((-Inf)**0,          1);
     is((-Inf)**2,          Inf);
     is((-Inf)**3,          -Inf);
-    is((-Inf)**2.3,        NaN);
+    is((-Inf)**2.3,        Inf);               # shouldn't be NaN?
     is(Inf**2.3,           Inf);
     is(Inf**-2.3,          0);
     is((-Inf)**-3,         0);
@@ -249,7 +249,7 @@ is(lc("$r"), "inf");
     is((Inf)**(1 / (-12)), 0);
     is((-Inf)**(1 / (-12)), 0);
     is((Inf)**(1 / (2)), Inf);
-    is((-Inf)**(1 / (2)), NaN);    # sqrt(-Inf)
+    is((-Inf)**(1 / (2)), Inf);    # sqrt(-Inf) -- shouldn't be NaN?
     is((Inf)**(1 / (Inf)), 1);
     is((-Inf)**(1 / (Inf)), 1);
     is((Inf)**(1 / (-Inf)), 1);
@@ -264,7 +264,7 @@ is(lc("$r"), "inf");
     is((-Inf)**"0",            1);
     is((-Inf)**"2",            Inf);
     is((-Inf)**"3",            -Inf);
-    is((-Inf)**"2.3",          NaN);
+    is((-Inf)**"2.3",          Inf);    # shouldn't be NaN?
     is(Inf**"2.3",             Inf);
     is(Inf**"-2.3",            0);
     is((-Inf)**"-3",           0);

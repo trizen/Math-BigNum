@@ -1100,13 +1100,13 @@ sub bsqrt { $_[0]->is_neg ? $_[0]->bnan : $_[0] }
 
 =head2 pow / ipow
 
-    $x->pow(BigNum)                # => Inf | Nan | BigNum
-    $x->pow(Scalar)                # => Inf | Nan | BigNum
-    $x->pow(Inf)                   # => Inf | Nan | BigNum
+    $x->pow(BigNum)                # => Inf | BigNum
+    $x->pow(Scalar)                # => Inf | BigNum
+    $x->pow(Inf)                   # => Inf | BigNum
 
     Scalar ** Inf                  # => Inf | BigNum(0)
-    Inf ** BigNum                  # => Inf | Nan | BigNum
-    Inf ** Scalar                  # => Inf | Nan | BigNum
+    Inf ** BigNum                  # => Inf | BigNum
+    Inf ** Scalar                  # => Inf | BigNum
 
 Raises C<$x> to the power C<$y>.
 
@@ -1128,12 +1128,12 @@ multimethod pow => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
 =head2 bpow / bipow
 
-    $x->bpow(BigNum)               # => Inf | Nan | BigNum
-    $x->bpow(Scalar)               # => Inf | Nan | BigNum
-    $x->bpow(Inf)                  # => Inf | Nan | BigNum
+    $x->bpow(BigNum)               # => Inf | BigNum
+    $x->bpow(Scalar)               # => Inf | BigNum
+    $x->bpow(Inf)                  # => Inf | BigNum
 
-    Inf **= BigNum                 # => Inf | Nan | BigNum
-    Inf **= Scalar                 # => Inf | Nan | BigNum
+    Inf **= BigNum                 # => Inf | BigNum
+    Inf **= Scalar                 # => Inf | BigNum
 
 Same C<pow()>, except that it changes C<$x> in-place.
 
@@ -1143,11 +1143,9 @@ multimethod bpow => qw(Math::BigNum::Inf Math::BigNum) => sub {
     my ($x, $y) = @_;
     $y->is_neg      ? $x->bzero
       : $y->is_zero ? $x->bone
-      : $x->is_neg  ? $y->is_int
-          ? $y->is_even
-              ? $x->bneg
-              : $x
-          : $x->bnan
+      : $x->is_neg  ? $y->is_odd
+          ? $x
+          : $x->bneg
       : $x;
 };
 
@@ -1155,11 +1153,9 @@ multimethod bpow => qw(Math::BigNum::Inf $) => sub {
     my ($x, $y) = @_;
     $y < 0         ? $x->bzero
       : $y == 0    ? $x->bone
-      : $x->is_neg ? CORE::int($y) eq $y
-          ? ($y % 2 == 0)
-              ? $x->bneg
-              : $x
-          : $x->bnan()
+      : $x->is_neg ? ($y % 2 != 0)
+          ? $x
+          : $x->bneg
       : $x;
 };
 
