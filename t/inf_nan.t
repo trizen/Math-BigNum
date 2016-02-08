@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-use Test::More tests => 108;
+use Test::More tests => 109;
 
 use Math::BigNum qw(:constant);
 
@@ -98,6 +98,7 @@ is((-1.01)->asin, NaN);
 is(1.01->asin,    NaN);
 is(sqrt(-1),      NaN);
 is(Inf**NaN,      NaN);
+is((-Inf)**NaN,   NaN);
 is(NaN**Inf,      NaN);
 
 # BigNum

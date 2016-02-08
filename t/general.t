@@ -426,7 +426,7 @@ $x = $mbn->inf;
 like($x->numify(), qr/^[^-]*inf/i);
 
 $x = $mbn->ninf;
-like($x->numify(), qr/-inf/i);
+like($x->numify(), qr/-.*?inf/i);
 
 #$x = $mbn->nan;
 #like($x->numify(), qr/nan/i);      # this is not portable
