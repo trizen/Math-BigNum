@@ -10,6 +10,8 @@ use Math::MPFR qw();
 
 use Class::Multimethods qw(multimethod);
 
+our $VERSION = '0.03';
+
 =encoding utf8
 
 =head1 NAME
@@ -18,7 +20,7 @@ Math::BigNum - Arbitrary size precision for integers, rationals and floating-poi
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =head1 SYNOPSIS
 
@@ -187,8 +189,6 @@ don't use B<copy> followed by a B<b*> method! Just leave out the B<b>.
 =head1 SUBROUTINES/METHODS
 
 =cut
-
-our $VERSION = '0.02';
 
 our ($ROUND, $PREC);
 
@@ -4954,8 +4954,8 @@ multimethod binomial => qw(Math::BigNum $) => sub {
     $x->is_prime(BigNum)           # => Scalar
     $n->is_prime(Scalar)           # => Scalar
 
-Returns 2 if $n is definitely prime, 1 if $n is probably prime (without
-being certain), or 0 if $n is definitely composite. This method does some
+Returns 2 if C<$n> is definitely prime, 1 if C<$n> is probably prime (without
+being certain), or 0 if C<$n> is definitely composite. This method does some
 trial divisions, then some Miller-Rabin probabilistic primality tests. It
 also accepts an optional argument for specifying the accuracy of the test.
 By default, it uses an accuracy value of 12, which guarantees correctness
@@ -4981,7 +4981,7 @@ multimethod is_prime => qw(Math::BigNum Math::BigNum) => sub {
 
     $n->next_prime                 # => BigNum
 
-Returns the next prime after $n.
+Returns the next prime after C<$n>.
 
 =cut
 
@@ -5204,11 +5204,24 @@ L<http://cpanratings.perl.org/d/Math-BigNum>
 
 L<http://search.cpan.org/dist/Math-BigNum/>
 
+=item * GitHub
+
+L<https://github.com/trizen/Math-BigNum>
+
 =back
 
 
 =head1 ACKNOWLEDGEMENTS
 
+=over 4
+
+=item * Special cases and NaN: L<https://en.wikipedia.org/wiki/NaN>
+
+=item * What Every Computer Scientist Should Know About FloatingPoint Arithmetic: L<http://www.cl.cam.ac.uk/teaching/1011/FPComp/floatingmath.pdf>
+
+=item * Wolfram|Alpha: L<http://www.wolframalpha.com/>
+
+=back
 
 =head1 LICENSE AND COPYRIGHT
 
