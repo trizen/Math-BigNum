@@ -168,12 +168,12 @@ sub compress {
     # Upper bound
     my $U = $L + $pf;
 
-    my $pow = $pf->log(2);
-    my $enc = ($U - 1)->bidiv(1 << $pow);
+    my $pow = $pf->log(2)->as_int;
+    my $enc = ($U - 1) >> $pow;
 
     # Remove any divisibility by 2
     while ($enc > 0 and $enc % 2 == 0) {
-        $pow->binc;
+        ++$pow;
         $enc >>= 1;
     }
 
@@ -220,10 +220,9 @@ sub decompress {
         $enc >>= (8 - $padd);
     }
 
-    $pow = Math::BigNum->new($pow);
     $enc <<= $pow;
 
-    my $base = Math::BigNum->new(0);
+    my $base = 0;
     $base += $_ for values %freq;
 
     # Create the cumulative frequency table
@@ -250,14 +249,14 @@ sub decompress {
     open my $out_fh, '>:raw', $output;
 
     # Decode the input number
-    for (my $pow = $base**($base - 1) ; $pow->is_pos ; $pow->bidiv($base)) {
+    for (my $pow = Math::BigNum->new($base)**($base - 1) ; $pow->is_pos ; $pow->bidiv($base)) {
         my $div = $enc->idiv($pow);
 
         my $c  = $dict{$div};
         my $fv = $freq{$c};
         my $cv = $cf{$c};
 
-        $enc = ($enc - $pow * $cv)->idiv($fv);
+        $enc->bsub($pow * $cv)->bidiv($fv);
         print {$out_fh} $c;
     }
 
