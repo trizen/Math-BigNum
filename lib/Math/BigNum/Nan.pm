@@ -290,6 +290,9 @@ sub cmp { }
 *sqrt  = \&nan;
 *bsqrt = \&_self;
 
+*sqr  = \&nan;
+*bsqr = \&_self;
+
 *isqrt  = \&nan;
 *bisqrt = \&_self;
 *cbrt   = \&nan;
@@ -339,6 +342,8 @@ sub cmp { }
 
 *rand   = \&nan;
 *modinv = \&nan;
+*inv    = \&nan;
+*binv   = \&_self;
 
 sub is_zero { 0 }
 sub is_one  { 0 }

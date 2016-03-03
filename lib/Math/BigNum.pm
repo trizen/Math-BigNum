@@ -1803,6 +1803,26 @@ sub inv {
     bless \$r, __PACKAGE__;
 }
 
+=head2 binv
+
+    $x->binv                       # => BigNum | Inf
+
+Set C<$x> to its inverse value. (C<1/$x>)
+
+=cut
+
+sub binv {
+    my ($x) = @_;
+
+    # Return Inf when $x is zero.
+    if (!Math::GMPq::Rmpq_sgn($$x)) {
+        return $x->binf;
+    }
+
+    Math::GMPq::Rmpq_inv($$x, $$x);
+    $x;
+}
+
 =head2 sqr
 
     $x->sqr                        # => BigNum
@@ -1816,6 +1836,20 @@ sub sqr {
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_mul($r, $$x, $$x);
     bless \$r, __PACKAGE__;
+}
+
+=head2 bsqr
+
+    $x->bsqr                       # => BigNum
+
+Set C<$x> to its multiplicative double. (C<$x**2>)
+
+=cut
+
+sub bsqr {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_mul($$x, $$x, $$x);
+    $x;
 }
 
 =head2 sqrt

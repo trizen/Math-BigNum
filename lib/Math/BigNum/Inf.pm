@@ -1072,7 +1072,8 @@ Returns the result of C<$x**2>.
 
 =cut
 
-sub sqr { $_[0]->mul($_[0]) }
+sub sqr  { $_[0]->mul($_[0]) }
+sub bsqr { $_[0]->bmul($_[0]) }
 
 =head2 sqrt / isqrt
 
@@ -1276,7 +1277,8 @@ Inverse value of +/-Infinity. Always returns zero.
 
 =cut
 
-*inv = \&zero;
+*inv  = \&zero;
+*binv = \&bzero;
 
 =head2 mod / imod
 
