@@ -1,5 +1,10 @@
 Revision history for Math-BigNum
 
+0.04    2016-16-03
+        - Added more multimethods to support any kind of numerical object, such as Math::BigInt, Math::BigFloat, etc...
+        - Improved the support for infinity.
+        - `BigNum <=> NaN` will now return `undef` instead of `0`.
+
 0.03    2016-08-02
         - Minor performance improvement in the creation of BigNum objects with integers or fractions.
         - Changed the result of (-Inf)^(Float) from NaN to Inf.

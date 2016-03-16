@@ -38,7 +38,7 @@
    "provides" : {
       "Math::BigNum" : {
          "file" : "lib/Math/BigNum.pm",
-         "version" : "0.03"
+         "version" : "0.04"
       },
       "Math::BigNum::Inf" : {
          "file" : "lib/Math/BigNum/Inf.pm"
@@ -56,6 +56,6 @@
          "url" : "https://github.com/trizen/Math-BigNum"
       }
    },
-   "version" : "0.03",
+   "version" : "0.04",
    "x_serialization_backend" : "JSON::PP version 2.27300"
 }
