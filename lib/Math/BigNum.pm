@@ -24,8 +24,26 @@ Version 0.04
 
 =head1 SYNOPSIS
 
+    use 5.014;
     use Math::BigNum qw(:constant);
-    print 1/2 * (100->fac + 1);
+
+    # Big numbers
+    say ((100->fac + 1) / 2);
+      # => 466631077219720763408496194281333502453579841321908107 \
+      #    342964819476087999966149578044707319880782591431268489 \
+      #    60413611879125592605458432000000000000000000000000.5
+
+    # Small numbers
+    say sqrt(1 / 100->fac);     # => 1.0351378111756264713204945916572e-79
+
+    # Rational numbers
+    my $x = 2/3;
+    say $x*3;                   # => 2
+    say 2/$x;                   # => 3
+    say $x->as_frac;            # => "2/3"
+
+    # Floating-point numbers
+    say "equal" if (1.1 + 2.2 == 3.3);     # => "equal"
 
 =head1 DESCRIPTION
 

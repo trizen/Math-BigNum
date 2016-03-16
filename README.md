@@ -25,6 +25,7 @@ say sqrt(1 / 100->fac);     # => 1.0351378111756264713204945916572e-79
 my $x = 2/3;
 say $x*3;                   # => 2
 say 2/$x;                   # => 3
+say $x->as_frac;            # => "2/3"
 
 # Floating-point numbers
 say "equal" if (1.1 + 2.2 == 3.3);     # => "equal"
