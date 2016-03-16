@@ -3930,6 +3930,14 @@ multimethod modpow => qw(Math::BigNum $ Math::BigNum) => sub {
     _mpz2big($r);
 };
 
+multimethod modpow => qw(Math::BigNum Math::BigNum *) => sub {
+    $_[0]->modpow($_[1], Math::BigNum->new($_[2]));
+};
+
+multimethod modpow => qw(Math::BigNum * Math::BigNum) => sub {
+    $_[0]->modpow(Math::BigNum->new($_[1]), $_[2]);
+};
+
 #
 ## Miscellaneous
 #
