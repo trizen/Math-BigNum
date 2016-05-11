@@ -1,5 +1,8 @@
 Revision history for Math-BigNum
 
+0.05    xxx
+        - 5% optimization in pow(), mod() and is_div() with integer arguments.
+
 0.04    2016-16-03
         - Added more multimethods to support any kind of numerical object, such as Math::BigInt, Math::BigFloat, etc...
         - Improved the support for infinity.

@@ -7,7 +7,7 @@ build_requires:
 configure_requires:
   Module::Build: '0'
 dynamic_config: 1
-generated_by: 'Module::Build version 0.4216, CPAN::Meta::Converter version 2.150005'
+generated_by: 'Module::Build version 0.4218, CPAN::Meta::Converter version 2.150005'
 license: artistic_2
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -16,7 +16,7 @@ name: Math-BigNum
 provides:
   Math::BigNum:
     file: lib/Math/BigNum.pm
-    version: '0.04'
+    version: '0.05'
   Math::BigNum::Inf:
     file: lib/Math/BigNum/Inf.pm
   Math::BigNum::Nan:
@@ -29,7 +29,7 @@ requires:
   Math::MPFR: '3.29'
   perl: v5.14.0
 resources:
-  license: http://www.perlfoundation.org/artistic_license_2_0
+  license: http://opensource.org/licenses/artistic-license-2.0.php
   repository: https://github.com/trizen/Math-BigNum
-version: '0.04'
+version: '0.05'
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'

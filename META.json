@@ -4,7 +4,7 @@
       "Daniel Șuteu <trizenx@gmail.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4216",
+   "generated_by" : "Module::Build version 0.4218",
    "license" : [
       "artistic_2"
    ],
@@ -38,7 +38,7 @@
    "provides" : {
       "Math::BigNum" : {
          "file" : "lib/Math/BigNum.pm",
-         "version" : "0.04"
+         "version" : "0.05"
       },
       "Math::BigNum::Inf" : {
          "file" : "lib/Math/BigNum/Inf.pm"
@@ -50,12 +50,12 @@
    "release_status" : "stable",
    "resources" : {
       "license" : [
-         "http://www.perlfoundation.org/artistic_license_2_0"
+         "http://opensource.org/licenses/artistic-license-2.0.php"
       ],
       "repository" : {
          "url" : "https://github.com/trizen/Math-BigNum"
       }
    },
-   "version" : "0.04",
-   "x_serialization_backend" : "JSON::PP version 2.27300"
+   "version" : "0.05",
+   "x_serialization_backend" : "JSON::PP version 2.27400"
 }

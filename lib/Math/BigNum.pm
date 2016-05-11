@@ -10,7 +10,7 @@ use Math::MPFR qw();
 
 use Class::Multimethods qw(multimethod);
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =encoding utf8
 
@@ -20,7 +20,7 @@ Math::BigNum - Arbitrary size precision for integers, rationals and floating-poi
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =head1 SYNOPSIS
 
@@ -494,9 +494,16 @@ sub _big2mpfr {
 
 # Converts a BigNum object to mpz
 sub _big2mpz {
-    my $i = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_set_q($i, ${$_[0]});
-    $i;
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_set_q($z, ${$_[0]});
+    $z;
+}
+
+# Converts an integer BigNum object to mpz
+sub _int2mpz {
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_get_num($z, ${$_[0]});
+    $z;
 }
 
 # Converts an mpfr object to BigNum
@@ -2172,7 +2179,7 @@ multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
 
         my $pow = Math::GMPq::Rmpq_get_d($$y);
 
-        my $z = _big2mpz($x);
+        my $z = _int2mpz($x);
         Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
 
         my $q = Math::GMPq::Rmpq_init();
@@ -2205,7 +2212,7 @@ multimethod pow => qw(Math::BigNum $) => sub {
 
     # Optimization for when both are integers
     if (CORE::int($y) eq $y and Math::GMPq::Rmpq_integer_p($$x)) {
-        my $z = _big2mpz($x);
+        my $z = _int2mpz($x);
         Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($y));
         my $q = Math::GMPq::Rmpq_init();
         Math::GMPq::Rmpq_set_z($q, $z);
@@ -3532,11 +3539,11 @@ multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
 
     if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
 
-        my $yz     = _big2mpz($y);
+        my $yz     = _int2mpz($y);
         my $sign_y = Math::GMPz::Rmpz_sgn($yz);
         return nan if !$sign_y;
 
-        my $r = _big2mpz($x);
+        my $r = _int2mpz($x);
         Math::GMPz::Rmpz_mod($r, $r, $yz);
         if (!Math::GMPz::Rmpz_sgn($r)) {
             return (zero);    # return faster
@@ -3567,7 +3574,7 @@ multimethod mod => qw(Math::BigNum $) => sub {
     return nan if ($y == 0);
 
     if (Math::GMPq::Rmpq_integer_p($$x) and CORE::int($y) eq $y) {
-        my $r     = _big2mpz($x);
+        my $r     = _int2mpz($x);
         my $neg_y = $y < 0;
         $y = CORE::abs($y) if $neg_y;
         Math::GMPz::Rmpz_mod_ui($r, $r, $y);
@@ -3630,11 +3637,11 @@ multimethod bmod => qw(Math::BigNum Math::BigNum) => sub {
 
     if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
 
-        my $yz     = _big2mpz($y);
+        my $yz     = _int2mpz($y);
         my $sign_y = Math::GMPz::Rmpz_sgn($yz);
         return $x->bnan if !$sign_y;
 
-        my $r = _big2mpz($x);
+        my $r = _int2mpz($x);
         Math::GMPz::Rmpz_mod($r, $r, $yz);
         if ($sign_y < 0 and Math::GMPz::Rmpz_sgn($r)) {
             Math::GMPz::Rmpz_add($r, $r, $yz);
@@ -3664,7 +3671,7 @@ multimethod bmod => qw(Math::BigNum $) => sub {
     return $x->bnan if ($y == 0);
 
     if (Math::GMPq::Rmpq_integer_p($$x) and CORE::int($y) eq $y) {
-        my $r     = _big2mpz($x);
+        my $r     = _int2mpz($x);
         my $neg_y = $y < 0;
         $y = CORE::abs($y) if $neg_y;
         Math::GMPz::Rmpz_mod_ui($r, $r, $y);
@@ -4128,7 +4135,7 @@ multimethod is_div => qw(Math::BigNum $) => sub {
 
     # Use a faster method when both $x and $y are integers
     if ($y > 0 and CORE::int($y) eq $y and Math::GMPq::Rmpq_integer_p($$x)) {
-        Math::GMPz::Rmpz_divisible_ui_p(_big2mpz($x), $y);
+        Math::GMPz::Rmpz_divisible_ui_p(_int2mpz($x), $y);
     }
 
     # Otherwise, do the division and check the result

@@ -17,7 +17,7 @@ Math::BigNum::Inf - Represents the +Infinity value.
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =head1 SYNOPSIS
 
