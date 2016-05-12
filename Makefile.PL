@@ -3,18 +3,18 @@ require 5.014000;
 use ExtUtils::MakeMaker;
 WriteMakefile
 (
-  'VERSION_FROM' => 'lib/Math/BigNum.pm',
+  'EXE_FILES' => [],
   'NAME' => 'Math::BigNum',
-  'PL_FILES' => {},
   'INSTALLDIRS' => 'site',
   'PREREQ_PM' => {
-                   'Class::Multimethods' => 0,
                    'Math::MPFR' => '3.29',
-                   'Carp' => 0,
                    'Math::GMPz' => 0,
+                   'Class::Multimethods' => 0,
                    'Test::More' => 0,
-                   'Math::GMPq' => '0.39'
+                   'Math::GMPq' => '0.39',
+                   'Carp' => 0
                  },
-  'EXE_FILES' => []
+  'VERSION_FROM' => 'lib/Math/BigNum.pm',
+  'PL_FILES' => {}
 )
 ;
