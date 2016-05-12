@@ -3462,8 +3462,7 @@ multimethod acmp => qw(Math::BigNum Math::BigNum::Nan) => sub { };
     $x->rand(Scalar)               # => BigNum
 
 Returns a random floating-point number. When an additional argument is provided,
-it returns a number between C<$x> and C<$y>, otherwise returns a number lower
-than C<$x>.
+it returns a number between C<$x> and C<$y>, otherwise returns a number between 0 and C<$x>.
 
 Example:
 
