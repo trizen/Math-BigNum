@@ -98,8 +98,8 @@ B<NOTE:> C<:constant> is lexical to the current scope only.
 
 =head1 PRECISION
 
-The default precision of floating-point numbers is 128 bits, which is equivalent with about 32
-digits of precision in base 10.
+The default precision for floating-point numbers is 128 bits, which is equivalent with
+32 digits of precision in base 10.
 
 The precision can be changed by modifying the C<$Math::BigNum::PREC> variable, such as:
 
