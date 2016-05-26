@@ -1,6 +1,6 @@
 Revision history for Math-BigNum
 
-0.05    xxx
+0.05    2016-26-05
         - 5% optimization in pow(), mod() and is_div() with integer arguments.
         - fixed `0**Inf` to return `0` and `0**(-Inf)` to return `Inf`
 
