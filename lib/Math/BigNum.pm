@@ -2244,12 +2244,18 @@ multimethod pow => qw(Math::BigNum *) => sub {
     $_[0]->pow(Math::BigNum->new($_[1]));
 };
 
+# 0 ** Inf = 0
+# 0 ** -Inf = Inf
 # (+/-1) ** (+/-Inf) = 1
 # x ** (-Inf) = 0
 # x ** Inf = Inf
 
 multimethod pow => qw(Math::BigNum Math::BigNum::Inf) => sub {
-        $_[0]->is_one || $_[0]->is_mone ? one()
+    $_[0]->is_zero
+      ? $_[1]->is_neg
+          ? inf
+          : zero
+      : $_[0]->is_one || $_[0]->is_mone ? one
       : $_[1]->is_neg ? zero
       :                 inf;
 };

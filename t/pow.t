@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 154;
+plan tests => 211;
 
 use Math::BigNum;
 
@@ -225,6 +225,8 @@ is(lc("$r"), "inf");
 
     # BigNum
     is(0**0,               1);
+    is(0**Inf,             0);
+    is(0**(-Inf),          Inf);
     is(ref(0**0),          'Math::BigNum');    # make sure we're getting BigNum objects
     is(1**Inf,             1);
     is((-1)**Inf,          1);
@@ -277,6 +279,87 @@ is(lc("$r"), "inf");
     is((-Inf)**("1" / (Inf)), 1);
     is((Inf)**("1" / (-Inf)), 1);
     is((-Inf)**("1" / (-Inf)), 1);
+}
+
+{
+    my $mone = Math::BigNum->new(-1);
+    my $one  = Math::BigNum->new(1);
+    my $zero = Math::BigNum->new(0);
+
+    my $inf  = Math::BigNum->inf;
+    my $ninf = Math::BigNum->ninf;
+
+    # NEGATIVE INFINITY
+    is($ninf**$inf,  $inf);
+    is($ninf**$ninf, $zero);
+    is($ninf**$zero, $one);
+    is($ninf**$one,  $ninf);
+    is($ninf**$mone, $zero);    # actually -0.0
+
+    is($ninf->ipow($inf),  $inf);
+    is($ninf->ipow($ninf), $zero);
+    is($ninf->ipow($zero), $one);
+    is($ninf->ipow($one),  $ninf);
+    is($ninf->ipow($mone), $zero);    # actually -0.0
+
+    # MINUS ONE
+    is($mone**$inf,  $one);
+    is($mone**$ninf, $one);
+    is($mone**$zero, $one);
+    is($mone**$one,  $mone);
+    is($mone**$mone, $mone);
+
+    is($mone->ipow($inf),  $one);
+    is($mone->ipow($ninf), $one);
+    is($mone->ipow($zero), $one);
+    is($mone->ipow($one),  $mone);
+    is($mone->ipow($mone), $mone);
+
+    # ZERO
+    is($zero**$inf,  $zero);
+    is($zero**$ninf, $inf);
+    is($zero**$zero, $one);
+    is($zero**$one,  $zero);
+    is($zero**$mone, $inf);
+
+    is($zero->ipow($inf),  $zero);
+    is($zero->ipow($ninf), $inf);
+    is($zero->ipow($zero), $one);
+    is($zero->ipow($one),  $zero);
+    is($zero->ipow($mone), $inf);
+
+    # ONE
+    is($one**$inf,  $one);
+    is($one**$ninf, $one);
+    is($one**$zero, $one);
+    is($one**$one,  $one);
+    is($one**$mone, $one);
+
+    is($one->ipow($inf),  $one);
+    is($one->ipow($ninf), $one);
+    is($one->ipow($zero), $one);
+    is($one->ipow($one),  $one);
+    is($one->ipow($mone), $one);
+
+    # POSITIVE INFINITY
+    is($inf**$inf,  $inf);
+    is($inf**$ninf, $zero);
+    is($inf**$zero, $one);
+    is($inf**$one,  $inf);
+    is($inf**$mone, $zero);
+
+    is($inf->ipow($inf),  $inf);
+    is($inf->ipow($ninf), $zero);
+    is($inf->ipow($zero), $one);
+    is($inf->ipow($one),  $inf);
+    is($inf->ipow($mone), $zero);
+
+    # Make sure the constants are the same
+    is($inf,  Math::BigNum->inf);
+    is($ninf, Math::BigNum->ninf);
+    is($zero, Math::BigNum->zero);
+    is($one,  Math::BigNum->one);
+    is($mone, Math::BigNum->mone);
 }
 
 ##############################################################
