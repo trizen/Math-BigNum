@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 211;
+plan tests => 317;
 
 use Math::BigNum;
 
@@ -281,6 +281,62 @@ is(lc("$r"), "inf");
     is((-Inf)**("1" / (-Inf)), 1);
 }
 
+# bpow()
+
+{
+    use Math::BigNum qw(:constant);
+
+    # BigNum
+    is(0->copy->bpow(0),                        1);
+    is(0->copy->bpow(Inf),                      0);
+    is(0->copy->bpow(-Inf),                     Inf);
+    is(ref(0->copy->bpow(0)),                   'Math::BigNum');    # make sure we're getting BigNum objects
+    is(1->copy->bpow(Inf),                      1);
+    is((-1)->copy->bpow(Inf),                   1);
+    is(1->copy->bpow(-Inf),                     1);
+    is((-1)->copy->bpow(-Inf),                  1);
+    is(Inf->copy->bpow(0),                      1);
+    is((-Inf)->copy->bpow(0),                   1);
+    is((-Inf)->copy->bpow(2),                   Inf);
+    is((-Inf)->copy->bpow(3),                   -Inf);
+    is((-Inf)->copy->bpow(2.3),                 Inf);               # shouldn't be NaN?
+    is(Inf->copy->bpow(2.3),                    Inf);
+    is(Inf->copy->bpow(-2.3),                   0);
+    is((-Inf)->copy->bpow(-3),                  0);
+    is(Inf->copy->bpow(Inf),                    Inf);
+    is((-Inf)->copy->bpow(Inf),                 Inf);
+    is((-Inf)->copy->bpow(-Inf),                0);
+    is(Inf->copy->bpow(-Inf),                   0);
+    is(100->copy->bpow(-Inf),                   0);
+    is((-100)->copy->bpow(-Inf),                0);
+    is(((0->copy->bpow(1 / 0))->copy->bpow(0)), 1);
+    is(0->copy->broot(0)->bpow(0),              1);
+    is((Inf)->copy->bpow(1 / (-12)), 0);
+    is((-Inf)->copy->bpow(1 / (-12)), 0);
+    is((Inf)->copy->bpow(1 / (2)), Inf);
+    is((-Inf)->copy->bpow(1 / (2)), Inf);    # sqrt(-Inf) -- shouldn't be NaN?
+    is((Inf)->copy->bpow(1 / (Inf)), 1);
+    is((-Inf)->copy->bpow(1 / (Inf)), 1);
+    is((Inf)->copy->bpow(1 / (-Inf)), 1);
+    is((-Inf)->copy->bpow(1 / (-Inf)), 1);
+
+    # Scalar
+    is(Inf->copy->bpow("0"),                      1);
+    is((-Inf)->copy->bpow("0"),                   1);
+    is((-Inf)->copy->bpow("2"),                   Inf);
+    is((-Inf)->copy->bpow("3"),                   -Inf);
+    is((-Inf)->copy->bpow("2.3"),                 Inf);    # shouldn't be NaN?
+    is(Inf->copy->bpow("2.3"),                    Inf);
+    is(Inf->copy->bpow("-2.3"),                   0);
+    is((-Inf)->copy->bpow("-3"),                  0);
+    is(((0->copy->bpow(1 / 0))->copy->bpow("0")), 1);
+    is(0->copy->broot("0")->bpow("0"),            1);
+    is((Inf)->copy->bpow("1" / (Inf)), 1);
+    is((-Inf)->copy->bpow("1" / (Inf)), 1);
+    is((Inf)->copy->bpow("1" / (-Inf)), 1);
+    is((-Inf)->copy->bpow("1" / (-Inf)), 1);
+}
+
 {
     my $mone = Math::BigNum->new(-1);
     my $one  = Math::BigNum->new(1);
@@ -353,6 +409,110 @@ is(lc("$r"), "inf");
     is($inf->ipow($zero), $one);
     is($inf->ipow($one),  $inf);
     is($inf->ipow($mone), $zero);
+
+    # Make sure the constants are the same
+    is($inf,  Math::BigNum->inf);
+    is($ninf, Math::BigNum->ninf);
+    is($zero, Math::BigNum->zero);
+    is($one,  Math::BigNum->one);
+    is($mone, Math::BigNum->mone);
+}
+
+# bpow()
+{
+    my $mone = Math::BigNum->new(-1);
+    my $one  = Math::BigNum->new(1);
+    my $zero = Math::BigNum->new(0);
+
+    my $inf  = Math::BigNum->inf;
+    my $ninf = Math::BigNum->ninf;
+
+    # NEGATIVE INFINITY
+    is($ninf->copy->bpow($inf),  $inf);
+    is($ninf->copy->bpow($ninf), $zero);
+    is($ninf->copy->bpow($zero), $one);
+    is($ninf->copy->bpow($one),  $ninf);
+    is($ninf->copy->bpow($mone), $zero);    # actually -0.0
+
+    # MINUS ONE
+    is($mone->copy->bpow($inf),  $one);
+    is($mone->copy->bpow($ninf), $one);
+    is($mone->copy->bpow($zero), $one);
+    is($mone->copy->bpow($one),  $mone);
+    is($mone->copy->bpow($mone), $mone);
+
+    # ZERO
+    is($zero->copy->bpow($inf),  $zero);
+    is($zero->copy->bpow($ninf), $inf);
+    is($zero->copy->bpow($zero), $one);
+    is($zero->copy->bpow($one),  $zero);
+    is($zero->copy->bpow($mone), $inf);
+
+    # ONE
+    is($one->copy->bpow($inf),  $one);
+    is($one->copy->bpow($ninf), $one);
+    is($one->copy->bpow($zero), $one);
+    is($one->copy->bpow($one),  $one);
+    is($one->copy->bpow($mone), $one);
+
+    # POSITIVE INFINITY
+    is($inf->copy->bpow($inf),  $inf);
+    is($inf->copy->bpow($ninf), $zero);
+    is($inf->copy->bpow($zero), $one);
+    is($inf->copy->bpow($one),  $inf);
+    is($inf->copy->bpow($mone), $zero);
+
+    # Make sure the constants are the same
+    is($inf,  Math::BigNum->inf);
+    is($ninf, Math::BigNum->ninf);
+    is($zero, Math::BigNum->zero);
+    is($one,  Math::BigNum->one);
+    is($mone, Math::BigNum->mone);
+}
+
+# bipow()
+{
+    my $mone = Math::BigNum->new(-1);
+    my $one  = Math::BigNum->new(1);
+    my $zero = Math::BigNum->new(0);
+
+    my $inf  = Math::BigNum->inf;
+    my $ninf = Math::BigNum->ninf;
+
+    # NEGATIVE INFINITY
+    is($ninf->copy->bipow($inf),  $inf);
+    is($ninf->copy->bipow($ninf), $zero);
+    is($ninf->copy->bipow($zero), $one);
+    is($ninf->copy->bipow($one),  $ninf);
+    is($ninf->copy->bipow($mone), $zero);    # actually -0.0
+
+    # MINUS ONE
+    is($mone->copy->bipow($inf),  $one);
+    is($mone->copy->bipow($ninf), $one);
+    is($mone->copy->bipow($zero), $one);
+    is($mone->copy->bipow($one),  $mone);
+    is($mone->copy->bipow($mone), $mone);
+
+    # ZERO
+    is($zero->copy->bipow($inf),  $zero);
+    is($zero->copy->bipow($ninf), $inf);
+    is($zero->copy->bipow($zero), $one);
+    is($zero->copy->bipow($one),  $zero);
+    is($zero->copy->bipow($mone), $inf);
+
+    # ONE
+    is($one->copy->bipow($inf),  $one);
+    is($one->copy->bipow($ninf), $one);
+    is($one->copy->bipow($zero), $one);
+    is($one->copy->bipow($one),  $one);
+    is($one->copy->bipow($mone), $one);
+
+    # POSITIVE INFINITY
+    is($inf->copy->bipow($inf),  $inf);
+    is($inf->copy->bipow($ninf), $zero);
+    is($inf->copy->bipow($zero), $one);
+    is($inf->copy->bipow($one),  $inf);
+    is($inf->copy->bipow($mone), $zero);
 
     # Make sure the constants are the same
     is($inf,  Math::BigNum->inf);

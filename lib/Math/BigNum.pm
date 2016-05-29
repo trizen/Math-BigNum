@@ -2344,7 +2344,11 @@ multimethod bpow => qw(Math::BigNum *) => sub {
 };
 
 multimethod bpow => qw(Math::BigNum Math::BigNum::Inf) => sub {
-        $_[0]->is_one || $_[0]->is_mone ? $_[0]->bone()
+    $_[0]->is_zero
+      ? $_[1]->is_neg
+          ? $_[0]->binf
+          : $_[0]->bzero
+      : $_[0]->is_one || $_[0]->is_mone ? $_[0]->bone()
       : $_[1]->is_neg ? $_[0]->bzero
       :                 $_[0]->binf;
 };
