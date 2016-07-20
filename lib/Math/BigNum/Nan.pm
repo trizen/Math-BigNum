@@ -341,6 +341,7 @@ sub cmp { }
 *atan2 = \&nan;
 
 *rand   = \&nan;
+*irand  = \&nan;
 *modinv = \&nan;
 *inv    = \&nan;
 *binv   = \&_self;

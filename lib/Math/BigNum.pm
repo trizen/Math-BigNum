@@ -3470,7 +3470,8 @@ multimethod acmp => qw(Math::BigNum Math::BigNum::Nan) => sub { };
     $x->rand(Scalar)               # => BigNum
 
 Returns a random floating-point number. When an additional argument is provided,
-it returns a number between C<$x> and C<$y>, otherwise returns a number between 0 and C<$x>.
+it returns a number between C<$x> and C<$y>, otherwise, a number between C<0> (inclusive) and
+C<$x> (exclusive) is returned.
 
 Example:
 
@@ -3480,52 +3481,119 @@ Example:
 =cut
 
 {
-    state $state = Math::MPFR::Rmpfr_randinit_mt();
-    state $seed  = do {
-        my $seed = srand();
-        Math::MPFR::Rmpfr_randseed_ui($state, $seed);
-    };
+    my $srand = srand();
 
-    multimethod rand => qw(Math::BigNum) => sub {
-        my ($x) = @_;
+    {
+        state $state = Math::MPFR::Rmpfr_randinit_mt();
+        state $seed = Math::MPFR::Rmpfr_randseed_ui($state, $srand);
 
-        my $rand = Math::MPFR::Rmpfr_init2($PREC);
-        Math::MPFR::Rmpfr_urandom($rand, $state, $ROUND);
+        multimethod rand => qw(Math::BigNum) => sub {
+            my ($x) = @_;
 
-        my $q = Math::GMPq::Rmpq_init();
-        Math::MPFR::Rmpfr_get_q($q, $rand);
+            my $rand = Math::MPFR::Rmpfr_init2($PREC);
+            Math::MPFR::Rmpfr_urandom($rand, $state, $ROUND);
 
-        Math::GMPq::Rmpq_mul($q, $q, $$x);
-        bless \$q, __PACKAGE__;
-    };
+            my $q = Math::GMPq::Rmpq_init();
+            Math::MPFR::Rmpfr_get_q($q, $rand);
 
-    multimethod rand => qw(Math::BigNum Math::BigNum) => sub {
-        my ($x, $y) = @_;
+            Math::GMPq::Rmpq_mul($q, $q, $$x);
+            bless \$q, __PACKAGE__;
+        };
 
-        my $rand = Math::MPFR::Rmpfr_init2($PREC);
-        Math::MPFR::Rmpfr_urandom($rand, $state, $ROUND);
+        multimethod rand => qw(Math::BigNum Math::BigNum) => sub {
+            my ($x, $y) = @_;
 
-        my $q = Math::GMPq::Rmpq_init();
-        Math::MPFR::Rmpfr_get_q($q, $rand);
+            my $rand = Math::MPFR::Rmpfr_init2($PREC);
+            Math::MPFR::Rmpfr_urandom($rand, $state, $ROUND);
 
-        my $diff = Math::GMPq::Rmpq_init();
-        Math::GMPq::Rmpq_sub($diff, $$y, $$x);
-        Math::GMPq::Rmpq_mul($q, $q, $diff);
-        Math::GMPq::Rmpq_add($q, $q, $$x);
+            my $q = Math::GMPq::Rmpq_init();
+            Math::MPFR::Rmpfr_get_q($q, $rand);
 
-        bless \$q, __PACKAGE__;
-    };
+            my $diff = Math::GMPq::Rmpq_init();
+            Math::GMPq::Rmpq_sub($diff, $$y, $$x);
+            Math::GMPq::Rmpq_mul($q, $q, $diff);
+            Math::GMPq::Rmpq_add($q, $q, $$x);
 
-    multimethod rand => qw(Math::BigNum $) => sub {
-        $_[0]->rand(Math::BigNum->new($_[1]));
-    };
+            bless \$q, __PACKAGE__;
+        };
 
-    multimethod rand => qw(Math::BigNum *) => sub {
-        $_[0]->rand(Math::BigNum->new($_[1]));
-    };
+        multimethod rand => qw(Math::BigNum $) => sub {
+            $_[0]->rand(Math::BigNum->new($_[1]));
+        };
 
-    multimethod rand => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->copy };
-    multimethod rand => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+        multimethod rand => qw(Math::BigNum *) => sub {
+            $_[0]->rand(Math::BigNum->new($_[1]));
+        };
+
+        multimethod rand => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->copy };
+        multimethod rand => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+    }
+
+=head2 irand
+
+    $x->irand                      # => BigNum
+    $x->irand(BigNum)              # => BigNum
+    $x->irand(Scalar)              # => BigNum
+
+Returns a random integer. When an additional argument is provided, it returns
+an integer between C<$x> and C<$y-1>, otherwise, an integer between C<0> (inclusive)
+and C<$x> (exclusive) is returned.
+
+Example:
+
+    10->irand;       # a random integer between 0 and 10 (exclusive)
+    10->irand(20);   # a random integer between 10 and 20 (exclusive)
+
+=cut
+
+    {
+        state $state = Math::GMPz::zgmp_randinit_mt();
+        state $seed = Math::GMPz::zgmp_randseed_ui($state, $srand);
+
+        multimethod irand => qw(Math::BigNum) => sub {
+            my ($x) = @_;
+
+            $x = _big2mpz($x);
+
+            my $sgn = Math::GMPz::Rmpz_sgn($x);
+            Math::GMPz::Rmpz_urandomm($x, $state, $x, 1);
+            Math::GMPz::Rmpz_neg($x, $x) if $sgn < 0;
+            _mpz2big($x);
+        };
+
+        multimethod irand => qw(Math::BigNum Math::BigNum) => sub {
+            my ($x, $y) = @_;
+
+            $x = _big2mpz($x);
+
+            my $rand = _big2mpz($y);
+            my $cmp = Math::GMPz::Rmpz_cmp($rand, $x);
+
+            if ($cmp == 0) {
+                return _mpz2big($rand);
+            }
+            elsif ($cmp < 0) {
+                ($x, $rand) = ($rand, $x);
+            }
+
+            Math::GMPz::Rmpz_sub($rand, $rand, $x);
+            Math::GMPz::Rmpz_urandomm($rand, $state, $rand, 1);
+            Math::GMPz::Rmpz_add($rand, $rand, $x);
+
+            _mpz2big($rand);
+        };
+
+        multimethod irand => qw(Math::BigNum $) => sub {
+            $_[0]->irand(Math::BigNum->new($_[1]));
+        };
+
+        multimethod irand => qw(Math::BigNum *) => sub {
+            $_[0]->irand(Math::BigNum->new($_[1]));
+        };
+
+        multimethod irand => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->copy };
+        multimethod irand => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+    }
 }
 
 =head2 mod

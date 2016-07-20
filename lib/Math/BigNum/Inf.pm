@@ -1630,7 +1630,8 @@ multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 *numerator   = \&nan;
 *denominator = \&nan;
 
-*rand = \&copy;
+*rand  = \&copy;
+*irand = \&copy;
 
 *int  = \&copy;
 *bint = \&_self;
