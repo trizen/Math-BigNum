@@ -781,17 +781,17 @@ or as a floating-point number. For C<$x=1/2>, it returns C<"0.5">.
 =cut
 
 sub stringify {
-    my $v = Math::GMPq::Rmpq_get_str(${$_[0]}, 10);
+    my $x = ${$_[0]};
+    Math::GMPq::Rmpq_integer_p($x)
+      ? Math::GMPq::Rmpq_get_str($x, 10)
+      : do {
+        $PREC = CORE::int($PREC) if ref($PREC);
 
-    if (index($v, '/') != -1) {
-        my ($x) = @_;
-        $PREC = "$$PREC" if ref($PREC);    # make sure $PREC is not a BigNum
-
-        my $prec = CORE::int($PREC / 4);        # the exact value should be 3.3...?
-        my $sgn  = Math::GMPq::Rmpq_sgn($$x);
+        my $prec = CORE::int($PREC / 4);
+        my $sgn  = Math::GMPq::Rmpq_sgn($x);
 
         my $n = Math::GMPq::Rmpq_init();
-        Math::GMPq::Rmpq_set($n, $$x);
+        Math::GMPq::Rmpq_set($n, $x);
         Math::GMPq::Rmpq_abs($n, $n) if $sgn < 0;
 
         my $z = Math::GMPz::Rmpz_init();
@@ -817,7 +817,7 @@ sub stringify {
         Math::GMPz::Rmpz_set_q($z, $n);
 
         # Too much rounding... Give up and return an MPFR stringified number.
-        Math::GMPz::Rmpz_sgn($z) || do {
+        !Math::GMPz::Rmpz_sgn($z) && $PREC >= 2 && do {
             my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
             Math::MPFR::Rmpfr_set_q($mpfr, $$x, $ROUND);
             return Math::MPFR::Rmpfr_get_str($mpfr, 10, $prec, $ROUND);
@@ -864,16 +864,8 @@ sub stringify {
             push(@r, '0' x $s) if ($s > 0);
         }
 
-        my $before = shift(@r);      # before the decimal point
-        my $after = join('', @r);    # after the decimal point
-        $after =~ s/0+$//;           # remove trailing zeros
-
-        # Maybe we should return "$before.0" when $after eq ''?
-        ($sgn < 0 ? "-" : '') . ($after eq '' ? $before : "$before.$after");
-    }
-    else {
-        $v;
-    }
+        ($sgn < 0 ? "-" : '') . shift(@r) . (('.' . join('', @r)) =~ s/0+\z//r =~ s/\.\z//r);
+      }
 }
 
 =head2 numify
