@@ -1,6 +1,6 @@
 Revision history for Math-BigNum
 
-0.06    xxx
+0.06    2016-06-08
         - fixed bpow(0, Inf) to return `0` and bpow(0, -Inf) to return `Inf`
         - added more tests for bpow() and bipow()
         - added the irand() method, which returns a random integer

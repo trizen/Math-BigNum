@@ -9,6 +9,8 @@ use Math::BigNum qw();
 
 use Class::Multimethods qw(multimethod);
 
+our $VERSION = '0.06';
+
 =encoding utf8
 
 =head1 NAME
@@ -17,7 +19,7 @@ Math::BigNum::Inf - Represents the +Infinity value.
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06
 
 =head1 SYNOPSIS
 

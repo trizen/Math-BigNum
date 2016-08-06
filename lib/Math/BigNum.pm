@@ -10,7 +10,7 @@ use Math::MPFR qw();
 
 use Class::Multimethods qw(multimethod);
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 =encoding utf8
 
@@ -20,7 +20,7 @@ Math::BigNum - Arbitrary size precision for integers, rationals and floating-poi
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06
 
 =head1 SYNOPSIS
 
@@ -5728,11 +5728,17 @@ L<https://github.com/trizen/Math-BigNum>
 
 =over 4
 
-=item * Special cases and NaN: L<https://en.wikipedia.org/wiki/NaN>
+=item * Special cases and NaN
 
-=item * What Every Computer Scientist Should Know About FloatingPoint Arithmetic: L<http://www.cl.cam.ac.uk/teaching/1011/FPComp/floatingmath.pdf>
+L<https://en.wikipedia.org/wiki/NaN>
 
-=item * Wolfram|Alpha: L<http://www.wolframalpha.com/>
+=item * What Every Computer Scientist Should Know About FloatingPoint Arithmetic
+
+L<http://www.cl.cam.ac.uk/teaching/1011/FPComp/floatingmath.pdf>
+
+=item * Wolfram|Alpha
+
+L<http://www.wolframalpha.com/>
 
 =back
 

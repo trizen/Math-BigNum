@@ -38,24 +38,26 @@
    "provides" : {
       "Math::BigNum" : {
          "file" : "lib/Math/BigNum.pm",
-         "version" : "0.05"
+         "version" : "0.06"
       },
       "Math::BigNum::Inf" : {
-         "file" : "lib/Math/BigNum/Inf.pm"
+         "file" : "lib/Math/BigNum/Inf.pm",
+         "version" : "0.06"
       },
       "Math::BigNum::Nan" : {
-         "file" : "lib/Math/BigNum/Nan.pm"
+         "file" : "lib/Math/BigNum/Nan.pm",
+         "version" : "0.06"
       }
    },
    "release_status" : "stable",
    "resources" : {
       "license" : [
-         "http://opensource.org/licenses/artistic-license-2.0.php"
+         "http://www.perlfoundation.org/artistic_license_2_0"
       ],
       "repository" : {
          "url" : "https://github.com/trizen/Math-BigNum"
       }
    },
-   "version" : "0.05",
+   "version" : "0.06",
    "x_serialization_backend" : "JSON::PP version 2.27400"
 }

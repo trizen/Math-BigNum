@@ -16,11 +16,13 @@ name: Math-BigNum
 provides:
   Math::BigNum:
     file: lib/Math/BigNum.pm
-    version: '0.05'
+    version: '0.06'
   Math::BigNum::Inf:
     file: lib/Math/BigNum/Inf.pm
+    version: '0.06'
   Math::BigNum::Nan:
     file: lib/Math/BigNum/Nan.pm
+    version: '0.06'
 requires:
   Carp: '0'
   Class::Multimethods: '0'
@@ -29,7 +31,7 @@ requires:
   Math::MPFR: '3.29'
   perl: v5.14.0
 resources:
-  license: http://opensource.org/licenses/artistic-license-2.0.php
+  license: http://www.perlfoundation.org/artistic_license_2_0
   repository: https://github.com/trizen/Math-BigNum
-version: '0.05'
+version: '0.06'
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'
