@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 228;
+plan tests => 229;
 
 # Initialization
 
@@ -48,6 +48,9 @@ plan tests => 228;
     # Factorial
     my $fac = ((100->fac + 1) / 2);
     is("$fac", $bigstr);
+
+    $fac = sqrt(1 / (100->fac + 1));
+    is("$fac", "1.0351378111756264713204945916572e-79");
 
     my $bignum = Math::BigNum->new($bigstr);
     is("$bignum", $bigstr);

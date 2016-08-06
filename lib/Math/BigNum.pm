@@ -10,7 +10,7 @@ use Math::MPFR qw();
 
 use Class::Multimethods qw(multimethod);
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 =encoding utf8
 
@@ -20,7 +20,7 @@ Math::BigNum - Arbitrary size precision for integers, rationals and floating-poi
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 =head1 SYNOPSIS
 
@@ -822,7 +822,7 @@ sub stringify {
         # Too much rounding... Give up and return an MPFR stringified number.
         !Math::GMPz::Rmpz_sgn($z) && $PREC >= 2 && do {
             my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
-            Math::MPFR::Rmpfr_set_q($mpfr, $$x, $ROUND);
+            Math::MPFR::Rmpfr_set_q($mpfr, $x, $ROUND);
             return Math::MPFR::Rmpfr_get_str($mpfr, 10, $prec, $ROUND);
         };
 

@@ -1,5 +1,8 @@
 Revision history for Math-BigNum
 
+0.07    2016-06-08
+        - fixed a critical bug in the stringification of very small floating-point values
+
 0.06    2016-06-08
         - fixed bpow(0, Inf) to return `0` and bpow(0, -Inf) to return `Inf`
         - added more tests for bpow() and bipow()
