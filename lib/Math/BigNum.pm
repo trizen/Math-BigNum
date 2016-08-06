@@ -487,6 +487,9 @@ sub _str2mpz {
 
 # Converts a BigNum object to mpfr
 sub _big2mpfr {
+
+    $PREC = CORE::int($PREC) if ref($PREC);
+
     my $r = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_set_q($r, ${$_[0]}, $ROUND);
     $r;
@@ -508,8 +511,6 @@ sub _int2mpz {
 
 # Converts an mpfr object to BigNum
 sub _mpfr2big {
-
-    $PREC = CORE::int($PREC) if ref($PREC);
 
     if (Math::MPFR::Rmpfr_inf_p($_[0])) {
         if (Math::MPFR::Rmpfr_sgn($_[0]) > 0) {
