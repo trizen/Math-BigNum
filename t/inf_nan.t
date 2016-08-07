@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-use Test::More tests => 109;
+use Test::More tests => 140;
 
 use Math::BigNum qw(:constant);
 
@@ -120,6 +120,56 @@ is((-Inf)->root("-12"), 0);
 is((Inf)->root("2"),    Inf);
 is((Inf)->iroot("2"),   Inf);
 is((-Inf)->root("2"),   Inf);    # sqrt(-Inf) -- shouldn't be NaN?
+
+{
+    my $inf  = Inf;
+    my $ninf = -Inf;
+    my $nan  = NaN;
+
+    my $zero = 0;
+    my $one  = 1;
+
+    my $o = 'Math::BigNum';
+
+    #################################################
+    # Pow
+
+    is($inf->pow($o->new(-12)->inv),  $zero);
+    is($ninf->pow($o->new(-12)->inv), $zero);
+    is($inf->pow($o->new(2)->inv),    $inf);
+    is($inf->pow($o->new(2)->inv),    $inf);
+    is($ninf->pow($o->new(2)->inv),   $inf);    # should be `inf*i`
+    is($inf->pow($inf->inv),          $one);
+    is($ninf->pow($inf->inv),         $one);
+    is($inf->pow($ninf->inv),         $one);
+    is($ninf->pow($ninf->inv),        $one);
+    is($ninf->pow($o->new(1)->inv),   $ninf);
+    is($ninf->pow($o->new(0)->inv),   $inf);
+    is($inf->pow($o->new(1)->inv),    $inf);
+    is($inf->pow($o->new(0)->inv),    $inf);
+    is($ninf->pow($nan),              $nan);
+    is($inf->pow($nan),               $nan);
+    is($nan->pow($nan),               $nan);
+
+    ##################################################
+    # Root
+
+    is($inf->root($o->new(-12)),  $zero);
+    is($ninf->root($o->new(-12)), $zero);
+    is($inf->root($o->new(2)),    $inf);
+    is($ninf->root($o->new(2)),   $inf);    # should be `inf*i`
+    is($inf->root($inf),          $one);
+    is($ninf->root($inf),         $one);
+    is($inf->root($ninf),         $one);
+    is($ninf->root($ninf),        $one);
+    is($ninf->root($o->new(1)),   $ninf);
+    is($ninf->root($o->new(0)),   $inf);
+    is($inf->root($o->new(1)),    $inf);
+    is($inf->root($o->new(0)),    $inf);
+    is($ninf->root($nan),         $nan);
+    is($inf->root($nan),          $nan);
+    is($nan->root($nan),          $nan);
+}
 
 #is(Math::BigNum->new('foo'), NaN);     # should be NaN?
 
