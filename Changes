@@ -1,17 +1,21 @@
 Revision history for Math-BigNum
 
+0.08    xxx
+        - Added support for `+inf`, `-inf` and `nan`, each represented as a scalar value.
+        - Improved the support for infinity to work with any numerical object and any special scalar values.
+
 0.07    2016-06-08
-        - fixed a critical bug in the stringification of very small floating-point values
+        - Fixed a critical bug in the stringification of very small floating-point values
 
 0.06    2016-06-08
-        - fixed bpow(0, Inf) to return `0` and bpow(0, -Inf) to return `Inf`
-        - added more tests for bpow() and bipow()
-        - added the irand() method, which returns a random integer
-        - slightly faster stringification of floating-point numbers
+        - Fixed bpow(0, Inf) to return `0` and bpow(0, -Inf) to return `Inf`
+        - Added more tests for bpow() and bipow()
+        - Added the irand() method, which returns a random integer
+        - Slightly faster stringification of floating-point numbers
 
 0.05    2016-26-05
         - 5% optimization in pow(), mod() and is_div() with integer arguments.
-        - fixed `0**Inf` to return `0` and `0**(-Inf)` to return `Inf`
+        - Fixed `0**Inf` to return `0` and `0**(-Inf)` to return `Inf`
 
 0.04    2016-16-03
         - Added more multimethods to support any kind of numerical object, such as Math::BigInt, Math::BigFloat, etc...

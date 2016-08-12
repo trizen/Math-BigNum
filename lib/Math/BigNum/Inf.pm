@@ -418,20 +418,18 @@ Addition of C<$x> and C<$y>.
 
 =cut
 
-multimethod add => qw(Math::BigNum::Inf *) => sub {
-    $_[0]->add(Math::BigNum->new($_[1]));
-};
-
 multimethod add => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     $_[0]->eq($_[1]) ? $_[0]->copy : nan();
+};
+
+multimethod add => qw(Math::BigNum::Inf *) => sub {
+    $_[0]->add(Math::BigNum->new($_[1]));
 };
 
 multimethod add => qw(* Math::BigNum::Inf) => sub {
     Math::BigNum->new($_[0])->add($_[1]);
 };
 
-multimethod add => qw(Math::BigNum::Inf $)                 => \&copy;
-multimethod add => qw($ Math::BigNum::Inf)                 => sub { $_[1]->copy };
 multimethod add => qw(Math::BigNum::Inf Math::BigNum)      => \&copy;
 multimethod add => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
@@ -459,7 +457,6 @@ multimethod badd => qw(Math::BigNum::Inf *) => sub {
     $_[0]->badd(Math::BigNum->new($_[1]));
 };
 
-multimethod badd => qw(Math::BigNum::Inf $)                 => \&_self;
 multimethod badd => qw(Math::BigNum::Inf Math::BigNum)      => \&_self;
 multimethod badd => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 
@@ -488,8 +485,6 @@ multimethod sub => qw(* Math::BigNum::Inf) => sub {
     Math::BigNum->new($_[0])->sub($_[1]);
 };
 
-multimethod sub => qw(Math::BigNum::Inf $)            => \&copy;
-multimethod sub => qw($ Math::BigNum::Inf)            => sub { $_[1]->neg };
 multimethod sub => qw(Math::BigNum::Inf Math::BigNum) => \&copy;
 
 multimethod sub => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
@@ -514,15 +509,14 @@ Subtraction of C<$x> and C<$y>, changing C<$x> in-place.
 
 =cut
 
-multimethod bsub => qw(Math::BigNum::Inf *) => sub {
-    $_[0]->bsub(Math::BigNum->new($_[1]));
-};
-
-multimethod bsub => qw(Math::BigNum::Inf $)            => \&_self;
 multimethod bsub => qw(Math::BigNum::Inf Math::BigNum) => \&_self;
 
 multimethod bsub => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     $_[0]->eq($_[1]) ? $_[0]->bnan : $_[0];
+};
+
+multimethod bsub => qw(Math::BigNum::Inf *) => sub {
+    $_[0]->bsub(Math::BigNum->new($_[1]));
 };
 
 multimethod bsub => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
@@ -552,20 +546,12 @@ multimethod mul => qw(Math::BigNum::Inf Math::BigNum) => sub {
     $_[0]->copy->bmul($_[1]);
 };
 
-multimethod mul => qw(Math::BigNum::Inf $) => sub {
-    $_[0]->copy->bmul($_[1]);
-};
-
 multimethod mul => qw(Math::BigNum::Inf *) => sub {
-    $_[0]->mul(Math::BigNum->new($_[1]));
-};
-
-multimethod mul => qw($ Math::BigNum::Inf) => sub {
-    $_[1]->copy->bmul($_[0]);
+    $_[0]->copy->bmul(Math::BigNum->new($_[1]));
 };
 
 multimethod mul => qw(* Math::BigNum::Inf) => sub {
-    Math::BigNum->new($_[0])->mul($_[1]);
+    $_[1]->copy->bmul(Math::BigNum->new($_[0]));
 };
 
 multimethod mul => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
@@ -590,11 +576,6 @@ multimethod bmul => qw(Math::BigNum::Inf Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $sgn = Math::GMPq::Rmpq_sgn($$y);
     $sgn < 0 ? $x->bneg : $sgn > 0 ? $x : $x->bnan;
-};
-
-multimethod bmul => qw(Math::BigNum::Inf $) => sub {
-    my ($x, $y) = @_;
-    $y < 0 ? $x->bneg : $y > 0 ? $x : $x->bnan;
 };
 
 multimethod bmul => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
@@ -650,10 +631,6 @@ multimethod div => qw(Math::BigNum::Inf Math::BigNum) => sub {
     $_[1]->is_neg ? $_[0]->neg : $_[0]->copy;
 };
 
-multimethod div => qw(Math::BigNum::Inf $) => sub {
-    $_[1] < 0 ? $_[0]->neg : $_[0]->copy;
-};
-
 multimethod div => qw(Math::BigNum::Inf *) => sub {
     $_[0]->div(Math::BigNum->new($_[1]));
 };
@@ -662,7 +639,6 @@ multimethod div => qw(* Math::BigNum::Inf) => sub {
     Math::BigNum->new($_[0])->div($_[1]);
 };
 
-multimethod div => qw($ Math::BigNum::Inf)                 => \&zero;
 multimethod div => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&nan;
 multimethod div => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
@@ -684,10 +660,6 @@ Division of C<$x> and C<$y>, changing C<$x> in-place.
 
 multimethod bdiv => qw(Math::BigNum::Inf Math::BigNum) => sub {
     $_[1]->is_neg ? $_[0]->bneg : $_[0];
-};
-
-multimethod bdiv => qw(Math::BigNum::Inf $) => sub {
-    $_[1] < 0 ? $_[0]->bneg : $_[0];
 };
 
 multimethod bdiv => qw(Math::BigNum::Inf *) => sub {
@@ -725,7 +697,6 @@ multimethod eq => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) == Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-multimethod eq => qw(Math::BigNum::Inf $)                 => sub { 0 };
 multimethod eq => qw(Math::BigNum::Inf Math::BigNum)      => sub { 0 };
 multimethod eq => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub { 0 };
 
@@ -754,7 +725,6 @@ multimethod ne => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) != Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-multimethod ne => qw(Math::BigNum::Inf $)                 => sub { 1 };
 multimethod ne => qw(Math::BigNum::Inf Math::BigNum)      => sub { 1 };
 multimethod ne => qw(Math::BigNum::Inf Math::BigNum::Nan) => sub { 1 };
 
@@ -781,20 +751,12 @@ multimethod cmp => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) <=> Math::GMPq::Rmpq_sgn(${$_[1]});
 };
 
-multimethod cmp => qw(Math::BigNum::Inf $) => sub {
-    (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0) ? 1 : -1;
-};
-
 multimethod cmp => qw(Math::BigNum::Inf Math::BigNum) => sub {
     (Math::GMPq::Rmpq_sgn(${$_[0]}) > 0) ? 1 : -1;
 };
 
 multimethod cmp => qw(Math::BigNum::Inf *) => sub {
     $_[0]->cmp(Math::BigNum->new($_[1]));
-};
-
-multimethod cmp => qw($ Math::BigNum::Inf) => sub {
-    (Math::GMPq::Rmpq_sgn(${$_[1]}) > 0) ? -1 : 1;
 };
 
 multimethod cmp => qw(* Math::BigNum::Inf) => sub {
@@ -821,10 +783,6 @@ multimethod acmp => qw(Math::BigNum::Inf Math::BigNum) => sub {
     $_[0]->abs->cmp($_[1]->abs);
 };
 
-multimethod acmp => qw(Math::BigNum::Inf $) => sub {
-    $_[0]->abs->cmp(CORE::abs($_[1]));
-};
-
 multimethod acmp => qw(Math::BigNum::Inf *) => sub {
     $_[0]->acmp(Math::BigNum->new($_[1]));
 };
@@ -849,16 +807,8 @@ multimethod gt => qw(Math::BigNum::Inf Math::BigNum) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
 };
 
-multimethod gt => qw(Math::BigNum::Inf $) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
-};
-
 multimethod gt => qw(Math::BigNum::Inf *) => sub {
     $_[0]->gt(Math::BigNum->new($_[1]));
-};
-
-multimethod gt => qw($ Math::BigNum::Inf) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[1]}) < 0;
 };
 
 multimethod gt => qw(* Math::BigNum::Inf) => sub {
@@ -891,12 +841,8 @@ multimethod ge => qw(Math::BigNum::Inf Math::BigNum) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
 };
 
-multimethod ge => qw(Math::BigNum::Inf $) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
-};
-
-multimethod ge => qw($ Math::BigNum::Inf) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[1]}) < 0;
+multimethod ge => qw(Math::BigNum::Inf *) => sub {
+    $_[0]->ge(Math::BigNum->new($_[1]));
 };
 
 multimethod ge => qw(* Math::BigNum::Inf) => sub {
@@ -929,16 +875,8 @@ multimethod lt => qw(Math::BigNum::Inf Math::BigNum) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
 };
 
-multimethod lt => qw(Math::BigNum::Inf $) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
-};
-
 multimethod lt => qw(Math::BigNum::Inf *) => sub {
     $_[0]->lt(Math::BigNum->new($_[1]));
-};
-
-multimethod lt => qw($ Math::BigNum::Inf) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[1]}) > 0;
 };
 
 multimethod lt => qw(* Math::BigNum::Inf) => sub {
@@ -971,16 +909,8 @@ multimethod le => qw(Math::BigNum::Inf Math::BigNum) => sub {
     Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
 };
 
-multimethod le => qw(Math::BigNum::Inf $) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0;
-};
-
 multimethod le => qw(Math::BigNum::Inf *) => sub {
     $_[0]->le(Math::BigNum->new($_[1]));
-};
-
-multimethod le => qw($ Math::BigNum::Inf) => sub {
-    Math::GMPq::Rmpq_sgn(${$_[1]}) > 0;
 };
 
 multimethod le => qw(* Math::BigNum::Inf) => sub {
@@ -1245,18 +1175,8 @@ multimethod pow => qw(Math::BigNum::Inf Math::BigNum) => sub {
     $_[0]->copy->bpow($_[1]);
 };
 
-multimethod pow => qw(Math::BigNum::Inf $) => sub {
-    $_[0]->copy->bpow($_[1]);
-};
-
 multimethod pow => qw(Math::BigNum::Inf *) => sub {
     $_[0]->copy->bpow(Math::BigNum->new($_[1]));
-};
-
-multimethod pow => qw($ Math::BigNum::Inf) => sub {
-    CORE::abs($_[0]) == 1 ? one()
-      : $_[1]->is_neg     ? zero()
-      :                     inf();
 };
 
 multimethod pow => qw(* Math::BigNum::Inf) => sub {
@@ -1290,14 +1210,8 @@ multimethod bpow => qw(Math::BigNum::Inf Math::BigNum) => sub {
       : $x;
 };
 
-multimethod bpow => qw(Math::BigNum::Inf $) => sub {
-    my ($x, $y) = @_;
-    $y < 0         ? $x->bzero
-      : $y == 0    ? $x->bone
-      : $x->is_neg ? ($y % 2 != 0)
-          ? $x
-          : $x->bneg
-      : $x;
+multimethod bpow => qw(Math::BigNum::Inf *) => sub {
+    $_[0]->bpow(Math::BigNum->new($_[1]));
 };
 
 # (+/-Inf) ** (-Inf) = 0
@@ -1324,7 +1238,7 @@ multimethod root => qw(Math::BigNum::Inf Math::BigNum) => sub {
     $_[0]->pow($_[1]->inv);
 };
 
-multimethod root => qw(Math::BigNum::Inf $) => sub {
+multimethod root => qw(Math::BigNum::Inf *) => sub {
     $_[0]->pow(Math::BigNum->new($_[1])->inv);
 };
 
@@ -1346,7 +1260,7 @@ multimethod broot => qw(Math::BigNum::Inf Math::BigNum) => sub {
     $_[0]->bpow($_[1]->inv);
 };
 
-multimethod broot => qw(Math::BigNum::Inf $) => sub {
+multimethod broot => qw(Math::BigNum::Inf *) => sub {
     $_[0]->bpow(Math::BigNum->new($_[1])->inv);
 };
 
@@ -1439,10 +1353,6 @@ Returns the remained of C<$x> divided by C<$y>.
 # +x mod -Inf = -Inf
 # -x mod +Inf = +Inf
 # -x mod -Inf = x
-multimethod mod => qw($ Math::BigNum::Inf) => sub {
-    my ($x, $y) = @_;
-    ($x <=> 0) == Math::GMPq::Rmpq_sgn($$y) ? Math::BigNum->new($x) : $y->copy;
-};
 
 multimethod mod => qw(* Math::BigNum::Inf) => sub {
     Math::BigNum->new($_[0])->mod($_[1]);
@@ -1452,7 +1362,6 @@ multimethod mod => qw(Math::BigNum::Inf *) => sub {
     $_[0]->mod(Math::BigNum->new($_[1]));
 };
 
-multimethod mod => qw(Math::BigNum::Inf $)                 => \&nan;
 multimethod mod => qw(Math::BigNum::Inf Math::BigNum)      => \&nan;
 multimethod mod => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&nan;
 multimethod mod => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
@@ -1517,7 +1426,6 @@ multimethod lsft => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     $xn ? ($yn ? nan() : $x->copy) : ($yn ? nan() : $x->copy);
 };
 
-multimethod lsft => qw(Math::BigNum::Inf $)                 => \&copy;
 multimethod lsft => qw(Math::BigNum::Inf Math::BigNum)      => \&copy;
 multimethod lsft => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
@@ -1526,9 +1434,8 @@ multimethod lsft => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 # -x * (2 ** +Inf) = -Inf
 #  0 * (2 ** +Inf) = NaN
 
-multimethod lsft => qw($ Math::BigNum::Inf) => sub {
-    my ($x, $y) = @_;
-    $y->is_neg ? zero() : $x < 0 ? ninf() : $x == 0 ? nan() : inf();
+multimethod lsft => qw(Math::BigNum::Inf *) => sub {
+    $_[0]->lsft(Math::BigNum->new($_[1]));
 };
 
 multimethod lsft => qw(* Math::BigNum::Inf) => sub {
@@ -1556,7 +1463,10 @@ multimethod blsft => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     $xn ? ($yn ? $x->bnan() : $x) : ($yn ? $x->bnan() : $x);
 };
 
-multimethod blsft => qw(Math::BigNum::Inf $)                 => \&_self;
+multimethod brsft => qw(Math::BigNum::Inf *) => sub {
+    $_[0]->blsft(Math::BigNum->new($_[1]));
+};
+
 multimethod blsft => qw(Math::BigNum::Inf Math::BigNum)      => \&_self;
 multimethod blsft => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 
@@ -1585,7 +1495,6 @@ multimethod rsft => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     $xn ? ($yn ? $x->neg : nan()) : ($yn ? $x->copy : nan());
 };
 
-multimethod rsft => qw(Math::BigNum::Inf $)                 => \&copy;
 multimethod rsft => qw(Math::BigNum::Inf Math::BigNum)      => \&copy;
 multimethod rsft => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
@@ -1594,9 +1503,8 @@ multimethod rsft => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 # -x / (2 ** -Inf) = -Inf
 #  0 / (2 ** -Inf) = NaN
 
-multimethod rsft => qw($ Math::BigNum::Inf) => sub {
-    my ($x, $y) = @_;
-    $y->is_pos ? zero() : $x < 0 ? ninf() : $x == 0 ? nan() : inf();
+multimethod rsft => qw(Math::BigNum::Inf *) => sub {
+    $_[0]->rsft(Math::BigNum->new($_[1]));
 };
 
 multimethod rsft => qw(* Math::BigNum::Inf) => sub {
@@ -1622,7 +1530,10 @@ multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Inf) => sub {
     $xn ? ($yn ? $x->bneg : $x->bnan()) : ($yn ? $x : $x->bnan());
 };
 
-multimethod brsft => qw(Math::BigNum::Inf $)                 => \&_self;
+multimethod brsft => qw(Math::BigNum::Inf *) => sub {
+    $_[0]->brsft(Math::BigNum->new($_[1]));
+};
+
 multimethod brsft => qw(Math::BigNum::Inf Math::BigNum)      => \&_self;
 multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 

@@ -470,8 +470,7 @@ sub _str2mpq {
     else {
         my $rat = $_[0] =~ tr/.Ee// ? _str2rat($_[0] =~ tr/_//dr) : ($_[0] =~ tr/_+//dr);
         if ($rat !~ m{^\s*[-+]?[0-9]+(?>\s*/\s*[1-9]+[0-9]*)?\s*\z}) {
-            require Carp;
-            Carp::confess("Not a base-10 numerical value: <<$_[0]>>");
+            return;
         }
         Math::GMPq::Rmpq_set_str($r, $rat, 10);
         Math::GMPq::Rmpq_canonicalize($r) if (index($rat, '/') != -1);
@@ -653,7 +652,7 @@ sub new {
 
     # Plain scalar
     if ($ref eq '' and (!defined($base) or $base == 10)) {    # it's a base 10 scalar
-        return bless \_str2mpq($num), $class;                 # so we can return faster
+        return bless \(_str2mpq($num) // return nan()), $class;    # so we can return faster
     }
 
     # Create a new GMPq object
@@ -695,7 +694,7 @@ sub new {
 
     # Other reference (which may support stringification)
     else {
-        Math::GMPq::Rmpq_set($r, _str2mpq("$num"));
+        Math::GMPq::Rmpq_set($r, _str2mpq("$num") // return nan());
     }
 
     # Return a bless BigNum object
@@ -1130,8 +1129,8 @@ multimethod add => qw(Math::BigNum Math::BigNum) => sub {
 
 multimethod add => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
-    my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_add($r, $$x, _str2mpq($y));
+    my $r = _str2mpq($y) // return $x->add(Math::BigNum->new($y));
+    Math::GMPq::Rmpq_add($r, $r, $$x);
     bless \$r, __PACKAGE__;
 };
 
@@ -1168,7 +1167,7 @@ multimethod badd => qw(Math::BigNum Math::BigNum) => sub {
 
 multimethod badd => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
-    Math::GMPq::Rmpq_add($$x, $$x, _str2mpq($y));
+    Math::GMPq::Rmpq_add($$x, $$x, _str2mpq($y) // return $x->badd(Math::BigNum->new($y)));
     $x;
 };
 
@@ -1267,14 +1266,14 @@ multimethod sub => qw(Math::BigNum Math::BigNum) => sub {
 
 multimethod sub => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
-    my $r = _str2mpq($y);
+    my $r = _str2mpq($y) // return $x->sub(Math::BigNum->new($y));
     Math::GMPq::Rmpq_sub($r, $$x, $r);
     bless \$r, __PACKAGE__;
 };
 
 multimethod sub => qw($ Math::BigNum) => sub {
     my ($x, $y) = @_;
-    my $r = _str2mpq($x);
+    my $r = _str2mpq($x) // return Math::BigNum->new($x)->sub($y);
     Math::GMPq::Rmpq_sub($r, $r, $$y);
     bless \$r, __PACKAGE__;
 };
@@ -1316,7 +1315,7 @@ multimethod bsub => qw(Math::BigNum Math::BigNum) => sub {
 
 multimethod bsub => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
-    Math::GMPq::Rmpq_sub($$x, $$x, _str2mpq($y));
+    Math::GMPq::Rmpq_sub($$x, $$x, _str2mpq($y) // return $x->bsub(Math::BigNum->new($y)));
     $x;
 };
 
@@ -1425,7 +1424,7 @@ multimethod mul => qw(Math::BigNum Math::BigNum) => sub {
 
 multimethod mul => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
-    my $r = _str2mpq($y);
+    my $r = _str2mpq($y) // return $x->mul(Math::BigNum->new($y));
     Math::GMPq::Rmpq_mul($r, $$x, $r);
     bless \$r, __PACKAGE__;
 };
@@ -1467,7 +1466,7 @@ multimethod bmul => qw(Math::BigNum Math::BigNum) => sub {
 
 multimethod bmul => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
-    Math::GMPq::Rmpq_mul($$x, $$x, _str2mpq($y));
+    Math::GMPq::Rmpq_mul($$x, $$x, _str2mpq($y) // return $x->bmul(Math::BigNum->new($y)));
     $x;
 };
 
@@ -1616,7 +1615,7 @@ multimethod div => qw(Math::BigNum $) => sub {
         return (!$sign ? nan : $sign > 0 ? inf : ninf);
     };
 
-    my $r = _str2mpq($y);
+    my $r = _str2mpq($y) // return $x->div(Math::BigNum->new($y));
     Math::GMPq::Rmpq_div($r, $$x, $r);
     bless \$r, __PACKAGE__;
 };
@@ -1627,7 +1626,7 @@ multimethod div => qw($ Math::BigNum) => sub {
     Math::GMPq::Rmpq_sgn($$y)
       || return (!$x ? nan : $x > 0 ? inf : ninf);
 
-    my $r = _str2mpq($x);
+    my $r = _str2mpq($x) // return Math::BigNum->new($x)->div($y);
     Math::GMPq::Rmpq_div($r, $r, $$y);
     bless \$r, __PACKAGE__;
 };
@@ -1687,7 +1686,7 @@ multimethod bdiv => qw(Math::BigNum $) => sub {
           :             $x->bnan;
     };
 
-    Math::GMPq::Rmpq_div($$x, $$x, _str2mpq($y));
+    Math::GMPq::Rmpq_div($$x, $$x, _str2mpq($y) // return $x->bdiv(Math::BigNum->new($y)));
     $x;
 };
 
@@ -3120,7 +3119,7 @@ multimethod eq => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 multimethod eq => qw(Math::BigNum $) => sub {
-    Math::GMPq::Rmpq_equal(${$_[0]}, _str2mpq($_[1]));
+    Math::GMPq::Rmpq_equal(${$_[0]}, _str2mpq($_[1]) // return $_[0]->eq(Math::BigNum->new($_[1])));
 };
 
 =for comment
@@ -3366,7 +3365,7 @@ multimethod cmp => qw(Math::BigNum $) => sub {
           : Math::GMPq::Rmpq_cmp_si($$x, $y, 1);
     }
     else {
-        Math::GMPq::Rmpq_cmp($$x, _str2mpq($_[1]));
+        Math::GMPq::Rmpq_cmp($$x, _str2mpq($_[1]) // return $x->cmp(Math::BigNum->new($y)));
     }
 };
 
@@ -3381,7 +3380,7 @@ multimethod cmp => qw($ Math::BigNum) => sub {
         $cmp < 0 ? 1 : $cmp > 0 ? -1 : 0;
     }
     else {
-        Math::GMPq::Rmpq_cmp(_str2mpq($_[0]), $$y);
+        Math::GMPq::Rmpq_cmp(_str2mpq($_[0]) // (return Math::BigNum->new($x)->cmp($y)), $$y);
     }
 };
 
@@ -3445,7 +3444,7 @@ multimethod acmp => qw(Math::BigNum $) => sub {
         Math::GMPq::Rmpq_cmp_ui($xn, CORE::abs($y), 1);
     }
     else {
-        my $q = _str2mpq($y);
+        my $q = _str2mpq($y) // return $x->acmp(Math::BigNum->new($y));
         Math::GMPq::Rmpq_abs($q, $q);
         Math::GMPq::Rmpq_cmp($xn, $q);
     }
@@ -4210,8 +4209,8 @@ multimethod is_div => qw(Math::BigNum $) => sub {
 
     # Otherwise, do the division and check the result
     else {
-        my $q = Math::GMPq::Rmpq_init();
-        Math::GMPq::Rmpq_div($q, $$x, _str2mpq($y));
+        my $q = _str2mpq($y) // return $x->is_div(Math::BigNum->new($y));
+        Math::GMPq::Rmpq_div($q, $$x, $q);
         Math::GMPq::Rmpq_integer_p($q);
     }
 };
