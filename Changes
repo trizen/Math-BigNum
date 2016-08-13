@@ -1,6 +1,6 @@
 Revision history for Math-BigNum
 
-0.08    xxx
+0.08    2016-13-08
         - Added support for `+inf`, `-inf` and `nan`, each represented as a scalar value.
         - Improved the support for infinity to work with any numerical object and any special scalar values.
 
