@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 229;
+plan tests => 232;
 
 # Initialization
 
@@ -531,6 +531,15 @@ plan tests => 229;
 
     #$root = $y->iroot(Math::BigNum->new(6));
     #is("$root", "3i");
+
+    $root = $y->iroot(Math::BigNum->new(6));
+    is("$root", Math::BigNum->nan);
+
+    $root = $y->iroot(3);
+    is("$root", "-10");
+
+    $root = $y->iroot(4);
+    is("$root", Math::BigNum->nan);
 
     $root = $y->iroot(5);
     is("$root", "-4");

@@ -206,6 +206,20 @@ Always returns Nan.
 *bsub  = \&_self;
 *bisub = \&_self;
 
+=head2 mul / bmul
+
+    $x->mul(Any)                   # => Nan
+    $x->bmul(Any)                  # => Nan
+
+Always returns Nan.
+
+=cut
+
+*mul   = \&nan;
+*imul  = \&nan;
+*bmul  = \&_self;
+*bimul = \&_self;
+
 =head2 div / bdiv
 
     $x->div(Any)                   # => Nan

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 6 * 8;
+use Test::More tests => 6 * 8 + 8;
 
 use Math::BigNum;
 
@@ -47,4 +47,26 @@ sub test_broot {
 
     # Test "pow" and "iroot"
     like(Math::BigNum->new($x)->pow($n)->iroot($y), $expected, "Try: Math::BigNum->new($x)->pow($n)->iroot($y) == $expected");
+}
+
+is(Math::BigNum->new(-1234)->iroot(3),                    -10);
+is(Math::BigNum->new(-1234)->iroot(Math::BigNum->new(3)), -10);
+
+is(Math::BigNum->new(-1234)->iroot(4),                    Math::BigNum->nan);
+is(Math::BigNum->new(-1234)->iroot(Math::BigNum->new(4)), Math::BigNum->nan);
+
+{
+    my $n = Math::BigNum->new(-1234);
+
+    my $x = $n->copy->biroot(3);
+    is($x, -10);
+
+    $x = $n->copy->biroot(Math::BigNum->new(3));
+    is($x, -10);
+
+    $x = $n->copy->biroot(4);
+    is($x, Math::BigNum->nan);
+
+    $x = $n->copy->biroot(Math::BigNum->new(4));
+    is($x, Math::BigNum->nan);
 }
