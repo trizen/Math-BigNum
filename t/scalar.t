@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 202;
+plan tests => 274;
 
 use Math::BigNum;
 
@@ -66,6 +66,20 @@ is('-inf'**($x + 1), $ninf);    # odd power
 my $max_ui = Math::BigNum->new(Math::BigNum::MAX_UI);
 my $min_si = Math::BigNum->new(Math::BigNum::MIN_SI);
 
+my $max_ui_p1 = ($max_ui + 1)->stringify;
+my $min_si_m1 = ($min_si - 1)->stringify;
+
+is($min_si_m1 + Math::BigNum->one, $min_si);
+is($max_ui_p1 - Math::BigNum->one, $max_ui);
+is($max_ui_p1 / ($max_ui + 1), 1);
+is($min_si_m1 / ($min_si - 1), 1);
+is($min_si - $min_si_m1,           1);
+is($max_ui - $max_ui_p1,           -1);
+is($max_ui - Math::BigNum::MAX_UI, 0);
+is($min_si - Math::BigNum::MIN_SI, 0);
+is($max_ui_p1 * Math::BigNum->new(2), ($max_ui + 1) * 2);
+is($min_si_m1 * Math::BigNum->new(2), ($min_si - 1) * 2);
+
 is($min_si,                                     Math::BigNum::MIN_SI);
 is(Math::BigNum->new(Math::BigNum::MIN_SI + 1), Math::BigNum::MIN_SI + 1);
 is($max_ui,                                     Math::BigNum::MAX_UI);
@@ -74,6 +88,13 @@ is($x->iadd(Math::BigNum::MIN_SI),              $x + $min_si);
 is($x->isub(Math::BigNum::MIN_SI),              $x - $min_si);
 is($x->imul(Math::BigNum::MIN_SI),              $x * $min_si);
 is($min_si->mul(3)->idiv(Math::BigNum::MIN_SI), 3);
+
+is($x->iadd($max_ui_p1), $x + $max_ui + 1);
+is($x->iadd($min_si_m1), $x + $min_si - 1);
+is($x->isub($max_ui_p1), $x - $max_ui - 1);
+is($x->isub($min_si_m1), $x - $min_si + 1);
+is($x->imul($max_ui_p1), $x * ($max_ui + 1));
+is($x->imul($min_si_m1), $x * ($min_si - 1));
 
 is($x->iadd(Math::BigNum::MAX_UI),              $x + $max_ui);
 is($x->isub(Math::BigNum::MAX_UI),              $x - $max_ui);
@@ -107,8 +128,16 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
     is($x, 42 + $max_ui);
 
     $x = Math::BigNum->new(-42);
+    $x = $x->iadd($max_ui_p1);
+    is($x, -42 + $max_ui + 1);
+
+    $x = Math::BigNum->new(-42);
     $x = $x->iadd(Math::BigNum::MIN_SI);
     is($x, -42 + $min_si);
+
+    $x = Math::BigNum->new(-42);
+    $x = $x->iadd($min_si_m1);
+    is($x, -42 + $min_si - 1);
 
     $x = Math::BigNum->new(42);
     $x = $x->iadd("3.4");
@@ -122,6 +151,10 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
     my $x = Math::BigNum->new(42);
     $x->biadd(Math::BigNum::MAX_UI);
     is($x, 42 + $max_ui);
+
+    $x = Math::BigNum->new(-42);
+    $x->biadd($max_ui_p1);
+    is($x, -42 + $max_ui + 1);
 
     $x = Math::BigNum->new(-42);
     $x->biadd(Math::BigNum::MIN_SI);
@@ -144,6 +177,14 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
     $x = $x->isub(Math::BigNum::MIN_SI);
     is($x, -42 - $min_si);
 
+    $x = Math::BigNum->new(-42);
+    $x = $x->isub($min_si_m1);
+    is($x, -42 - $min_si + 1);
+
+    $x = Math::BigNum->new(-42);
+    $x = $x->isub($max_ui_p1);
+    is($x, -42 - $max_ui - 1);
+
     $x = Math::BigNum->new(42);
     $x = $x->isub("3.4");
     is($x, 39);
@@ -160,6 +201,14 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
     $x = Math::BigNum->new(-42);
     $x->bisub(Math::BigNum::MIN_SI);
     is($x, -42 - $min_si);
+
+    $x = Math::BigNum->new(42);
+    $x->bisub($min_si_m1);
+    is($x, 42 - $min_si + 1);
+
+    $x = Math::BigNum->new(42);
+    $x->bisub($max_ui_p1);
+    is($x, 42 - $max_ui - 1);
 
     $x = Math::BigNum->new(42);
     $x->bisub("3.4");
@@ -182,6 +231,14 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
     $x = $x->imul(Math::BigNum::MIN_SI);
     is($x, 2 * $min_si);
 
+    $x = Math::BigNum->new(2);
+    $x = $x->imul($max_ui_p1);
+    is($x, 2 * ($max_ui + 1));
+
+    $x = Math::BigNum->new(2);
+    $x = $x->imul($min_si_m1);
+    is($x, 2 * ($min_si - 1));
+
     $x = Math::BigNum->new(42);
     $x = $x->imul("3.4");
     is($x, 126);
@@ -203,6 +260,14 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
     $x->bimul(Math::BigNum::MIN_SI);
     is($x, 2 * $min_si);
 
+    $x = Math::BigNum->new(2);
+    $x->bimul($max_ui_p1);
+    is($x, 2 * ($max_ui + 1));
+
+    $x = Math::BigNum->new(2);
+    $x->bimul($min_si_m1);
+    is($x, 2 * ($min_si - 1));
+
     $x = Math::BigNum->new(42);
     $x->bimul("3.4");
     is($x, 126);
@@ -212,12 +277,20 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 ## idiv()
 #
 {
-    my $x = Math::BigNum->new(Math::BigNum::MAX_UI)->mul(3);
+    my $x = $max_ui->mul(3);
     $x = $x->idiv(Math::BigNum::MAX_UI);
     is($x, 3);
 
-    $x = Math::BigNum->new(Math::BigNum::MIN_SI)->mul(3);
+    $x = ($max_ui + 1)->mul(3);
+    $x = $x->idiv($max_ui_p1);
+    is($x, 3);
+
+    $x = $min_si->mul(3);
     $x = $x->idiv(Math::BigNum::MIN_SI);
+    is($x, 3);
+
+    $x = ($min_si - 1)->mul(3);
+    $x = $x->idiv($min_si_m1);
     is($x, 3);
 
     $x = Math::BigNum->new(42);
@@ -229,12 +302,20 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 ## bidiv()
 #
 {
-    my $x = Math::BigNum->new(Math::BigNum::MAX_UI)->mul(3);
+    my $x = $max_ui->mul(3);
     $x->bidiv(Math::BigNum::MAX_UI);
     is($x, 3);
 
-    $x = Math::BigNum->new(Math::BigNum::MIN_SI)->mul(3);
+    $x = ($max_ui + 1)->mul(3);
+    $x->bidiv($max_ui_p1);
+    is($x, 3);
+
+    $x = $min_si->mul(3);
     $x->bidiv(Math::BigNum::MIN_SI);
+    is($x, 3);
+
+    $x = ($min_si - 1)->mul(3);
+    $x->bidiv($min_si_m1);
     is($x, 3);
 
     $x = Math::BigNum->new(42);
@@ -246,19 +327,20 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 ## idiv()
 #
 {
-    my $x = Math::BigNum->new(124);
+    my $n = Math::BigNum->new(124);
+    my $x = $n->copy;
     $x = $x->idiv(-4);
     is($x, -31);
 
-    $x = Math::BigNum->new(124);
+    $x = $n->copy;
     $x = $x->idiv(4);
     is($x, 31);
 
-    $x = Math::BigNum->new(-124);
+    $x = $n->neg;
     $x = $x->idiv(-4);
     is($x, 31);
 
-    $x = Math::BigNum->new(-124);
+    $x = $n->neg;
     $x = $x->idiv(4);
     is($x, -31);
 }
@@ -267,19 +349,20 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 ## bidiv()
 #
 {
-    my $x = Math::BigNum->new(124);
+    my $n = Math::BigNum->new(124);
+    my $x = $n->copy;
     $x->bidiv(-4);
     is($x, -31);
 
-    $x = Math::BigNum->new(124);
+    $x = $n->copy;
     $x->bidiv(4);
     is($x, 31);
 
-    $x = Math::BigNum->new(-124);
+    $x = $n->neg;
     $x->bidiv(-4);
     is($x, 31);
 
-    $x = Math::BigNum->new(-124);
+    $x = $n->neg;
     $x->bidiv(4);
     is($x, -31);
 }
@@ -445,6 +528,98 @@ ok('inf' >= $x);
 ok(not $x >= 'inf');
 ok(not '-inf' >= $x);
 
+is($x->log(4)->int, 2);
+is($x->log('inf'),  0);
+is($x->log('NaN'),  $nan);
+
+# is_div()
+{
+    is($max_ui->is_div(Math::BigNum::MAX_UI),           1);
+    is($max_ui->is_div(Math::BigNum::MAX_UI- 1),        0);
+    is(($max_ui->dec)->is_div(Math::BigNum::MAX_UI- 1), 1);
+
+    is(($max_ui->inc)->is_div($max_ui_p1), 1);
+    is(($min_si->dec)->is_div($min_si_m1), 1);
+
+    is($max_ui->is_div($max_ui_p1), 0);
+    is($min_si->is_div($min_si_m1), 0);
+
+    is($x->is_div(2),                             1);
+    is(Math::BigNum->new("218.4")->is_div("5.2"), 1);
+    is(Math::BigNum->new("218.4")->is_div("6.2"), 0);
+}
+
+# hypot()
+{
+    like($x->hypot(123.4), qr/^130\.3516/);
+    like($x->hypot(321),   qr/^323\.7360/);
+    like($x->hypot(-321),  qr/^323\.7360/);
+
+    is($x->hypot('-inf'), $inf);
+    is($x->hypot('inf'),  $inf);
+    is($x->hypot('abc'),  $nan);
+}
+
+# blog()
+{
+    my $n = Math::BigNum->new(42);
+    my $x = $n->copy;
+    $x->blog(4)->bint;
+    is($x, 2);
+
+    $x = $n->copy;
+    $x->blog('Inf');
+    is($x, 0);
+
+    $x = $n->copy;
+    $x->blog('NaN');
+    is($x, $nan);
+
+    $x = $n->copy;
+    $x->blog('abc');
+    is($x, $nan);
+}
+
+# atan2()
+{
+    like(atan2(1,     $zero), qr/^1\.57079/);
+    like(atan2(-1,    $zero), qr/^-1\.57079/);
+    like(atan2($zero, -1),    qr/^3\.14159/);
+    like(atan2($x,    42),    qr/^0\.78539/);
+
+    is(atan2($x,    'abc'), $nan);
+    is(atan2('abc', $x),    $nan);
+
+    like(atan2($zero, '-Inf'), qr/^3\.14159/);
+    like(atan2('Inf', $zero),  qr/^1\.57079/);
+}
+
+# mod()
+{
+    like($x->mod("12.4"), qr/^4\.[78]/);
+    is($x->mod('inf'),  $x);
+    is($x->mod('abc'),  $nan);
+    is($x->mod('-inf'), $ninf);
+}
+
+# bmod()
+{
+    my $n = Math::BigNum->new(42);
+    my $x = $n->copy;
+
+    $x->bmod("12.4");
+    like($x, qr/^4\.[78]/);
+
+    $x = $n->copy->bmod('inf');
+    is($x, $n);
+
+    $x = $n->copy->bmod('abc');
+    is($x, $nan);
+
+    $x = $n->copy->bmod('-Inf');
+    is($x, $ninf);
+}
+
 #
 ## NaN
 #
@@ -478,3 +653,8 @@ is($x / 'abc', $nan);
 is('abc' / $x, $nan);
 is('abc'**$x,  $nan);
 is($x**'abc',  $nan);
+
+is($x->log('abc'), $nan);
+
+# Final test to make sure $x didn't change
+is($x, 42);

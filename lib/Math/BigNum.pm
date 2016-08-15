@@ -15,7 +15,7 @@ use Class::Multimethods qw();
 #<<<
 use constant {
               MAX_UI  =>             unpack('I', pack 'I', -1),          # UP: ~0
-              MIN_SI  => 0.5 * (-1 - unpack('I', pack 'I', -1)),         # UP: -(~0 >> 1) - 1,
+              MIN_SI  => 0.5 * (-1 - unpack('I', pack 'I', -1)),         # UP: -(~0 >> 1) - 1
              };
 #>>>
 
@@ -421,16 +421,16 @@ sub _str2rat {
         my $denominator = "1";
 
         if ($exp < 1) {
-            $denominator .= '0' x (CORE::abs($exp) + length($after));
+            $denominator .= '0' x (CORE::abs($exp) + CORE::length($after));
         }
         else {
-            my $diff = ($exp - length($after));
+            my $diff = ($exp - CORE::length($after));
             if ($diff >= 0) {
                 $numerator .= '0' x $diff;
             }
             else {
                 my $s = "$before$after";
-                substr($s, $exp + length($before), 0, '.');
+                substr($s, $exp + CORE::length($before), 0, '.');
                 return _str2rat("$sign$s");
             }
         }
@@ -439,10 +439,10 @@ sub _str2rat {
     }
     elsif (($i = index($str, '.')) != -1) {
         my ($before, $after) = (substr($str, 0, $i), substr($str, $i + 1));
-        if ($after =~ tr/0// == length($after)) {
+        if ($after =~ tr/0// == CORE::length($after)) {
             return "$sign$before";
         }
-        $sign . ("$before$after/1" =~ s/^0+//r) . ('0' x length($after));
+        $sign . ("$before$after/1" =~ s/^0+//r) . ('0' x CORE::length($after));
     }
     else {
         "$sign$str";
@@ -452,7 +452,16 @@ sub _str2rat {
 # Converts a string into an mpfr object
 sub _str2mpfr {
     my $r = Math::MPFR::Rmpfr_init2($PREC);
-    Math::MPFR::Rmpfr_set_str($r, $_[0], 10, $ROUND);
+
+    if (CORE::int($_[0]) eq $_[0] and $_[0] >= MIN_SI and $_[0] <= MAX_UI) {
+        $_[0] >= 0
+          ? Math::MPFR::Rmpfr_set_ui($r, $_[0], $ROUND)
+          : Math::MPFR::Rmpfr_set_si($r, $_[0], $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_set_str($r, $_[0], 10, $ROUND) && return;
+    }
+
     $r;
 }
 
@@ -1221,7 +1230,7 @@ Class::Multimethods::multimethod iadd => qw(Math::BigNum $) => sub {
         _mpz2big($r);
     }
     else {
-        $x->iadd(Math::BigNum->new($y));
+        Math::BigNum->new($y)->biadd($x);
     }
 };
 
@@ -1383,7 +1392,7 @@ Class::Multimethods::multimethod isub => qw(Math::BigNum $) => sub {
         _mpz2big($r);
     }
     else {
-        $x->isub(Math::BigNum->new($y));
+        Math::BigNum->new($y)->bneg->biadd($x);
     }
 };
 
@@ -2372,7 +2381,7 @@ Class::Multimethods::multimethod bpow => qw(Math::BigNum $) => sub {
         }
     }
     else {
-        Math::MPFR::Rmpfr_pow($r, $r, _str2mpfr($y), $ROUND);
+        Math::MPFR::Rmpfr_pow($r, $r, _str2mpfr($y) // (return $x->bpow(Math::BigNum->new($y))), $ROUND);
     }
 
     _mpfr2x($x, $r);
@@ -2560,22 +2569,24 @@ Class::Multimethods::multimethod log => qw(Math::BigNum Math::BigNum) => sub {
 Class::Multimethods::multimethod log => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    my $r = _big2mpfr($x);
-
-    if ($y == 2) {
+    if (CORE::int($y) eq $y and $y == 2) {
+        my $r = _big2mpfr($x);
         Math::MPFR::Rmpfr_log2($r, $r, $ROUND);
+        _mpfr2big($r);
     }
-    elsif ($y == 10) {
+    elsif (CORE::int($y) eq $y and $y == 10) {
+        my $r = _big2mpfr($x);
         Math::MPFR::Rmpfr_log10($r, $r, $ROUND);
+        _mpfr2big($r);
     }
     else {
-        Math::MPFR::Rmpfr_log($r, $r, $ROUND);
-        my $baseln = _str2mpfr($y);
+        my $baseln = _str2mpfr($y) // return $x->log(Math::BigNum->new($y));
+        my $r = _big2mpfr($x);
+        Math::MPFR::Rmpfr_log($r,      $r,      $ROUND);
         Math::MPFR::Rmpfr_log($baseln, $baseln, $ROUND);
         Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
+        _mpfr2big($r);
     }
-
-    _mpfr2big($r);
 };
 
 Class::Multimethods::multimethod log => qw(Math::BigNum) => \&ln;
@@ -2601,22 +2612,25 @@ When C<$y> is not specified, it defaults to base e.
 Class::Multimethods::multimethod blog => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    my $r = _big2mpfr($x);
-
-    if ($y == 2) {
+    if (CORE::int($y) eq $y and $y == 2) {
+        my $r = _big2mpfr($x);
         Math::MPFR::Rmpfr_log2($r, $r, $ROUND);
+        _mpfr2x($x, $r);
+
     }
-    elsif ($y == 10) {
+    elsif (CORE::int($y) eq $y and $y == 10) {
+        my $r = _big2mpfr($x);
         Math::MPFR::Rmpfr_log10($r, $r, $ROUND);
+        _mpfr2x($x, $r);
     }
     else {
-        Math::MPFR::Rmpfr_log($r, $r, $ROUND);
-        my $baseln = _str2mpfr($y);
+        my $baseln = _str2mpfr($y) // return $x->blog(Math::BigNum->new($y));
+        my $r = _big2mpfr($x);
+        Math::MPFR::Rmpfr_log($r,      $r,      $ROUND);
         Math::MPFR::Rmpfr_log($baseln, $baseln, $ROUND);
         Math::MPFR::Rmpfr_div($r, $r, $baseln, $ROUND);
+        _mpfr2x($x, $r);
     }
-
-    _mpfr2x($x, $r);
 };
 
 Class::Multimethods::multimethod blog => qw(Math::BigNum Math::BigNum) => sub {
@@ -3131,13 +3145,14 @@ Class::Multimethods::multimethod atan2 => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 Class::Multimethods::multimethod atan2 => qw(Math::BigNum $) => sub {
+    my $f = _str2mpfr($_[1]) // return $_[0]->atan2(Math::BigNum->new($_[1]));
     my $r = _big2mpfr($_[0]);
-    Math::MPFR::Rmpfr_atan2($r, $r, _str2mpfr($_[1]), $ROUND);
+    Math::MPFR::Rmpfr_atan2($r, $r, $f, $ROUND);
     _mpfr2big($r);
 };
 
 Class::Multimethods::multimethod atan2 => qw($ Math::BigNum) => sub {
-    my $r = _str2mpfr($_[0]);
+    my $r = _str2mpfr($_[0]) // return Math::BigNum->new($_[0])->atan2($_[1]);
     Math::MPFR::Rmpfr_atan2($r, $r, _big2mpfr($_[1]), $ROUND);
     _mpfr2big($r);
 };
@@ -3715,8 +3730,8 @@ Class::Multimethods::multimethod mod => qw(Math::BigNum $) => sub {
         _mpz2big($r);
     }
     else {
-        my $r  = _big2mpfr($x);
-        my $yf = _str2mpfr($y);
+        my $yf = _str2mpfr($y) // return $x->mod(Math::BigNum->new($y));
+        my $r = _big2mpfr($x);
         Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
         my $sign = Math::MPFR::Rmpfr_sgn($r);
         if (!$sign) {
@@ -3804,8 +3819,8 @@ Class::Multimethods::multimethod bmod => qw(Math::BigNum $) => sub {
         Math::GMPq::Rmpq_set_z($$x, $r);
     }
     else {
-        my $r  = _big2mpfr($x);
-        my $yf = _str2mpfr($y);
+        my $yf = _str2mpfr($y) // return $x->bmod(Math::BigNum->new($y));
+        my $r = _big2mpfr($x);
         Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
         my $sign_r = Math::MPFR::Rmpfr_sgn($r);
         if (!$sign_r) {
@@ -4298,10 +4313,11 @@ Class::Multimethods::multimethod is_div => qw(Math::BigNum Math::BigNum) => sub 
 
 Class::Multimethods::multimethod is_div => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
+
     $y == 0 and return 0;
 
     # Use a faster method when both $x and $y are integers
-    if (CORE::int($y) eq $y and $y > 0 and $y <= ~0 and Math::GMPq::Rmpq_integer_p($$x)) {
+    if (CORE::int($y) eq $y and $y > 0 and $y <= MAX_UI and Math::GMPq::Rmpq_integer_p($$x)) {
         Math::GMPz::Rmpz_divisible_ui_p(_int2mpz($x), $y);
     }
 
@@ -5681,10 +5697,21 @@ Class::Multimethods::multimethod agm => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 Class::Multimethods::multimethod agm => qw(Math::BigNum $) => sub {
+    my $f = _str2mpfr($_[1]) // return $_[0]->agm(Math::BigNum->new($_[1]));
     my $r = _big2mpfr($_[0]);
-    Math::MPFR::Rmpfr_agm($r, $r, _str2mpfr($_[1]), $ROUND);
+    Math::MPFR::Rmpfr_agm($r, $r, $f, $ROUND);
     _mpfr2big($r);
 };
+
+Class::Multimethods::multimethod agm => qw(Math::BigNum *) => sub {
+    $_[0]->agm(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod agm => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[1]->is_pos ? $_[1]->copy : nan();
+};
+
+Class::Multimethods::multimethod agm => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 hypot
 
@@ -5702,10 +5729,18 @@ Class::Multimethods::multimethod hypot => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 Class::Multimethods::multimethod hypot => qw(Math::BigNum $) => sub {
+    my $f = _str2mpfr($_[1]) // return $_[0]->hypot(Math::BigNum->new($_[1]));
     my $r = _big2mpfr($_[0]);
-    Math::MPFR::Rmpfr_hypot($r, $r, _str2mpfr($_[1]), $ROUND);
+    Math::MPFR::Rmpfr_hypot($r, $r, $f, $ROUND);
     _mpfr2big($r);
 };
+
+Class::Multimethods::multimethod hypot => qw(Math::BigNum *) => sub {
+    $_[0]->hypot(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod hypot => qw(Math::BigNum Math::BigNum::Inf) => \&inf;
+Class::Multimethods::multimethod hypot => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 gamma
 

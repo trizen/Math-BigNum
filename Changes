@@ -1,5 +1,9 @@
 Revision history for Math-BigNum
 
+0.10    2016-xx-xx
+        - Faster creation of MPFR objects from scalar integer values.
+        - Conversion of scalar values to MPFR objects is done more strictly, by validating each conversion.
+
 0.09    2016-15-08
         - Better support for scalar values.
         - Better performance for `idiv()` and `bidiv()` when called with negative scalar integers.
