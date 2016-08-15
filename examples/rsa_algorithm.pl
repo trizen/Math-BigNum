@@ -10,17 +10,17 @@ use Math::BigNum qw(:constant);
 use Math::Prime::Util ':all';
 
 # == key generation
-my $p = random_strong_prime(256);    # Note that BigNum understands BigInt
+my $p = random_strong_prime(256);
 my $q = random_strong_prime(256);
 
 my $n = $p * $q;
 
 my $phi = ($p - 1) * ($q - 1);
 
-my $e = 257;                         # need to figure out how to calculate it
+my $e = 257;    # need to figure out how to calculate it
 
 my $x = $e**1;
-my $d = $x->modinv($phi);
+my $d = $x->modinv($phi);    # note that BigNum understands BigInt
 
 # == encryption
 my $message = "hello world";
