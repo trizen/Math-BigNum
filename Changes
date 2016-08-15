@@ -1,9 +1,10 @@
 Revision history for Math-BigNum
 
-0.09    2016-xx-08
+0.09    2016-15-08
         - Better support for scalar values.
         - Better performance for `idiv()` and `bidiv()` when called with negative scalar integers.
         - Faster creation of Math::BigNum objects with scalar integer values.
+        - Scalar values passed to `(b)i*` methods are now validated or converted correspondingly.
 
 0.08    2016-13-08
         - Added support for `+inf`, `-inf` and `nan`, each represented as a scalar value.
