@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-use Test::More tests => 140;
+use Test::More tests => 148;
 
 use Math::BigNum qw(:constant);
 
@@ -120,6 +120,33 @@ is((-Inf)->root("-12"), 0);
 is((Inf)->root("2"),    Inf);
 is((Inf)->iroot("2"),   Inf);
 is((-Inf)->root("2"),   Inf);    # sqrt(-Inf) -- shouldn't be NaN?
+
+is((-Inf)->log, NaN);
+is((+Inf)->log, Inf);
+
+# log() / blog()
+{
+    my $x = Math::BigNum->inf;
+    $x->blog;
+    is($x, Inf);
+
+    $x = Math::BigNum->ninf;
+    $x->blog(42);
+    is($x, NaN);
+
+    $x = Math::BigNum->inf;
+    is($x->ln, Inf);
+
+    $x->bln;
+    is($x, Inf);
+
+    $x = $x->log(42);
+    is($x, Inf);
+
+    $x->bneg;
+    $x = $x->log(42);
+    is($x, NaN);
+}
 
 {
     my $inf  = Inf;

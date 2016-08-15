@@ -324,6 +324,7 @@ sub cmp { }
 *log2  = \&nan;
 *log10 = \&nan;
 *blog  = \&_self;
+*bln   = \&_self;
 
 *exp   = \&nan;
 *exp2  = \&nan;

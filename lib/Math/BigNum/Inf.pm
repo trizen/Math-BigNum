@@ -177,9 +177,8 @@ Negative value of C<$x>, changing C<$x> in-place.
 =cut
 
 sub bneg {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_neg($$x, $$x);
-    $x;
+    Math::GMPq::Rmpq_neg(${$_[0]}, ${$_[0]});
+    $_[0];
 }
 
 =head2 abs
@@ -205,9 +204,8 @@ Sets C<$x> in-place to its absolute value.
 =cut
 
 sub babs {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_abs($$x, $$x);
-    $x;
+    Math::GMPq::Rmpq_abs(${$_[0]}, ${$_[0]});
+    $_[0];
 }
 
 =head2 copy
@@ -1563,12 +1561,34 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan
 *bdec = \&_self;
 
 *li2 = \&ninf;
-*ln  = \&inf;
 
-Class::Multimethods::multimethod log => qw(Math::BigNum::Inf)                   => \&inf;
-Class::Multimethods::multimethod log => qw(Math::BigNum::Inf Math::BigNum)      => \&inf;
+sub ln {
+    $_[0]->is_pos ? inf() : nan();
+}
+
+sub bln {
+    $_[0]->is_pos ? $_[0]->binf : $_[0]->bnan;
+}
+
+Class::Multimethods::multimethod log => qw(Math::BigNum::Inf) => \&ln;
+Class::Multimethods::multimethod log => qw(Math::BigNum::Inf Math::BigNum) => \&ln;
+
 Class::Multimethods::multimethod log => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&nan;
 Class::Multimethods::multimethod log => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
+
+Class::Multimethods::multimethod log => qw(Math::BigNum::Inf *) => sub {
+    $_[0]->log(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf) => \&bln;
+Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf Math::BigNum) => \&bln;
+
+Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&bnan;
+Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
+
+Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf *) => sub {
+    $_[0]->blog(Math::BigNum->new($_[1]));
+};
 
 sub gamma {
     $_[0]->is_neg ? nan() : $_[0]->copy;
