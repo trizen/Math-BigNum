@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-use Test::More tests => 148;
+use Test::More tests => 156;
 
 use Math::BigNum qw(:constant);
 
@@ -146,6 +146,18 @@ is((+Inf)->log, Inf);
     $x->bneg;
     $x = $x->log(42);
     is($x, NaN);
+
+    is(Math::BigNum->new(42)->log(Inf),  0);
+    is(Math::BigNum->new(42)->log(-Inf), NaN);
+
+    is(Math::BigNum->new(-42)->log(Inf),  0);
+    is(Math::BigNum->new(-42)->log(-Inf), NaN);
+
+    is(Math::BigNum->new(42)->blog(Inf),  0);
+    is(Math::BigNum->new(42)->blog(-Inf), NaN);
+
+    is(Math::BigNum->new(-42)->blog(Inf),  0);
+    is(Math::BigNum->new(-42)->blog(-Inf), NaN);
 }
 
 {

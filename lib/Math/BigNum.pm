@@ -2621,7 +2621,10 @@ Class::Multimethods::multimethod log => qw(Math::BigNum *) => sub {
 };
 
 Class::Multimethods::multimethod log => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
-Class::Multimethods::multimethod log => qw(Math::BigNum Math::BigNum::Inf) => \&zero;
+
+Class::Multimethods::multimethod log => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[1]->is_pos ? zero() : nan();
+};
 
 =head2 blog
 
@@ -2669,7 +2672,10 @@ Class::Multimethods::multimethod blog => qw(Math::BigNum *) => sub {
 };
 
 Class::Multimethods::multimethod blog => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
-Class::Multimethods::multimethod blog => qw(Math::BigNum Math::BigNum::Inf) => \&bzero;
+
+Class::Multimethods::multimethod blog => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[1]->is_pos ? $_[0]->bzero : $_[0]->bnan;
+};
 
 =head2 log2
 
