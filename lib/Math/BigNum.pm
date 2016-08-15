@@ -12,11 +12,12 @@ use Math::MPFR qw();
 
 use Class::Multimethods qw();
 
+#<<<
 use constant {
-              MAX_UI  => ~0,
-              MIN_SI  => -((~0) >> 1) - 1,
-              MIN_INT => -2147483648,        # POSIX::INT_MIN,
+              MAX_UI  =>             unpack('I', pack 'I', -1),          # UP: ~0
+              MIN_SI  => 0.5 * (-1 - unpack('I', pack 'I', -1)),         # UP: -(~0 >> 1) - 1,
              };
+#>>>
 
 our $VERSION = '0.08';
 
@@ -465,7 +466,7 @@ sub _str2mpq {
     };
 
     # Performance improvement for Perl integers
-    if (CORE::int($_[0]) eq $_[0] and $_[0] >= MIN_INT and $_[0] <= MAX_UI) {
+    if (CORE::int($_[0]) eq $_[0] and $_[0] >= MIN_SI and $_[0] <= MAX_UI) {
         if ($_[0] >= 0) {
             Math::GMPq::Rmpq_set_ui($r, $_[0], 1);
         }
