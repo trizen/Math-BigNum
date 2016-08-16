@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-use Test::More tests => 156;
+use Test::More tests => 186;
 
 use Math::BigNum qw(:constant);
 
@@ -41,10 +41,12 @@ is("0" * -Inf,     NaN);
 is(0 * 1 / 0,      NaN);
 is(0 / 0,          NaN);
 isnt(0 / 0 == 0 / 0, 1);    # NaN != NaN
-is(Inf + Inf,     Inf);
-is(Inf - Inf,     NaN);
-is(Inf * Inf,     Inf);
-is(Inf / Inf,     NaN);
+is(Inf + Inf,    Inf);
+is(Inf - Inf,    NaN);
+is(Inf * Inf,    Inf);
+is(Inf / Inf,    NaN);
+is((-Inf) / Inf, NaN);
+is(Inf / (-Inf), NaN);
 is(Inf * 0.0,     NaN);
 is(0 < Inf,       1);
 is("0" < Inf,     1);
@@ -121,7 +123,7 @@ is((Inf)->root("2"),    Inf);
 is((Inf)->iroot("2"),   Inf);
 is((-Inf)->root("2"),   Inf);    # sqrt(-Inf) -- shouldn't be NaN?
 
-is((-Inf)->log, NaN);
+is((-Inf)->log, Inf);
 is((+Inf)->log, Inf);
 
 # log() / blog()
@@ -132,7 +134,7 @@ is((+Inf)->log, Inf);
 
     $x = Math::BigNum->ninf;
     $x->blog(42);
-    is($x, NaN);
+    is($x, Inf);
 
     $x = Math::BigNum->inf;
     is($x->ln, Inf);
@@ -145,19 +147,58 @@ is((+Inf)->log, Inf);
 
     $x->bneg;
     $x = $x->log(42);
-    is($x, NaN);
+    is($x, Inf);
 
     is(Math::BigNum->new(42)->log(Inf),  0);
-    is(Math::BigNum->new(42)->log(-Inf), NaN);
+    is(Math::BigNum->new(42)->log(-Inf), 0);
 
     is(Math::BigNum->new(-42)->log(Inf),  0);
-    is(Math::BigNum->new(-42)->log(-Inf), NaN);
+    is(Math::BigNum->new(-42)->log(-Inf), 0);
 
     is(Math::BigNum->new(42)->blog(Inf),  0);
-    is(Math::BigNum->new(42)->blog(-Inf), NaN);
+    is(Math::BigNum->new(42)->blog(-Inf), 0);
 
     is(Math::BigNum->new(-42)->blog(Inf),  0);
-    is(Math::BigNum->new(-42)->blog(-Inf), NaN);
+    is(Math::BigNum->new(-42)->blog(-Inf), 0);
+
+    is(Math::BigNum->new(42)->log(NaN),  NaN);
+    is(Math::BigNum->new(42)->blog(NaN), NaN);
+
+    is(Math::BigNum->zero->ln,       -Inf);
+    is(Math::BigNum->zero->bln,      -Inf);
+    is(Math::BigNum->zero->log(42),  -Inf);
+    is(Math::BigNum->zero->blog(42), -Inf);
+
+    is(Math::BigNum->zero->log(-Inf),  NaN);
+    is(Math::BigNum->zero->blog(-Inf), NaN);
+
+    is(Math::BigNum->zero->log(Inf),  NaN);
+    is(Math::BigNum->zero->blog(Inf), NaN);
+
+    is((Inf)->log(Math::BigNum->zero),  NaN);
+    is((-Inf)->log(Math::BigNum->zero), NaN);
+
+    is((Inf)->copy->blog(Math::BigNum->zero),  NaN);
+    is((-Inf)->copy->blog(Math::BigNum->zero), NaN);
+
+    is((Inf)->log(Math::BigNum->new(-42)),  NaN);
+    is((Inf)->log(Math::BigNum->new(42)),   Inf);
+    is((-Inf)->log(Math::BigNum->new(-42)), NaN);
+    is((-Inf)->log(Math::BigNum->new(42)),  Inf);
+
+    is((Inf)->copy->blog(Math::BigNum->new(-42)),  NaN);
+    is((Inf)->copy->blog(Math::BigNum->new(42)),   Inf);
+    is((-Inf)->copy->blog(Math::BigNum->new(-42)), NaN);
+    is((-Inf)->copy->blog(Math::BigNum->new(42)),  Inf);
+
+    is(Math::BigNum->zero->log(Math::BigNum->zero),  NaN);
+    is(Math::BigNum->zero->blog(Math::BigNum->zero), NaN);
+
+    is(Math::BigNum->new(42)->log(Math::BigNum->zero),  0);
+    is(Math::BigNum->new(42)->blog(Math::BigNum->zero), 0);
+
+    is(Math::BigNum->new(-42)->log(Math::BigNum->zero),  NaN);    # should this also equal 0?
+    is(Math::BigNum->new(-42)->blog(Math::BigNum->zero), NaN);    # =//=
 }
 
 {

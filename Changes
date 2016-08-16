@@ -6,7 +6,7 @@ Revision history for Math-BigNum
         - Added the missing `[b|i]mul` methods in the `Nan` class.
         - Minor overall performance improvements, by taking advantage of some commutative properties.
         - Added the `bln()` method, which calculates the natural logarithm in-place.
-        - Fixed the `log()` and `blog()` methods to return `NaN` for `-Inf`.
+        - Stricter definitions for the `log` and `blog` methods when one of the arguments is +/-Infinity.
 
 0.09    2016-15-08
         - Better support for scalar values.

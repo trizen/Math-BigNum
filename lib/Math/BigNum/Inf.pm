@@ -1561,17 +1561,19 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan
 *bdec = \&_self;
 
 *li2 = \&ninf;
+*ln  = \&inf;
+*bln = \&binf;
 
-sub ln {
-    $_[0]->is_pos ? inf() : nan();
-}
+# log(+/-Inf) = +Inf
+Class::Multimethods::multimethod log => qw(Math::BigNum::Inf) => \&inf;
 
-sub bln {
-    $_[0]->is_pos ? $_[0]->binf : $_[0]->bnan;
-}
+# log(+/-Inf) / log(42) = +Inf
+# log(+/-Inf) / log(-1) = (-i)*Inf       --> NaN in our case
+# log(+/-Inf) / log(0)  = undefined      --> NaN
 
-Class::Multimethods::multimethod log => qw(Math::BigNum::Inf) => \&ln;
-Class::Multimethods::multimethod log => qw(Math::BigNum::Inf Math::BigNum) => \&ln;
+Class::Multimethods::multimethod log => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[1]}) <= 0 ? nan() : inf();
+};
 
 Class::Multimethods::multimethod log => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&nan;
 Class::Multimethods::multimethod log => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
@@ -1580,8 +1582,11 @@ Class::Multimethods::multimethod log => qw(Math::BigNum::Inf *) => sub {
     $_[0]->log(Math::BigNum->new($_[1]));
 };
 
-Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf) => \&bln;
-Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf Math::BigNum) => \&bln;
+Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf) => \&binf;
+
+Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf Math::BigNum) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[1]}) <= 0 ? $_[0]->bnan : $_[0]->binf;
+};
 
 Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf Math::BigNum::Inf) => \&bnan;
 Class::Multimethods::multimethod blog => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;

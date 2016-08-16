@@ -2578,6 +2578,13 @@ Returns Nan when C<$x> is negative and -Inf when C<$x> is zero.
 
 =cut
 
+# Probably we should add cases when the base equals zero.
+
+# Example:
+#   log(+42) / log(0) = 0
+#   log(-42) / log(0) = 0
+#   log( 0 ) / log(0) = undefined
+
 Class::Multimethods::multimethod log => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
@@ -2622,8 +2629,13 @@ Class::Multimethods::multimethod log => qw(Math::BigNum *) => sub {
 
 Class::Multimethods::multimethod log => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
+# log(+/-Inf) = +Inf
+# log(-42) / log(+/-Inf) = 0
+# log(+42) / log(+/-Inf) = 0
+# log(0)   / log(+/-Inf) = NaN
+
 Class::Multimethods::multimethod log => qw(Math::BigNum Math::BigNum::Inf) => sub {
-    $_[1]->is_pos ? zero() : nan();
+    Math::GMPq::Rmpq_sgn(${$_[0]}) == 0 ? nan() : zero();
 };
 
 =head2 blog
@@ -2674,7 +2686,7 @@ Class::Multimethods::multimethod blog => qw(Math::BigNum *) => sub {
 Class::Multimethods::multimethod blog => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 Class::Multimethods::multimethod blog => qw(Math::BigNum Math::BigNum::Inf) => sub {
-    $_[1]->is_pos ? $_[0]->bzero : $_[0]->bnan;
+    Math::GMPq::Rmpq_sgn(${$_[0]}) == 0 ? $_[0]->bnan : $_[0]->bzero;
 };
 
 =head2 log2
