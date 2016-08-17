@@ -8,7 +8,7 @@ WriteMakefile
   'PREREQ_PM' => {
                    'Carp' => 0,
                    'Class::Multimethods' => 0,
-                   'Math::GMPq' => '0.39',
+                   'Math::GMPq' => '0.41',
                    'Math::GMPz' => '0.39',
                    'Math::MPFR' => '3.29',
                    'Test::More' => 0

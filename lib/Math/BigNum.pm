@@ -14,8 +14,11 @@ use Class::Multimethods qw();
 
 #<<<
 use constant {
-              MAX_UI  =>             unpack('I', pack 'I', -1),          # UP: ~0
-              MIN_SI  => 0.5 * (-1 - unpack('I', pack 'I', -1)),         # UP: -(~0 >> 1) - 1
+              #MAX_UI  =>             unpack('I', pack 'I', -1),          # UP: ~0
+              #MIN_SI  => 0.5 * (-1 - unpack('I', pack 'I', -1)),         # UP: -(~0 >> 1) - 1
+
+              MAX_UI => Math::GMPq::_ulong_max(),
+              MIN_SI => Math::GMPq::_long_min(),
              };
 #>>>
 
