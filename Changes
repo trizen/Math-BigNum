@@ -7,6 +7,8 @@ Revision history for Math-BigNum
         - Minor overall performance improvements, by taking advantage of some commutative properties.
         - Added the `bln()` method, which calculates the natural logarithm in-place.
         - Stricter definitions for the `log` and `blog` methods when one of the arguments is +/-Infinity.
+        - Require Math::GMPz >= 0.39 (for Rmpz_bin_si).
+        - Use Math::GMPq's (>=0.41) `_ulong_max()` and `_long_min()` to determine the integer limits.
 
 0.09    2016-15-08
         - Better support for scalar values.
