@@ -28,7 +28,7 @@ my $builder = Module::Build->new(
                  'Carp'                => 0,
                  'Math::MPFR'          => 3.29,
                  'Math::GMPq'          => 0.39,
-                 'Math::GMPz'          => 0,
+                 'Math::GMPz'          => 0.39,
                  'Class::Multimethods' => 0,
                 },
     add_to_cleanup     => ['Math-BigNum-*'],
