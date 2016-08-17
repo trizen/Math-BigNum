@@ -7,14 +7,6 @@ use Test::More;
 
 plan tests => 232;
 
-warn "\n";
-warn "# INT_MIN  : ", Math::GMPq::_int_min(),   "\n";
-warn "# INT_MAX  : ", Math::GMPq::_int_max(),   "\n";
-warn "# UINT_MAX : ", Math::GMPq::_uint_max(),  "\n";
-warn "# LONG_MIN : ", Math::GMPq::_long_min(),  "\n";
-warn "# LONG_MAX : ", Math::GMPq::_long_max(),  "\n";
-warn "# ULONG_MAX: ", Math::GMPq::_ulong_max(), "\n";
-
 # Initialization
 
 {

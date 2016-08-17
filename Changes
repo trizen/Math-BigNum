@@ -1,6 +1,6 @@
 Revision history for Math-BigNum
 
-0.10    2016-xx-xx
+0.10    2016-17-08
         - Faster creation of MPFR objects from scalar integer values.
         - Conversion of scalar values to MPFR objects is done more strictly, by validating each conversion.
         - Added the missing `[b|i]mul` methods in the `Nan` class.
