@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-use Test::More tests => 186;
+use Test::More tests => 189;
 
 use Math::BigNum qw(:constant);
 
@@ -206,6 +206,11 @@ is((+Inf)->log, Inf);
     my $ninf = -Inf;
     my $nan  = NaN;
 
+    my ($num, $den) = $nan->parts;
+
+    is($num, NaN);
+    is($den, NaN);
+
     my $zero = 0;
     my $one  = 1;
 
@@ -251,6 +256,6 @@ is((+Inf)->log, Inf);
     is($nan->root($nan),          $nan);
 }
 
-#is(Math::BigNum->new('foo'), NaN);     # should be NaN?
+is(Math::BigNum->new('foo'), NaN);
 
 like(Inf->asec, qr/^1\.5707963267/);

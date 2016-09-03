@@ -1511,11 +1511,11 @@ Class::Multimethods::multimethod rsft => qw(* Math::BigNum::Inf) => sub {
 
 =head2 brsft
 
-    $x->brsft(BigNum)              # => BigNum
-    $x->brsft(Scalar)              # => BigNum
+    $x->brsft(BigNum)              # => Inf
+    $x->brsft(Scalar)              # => Inf
 
-    BigNum >>= BigNum              # => BigNum
-    BigNum >>= Scalar              # => BigNum
+    Inf >>= BigNum                 # => Inf
+    Inf >>= Scalar                 # => Inf
 
 Integer right-shift operation. (C<$x / (2 ** $y)>)
 
@@ -1537,9 +1537,6 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan
 
 *gcd = \&nan;
 *lcm = \&nan;
-
-*numerator   = \&nan;
-*denominator = \&nan;
 
 *rand  = \&copy;
 *irand = \&copy;
@@ -1647,15 +1644,25 @@ sub lucas {
 
 sub divmod { (nan(), nan()) }
 
+sub as_frac {
+    $_[0]->is_pos ? '@Inf@/1' : '-@Inf@/1';
+}
+
+*numerator   = \&copy;
+*denominator = \&one;
+
+sub parts {
+    ($_[0]->copy, one());
+}
+
 sub as_bin { $_[0]->is_pos ? '@Inf@' : '-@Inf@' }
 
 *as_oct   = \&as_bin;
 *as_hex   = \&as_bin;
 *in_base  = \&as_bin;
-*as_frac  = \&as_bin;
-*as_rat   = \&as_bin;
 *as_float = \&as_bin;
 *as_int   = \&as_bin;
+*as_rat   = \&as_bin;
 
 sub digits { () }
 sub length { 0 }

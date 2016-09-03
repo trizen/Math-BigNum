@@ -1,5 +1,8 @@
 Revision history for Math-BigNum
 
+0.11    2016-xx-xx
+        - Added the `parts` method, which returns the numerator and the denominator as BigNum objects.
+
 0.10    2016-17-08
         - Faster creation of MPFR objects from scalar integer values.
         - Conversion of scalar values to MPFR objects is done more strictly, by validating each conversion.

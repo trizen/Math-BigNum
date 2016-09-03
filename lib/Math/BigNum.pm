@@ -531,7 +531,7 @@ sub _big2mpz {
 # Converts an integer BigNum object to mpz
 sub _int2mpz {
     my $z = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_get_num($z, ${$_[0]});
+    Math::GMPq::Rmpq_numref($z, ${$_[0]});
     $z;
 }
 
@@ -868,8 +868,8 @@ sub stringify {
         my $num = Math::GMPz::Rmpz_init();
         my $den = Math::GMPz::Rmpz_init();
 
-        Math::GMPq::Rmpq_get_num($num, $n);
-        Math::GMPq::Rmpq_get_den($den, $n);
+        Math::GMPq::Rmpq_numref($num, $n);
+        Math::GMPq::Rmpq_denref($den, $n);
 
         my @r;
         my $c = 0;
@@ -4296,7 +4296,7 @@ sub is_even {
     my ($x) = @_;
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
     my $nz = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_get_num($nz, $$x);
+    Math::GMPq::Rmpq_numref($nz, $$x);
     Math::GMPz::Rmpz_even_p($nz);
 }
 
@@ -4312,7 +4312,7 @@ sub is_odd {
     my ($x) = @_;
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
     my $nz = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_get_num($nz, $$x);
+    Math::GMPq::Rmpq_numref($nz, $$x);
     Math::GMPz::Rmpz_odd_p($nz);
 }
 
@@ -4372,7 +4372,7 @@ sub is_psqr {
     my ($x) = @_;
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
     my $nz = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_get_num($nz, $$x);
+    Math::GMPq::Rmpq_numref($nz, $$x);
     Math::GMPz::Rmpz_perfect_square_p($nz);
 }
 
@@ -4389,7 +4389,7 @@ sub is_ppow {
     my ($x) = @_;
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
     my $nz = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_get_num($nz, $$x);
+    Math::GMPq::Rmpq_numref($nz, $$x);
     Math::GMPz::Rmpz_perfect_power_p($nz);
 }
 
@@ -4767,7 +4767,7 @@ Returns a copy of the numerator as signed BigNum.
 sub numerator {
     my ($x) = @_;
     my $z = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_get_num($z, $$x);
+    Math::GMPq::Rmpq_numref($z, $$x);
     _mpz2big($z);
 }
 
@@ -4782,8 +4782,25 @@ Returns a copy of the denominator as positive BigNum.
 sub denominator {
     my ($x) = @_;
     my $z = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_get_den($z, $$x);
+    Math::GMPq::Rmpq_denref($z, $$x);
     _mpz2big($z);
+}
+
+=head2 parts
+
+    $x->parts                      # => (BigNum, BigNum)
+
+Returns a copy of the numerator and a copy of the denominator (in this order) as BigNum objects.
+
+=cut
+
+sub parts {
+    my ($x)   = @_;
+    my $num_z = Math::GMPz::Rmpz_init();
+    my $den_z = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_numref($num_z, $$x);
+    Math::GMPq::Rmpq_denref($den_z, $$x);
+    (_mpz2big($num_z), _mpz2big($den_z));
 }
 
 =head2 floor

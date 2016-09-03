@@ -400,9 +400,6 @@ sub as_oct   { '' }
 sub digits { () }
 sub length { 0 }
 
-*numerator   = \&nan;
-*denominator = \&nan;
-
 *floor  = \&nan;
 *ceil   = \&nan;
 *round  = \&nan;
@@ -452,6 +449,11 @@ sub is_prime { 0 }
 *eint       = \&nan;
 *li2        = \&nan;
 
+*numerator   = \&nan;
+*denominator = \&nan;
+
 sub divmod { (nan(), nan()) }
+
+*parts = \&divmod;
 
 1;

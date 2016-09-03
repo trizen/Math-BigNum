@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 232;
+plan tests => 238;
 
 # Initialization
 
@@ -35,10 +35,21 @@ plan tests => 232;
 
     # numerator/denominator
     my $nu = $x->numerator;
-    is("$nu", "1");
+    is("$nu",    "1");
+    is(ref($nu), 'Math::BigNum');
 
     my $de = $x->denominator;
-    is("$de", "3");
+    is("$de",    "3");
+    is(ref($de), 'Math::BigNum');
+
+    # (numerator, denominator)
+    ($nu, $de) = $x->parts;
+
+    is($nu, 1);
+    is($de, 3);
+
+    is(ref($nu), 'Math::BigNum');
+    is(ref($de), 'Math::BigNum');
 
     my $bigstr =
         "46663107721972076340849619428133350245357984132190810"

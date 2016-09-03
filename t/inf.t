@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 108;
+plan tests => 122;
 
 use Math::BigNum;
 
@@ -85,6 +85,40 @@ like("$p", qr/^-inf/i);
     is("-2" / Inf, 0);    # should be '-0.0'
     is("2" / (-Inf), 0);  # should be '-0.0'
     is("2" / Inf, 0);
+}
+
+###################################################
+# Rational methods
+{
+    my $one  = Math::BigNum->one;
+    my $inf  = Math::BigNum->inf;
+    my $ninf = Math::BigNum->ninf;
+
+    my $inum = $inf->numerator;
+    my $iden = $inf->denominator;
+
+    is($inum, $inf);
+    is($iden, $one);
+
+    is(ref($inum), 'Math::BigNum::Inf');
+    is(ref($iden), 'Math::BigNum');
+
+    is($ninf->numerator,   $ninf);
+    is($ninf->denominator, $one);
+
+    my ($num, $den) = $ninf->parts;
+
+    is($num, $ninf);
+    is($den, $one);
+
+    is(ref($num), 'Math::BigNum::Inf');
+    is(ref($den), 'Math::BigNum');
+
+    is($inf->as_rat,  '@Inf@');
+    is($ninf->as_rat, '-@Inf@');
+
+    is($inf->as_frac,  '@Inf@/1');
+    is($ninf->as_frac, '-@Inf@/1');
 }
 
 ###################################################
