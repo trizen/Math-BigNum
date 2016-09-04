@@ -490,7 +490,7 @@ sub _str2mpq {
     # Otherwise, it's a string or a float (this is slightly slower)
     else {
         my $rat = $_[0] =~ tr/.Ee// ? _str2rat($_[0] =~ tr/_//dr) : ($_[0] =~ tr/_+//dr);
-        if ($rat !~ m{^\s*[-+]?[0-9]+(?>\s*/\s*[1-9]+[0-9]*)?\s*\z}) {
+        if ($rat !~ m{^\s*[-+]?[0-9]+(?>\s*/\s*[-+]?[1-9]+[0-9]*)?\s*\z}) {
             return;
         }
         Math::GMPq::Rmpq_set_str($r, $rat, 10);
