@@ -724,7 +724,7 @@ sub new {
         Math::GMPq::Rmpq_set($r, _str2mpq("$num") // return nan());
     }
 
-    # Return a bless BigNum object
+    # Return a blessed BigNum object
     bless \$r, $class;
 }
 
@@ -5683,15 +5683,18 @@ Returns 2 if C<$n> is definitely prime, 1 if C<$n> is probably prime (without
 being certain), or 0 if C<$n> is definitely composite. This method does some
 trial divisions, then some Miller-Rabin probabilistic primality tests. It
 also accepts an optional argument for specifying the accuracy of the test.
-By default, it uses an accuracy value of 12, which guarantees correctness
-up to C<2**78>.
+By default, it uses an accuracy value of 20. Reasonable accuracy values
+are between 15 and 50.
 
-See also: L<https://en.wikipedia.org/wiki/Miller–Rabin_primality_test>
+See also:
+
+    https://en.wikipedia.org/wiki/Miller–Rabin_primality_test
+    https://gmplib.org/manual/Number-Theoretic-Functions.html
 
 =cut
 
 Class::Multimethods::multimethod is_prime => qw(Math::BigNum) => sub {
-    Math::GMPz::Rmpz_probab_prime_p(_big2mpz($_[0]), 12);
+    Math::GMPz::Rmpz_probab_prime_p(_big2mpz($_[0]), 20);
 };
 
 Class::Multimethods::multimethod is_prime => qw(Math::BigNum $) => sub {
