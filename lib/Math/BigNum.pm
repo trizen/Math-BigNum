@@ -28,7 +28,7 @@ our $VERSION = '0.10';
 
 =head1 NAME
 
-Math::BigNum - Arbitrary size precision for integers, rationals and floating-point numbers
+Math::BigNum - Arbitrary size precision for integers, rationals and floating-point numbers.
 
 =head1 VERSION
 
@@ -66,7 +66,8 @@ L<bignum> and L<bigrat> pragmas.
 =head1 MOTIVATION
 
 This module came into existence as a response to Dana Jacobsen's request for a transparent
-interface to L<Math::GMPz> and L<Math::MPFR>, that he talked about at the YAPC NA, in 2015.
+interface to L<Math::GMPz> and L<Math::MPFR>, which he talked about at the YAPC NA, in 2015.
+
 See his great presentation at: L<https://www.youtube.com/watch?v=Dhl4_Chvm_g>.
 
 The main aim of this module is to provide a fast and correct alternative to L<Math::BigInt>,
@@ -127,7 +128,7 @@ stringification of floating-point numbers.
 For example, if we change the precision to 3 decimal digits (where C<4> is the conversion factor),
 we get the following results:
 
-    local $Math::BigNum::PREC = 3*4
+    local $Math::BigNum::PREC = 3*4;
     say sqrt(2);                   # => 1.414
     say 98**7;                     # => 86812553324672
     say 1 / 98**7                  # => 1.15e-14
@@ -151,8 +152,8 @@ methods that change the self object in-place, while their counter-parts (e.g.: C
 do not. Instead, they will create and return a new object.
 
 Also, Math::BigNum features another kind of methods that begin with an B<i> followed by
-the actual name (e.g.: C<isqrt>). This methods will do integer operations, by truncating
-their arguments to integers, whenever needed.
+the actual name (e.g.: C<isqrt>). This methods will do integer operations, by first
+truncating their arguments to integers, whenever needed.
 
 The returned types are noted as follows:
 
@@ -161,14 +162,13 @@ The returned types are noted as follows:
     Nan         #-> a "Math::BigNum::Nan" object
     Scalar      #-> a Perl number or string
     Bool        #-> true or false (actually: 1 or 0)
-    Any         #-> any value, including a reference
 
 When two or more types are separated with pipe characters (B<|>), it means that the
 corresponding function can return any of the specified types.
 
 =head1 PERFORMANCE
 
-The performance varies greatly, but, in most cases, Math::BigNum it's between 2x up to 10x
+The performance varies greatly, but, in most cases, Math::BigNum is between 2x up to 10x
 faster than L<Math::BigFloat> with the B<GMP> backend, and about 100x faster than L<Math::BigFloat>
 without the B<GMP> backend (to be modest).
 
@@ -400,7 +400,7 @@ sub _str2rat {
         my $exp = substr($str, $i + 1);
 
         # Handle specially numbers with very big exponents
-        # (it's not a very good solution, but I hope it's only temporary)
+        # (it's not a very good solution, but I hope it's only temporarily)
         if (CORE::abs($exp) >= 1000000) {
             my $mpfr = Math::MPFR::Rmpfr_init2($PREC);
             Math::MPFR::Rmpfr_set_str($mpfr, "$sign$str", 10, $ROUND);
