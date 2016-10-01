@@ -5,6 +5,7 @@ Revision history for Math-BigNum
         - Increased the default accuracy value for the method `is_prime` from 12 to 20.
         - Support for rational exponentiation with an integer power.
         - Added the `li(x)` method for computing the logarithm integral of x.
+        - Optimized the `root(n)` method for positive integer values of n.
 
 0.10    2016-17-08
         - Faster creation of MPFR objects from scalar integer values.

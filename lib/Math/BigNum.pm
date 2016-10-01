@@ -2087,7 +2087,16 @@ Nth root of C<$x>. Returns Nan when C<$x> is negative.
 =cut
 
 Class::Multimethods::multimethod root => qw(Math::BigNum Math::BigNum) => sub {
-    $_[0]->pow($_[1]->inv);
+    my ($x, $y) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$y) > 0 and Math::GMPq::Rmpq_integer_p($$y)) {
+        $x = _big2mpfr($x);
+        Math::MPFR::Rmpfr_root($x, $x, Math::GMPq::Rmpq_get_d($$y), $ROUND);
+        _mpfr2big($x);
+    }
+    else {
+        $x->pow($y->inv);
+    }
 };
 
 =for comment
@@ -2096,8 +2105,21 @@ Class::Multimethods::multimethod root => qw(Math::BigNum Math::BigNum::Complex) 
 };
 =cut
 
+Class::Multimethods::multimethod root => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    if (CORE::int($y) eq $y and $y > 0 and $y <= MAX_UI) {
+        $x = _big2mpfr($x);
+        Math::MPFR::Rmpfr_root($x, $x, $y, $ROUND);
+        _mpfr2big($x);
+    }
+    else {
+        $x->pow(Math::BigNum->new($y)->inv);
+    }
+};
+
 Class::Multimethods::multimethod root => qw(Math::BigNum *) => sub {
-    $_[0]->pow(Math::BigNum->new($_[1])->binv);
+    $_[0]->root(Math::BigNum->new($_[1]));
 };
 
 Class::Multimethods::multimethod root => qw(Math::BigNum Math::BigNum::Inf) => \&one;
@@ -2114,11 +2136,33 @@ C<$x> to Nan when C<$x> is negative.
 =cut
 
 Class::Multimethods::multimethod broot => qw(Math::BigNum Math::BigNum) => sub {
-    $_[0]->bpow($_[1]->inv);
+    my ($x, $y) = @_;
+
+    if (Math::GMPq::Rmpq_sgn($$y) > 0 and Math::GMPq::Rmpq_integer_p($$y)) {
+        my $f = _big2mpfr($x);
+        Math::MPFR::Rmpfr_root($f, $f, Math::GMPq::Rmpq_get_d($$y), $ROUND);
+        _mpfr2x($x, $f);
+    }
+    else {
+        $x->pow($y->inv);
+    }
+};
+
+Class::Multimethods::multimethod broot => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    if (CORE::int($y) eq $y and $y > 0 and $y <= MAX_UI) {
+        my $f = _big2mpfr($x);
+        Math::MPFR::Rmpfr_root($f, $f, $y, $ROUND);
+        _mpfr2x($x, $f);
+    }
+    else {
+        $x->bpow(Math::BigNum->new($y)->inv);
+    }
 };
 
 Class::Multimethods::multimethod broot => qw(Math::BigNum *) => sub {
-    $_[0]->bpow(Math::BigNum->new($_[1])->binv);
+    $_[0]->broot(Math::BigNum->new($_[1]));
 };
 
 =for comment
