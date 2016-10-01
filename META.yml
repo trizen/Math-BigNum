@@ -1,5 +1,5 @@
 ---
-abstract: 'Arbitrary size precision for integers, rationals and floating-point numbers'
+abstract: 'Arbitrary size precision for integers, rationals and floating-point numbers.'
 author:
   - 'Daniel Șuteu <trizenx@gmail.com>'
 build_requires:
@@ -7,7 +7,7 @@ build_requires:
 configure_requires:
   Module::Build: '0'
 dynamic_config: 1
-generated_by: 'Module::Build version 0.422, CPAN::Meta::Converter version 2.150005'
+generated_by: 'Module::Build version 0.422, CPAN::Meta::Converter version 2.150010'
 license: artistic_2
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html

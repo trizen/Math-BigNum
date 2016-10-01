@@ -1,5 +1,5 @@
 {
-   "abstract" : "Arbitrary size precision for integers, rationals and floating-point numbers",
+   "abstract" : "Arbitrary size precision for integers, rationals and floating-point numbers.",
    "author" : [
       "Daniel Șuteu <trizenx@gmail.com>"
    ],

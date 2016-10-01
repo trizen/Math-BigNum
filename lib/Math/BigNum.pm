@@ -685,7 +685,7 @@ sub new {
     # Create a new GMPq object
     my $r = Math::GMPq::Rmpq_init();
 
-    # BigFloat
+    # BigInt
     if ($ref eq 'Math::BigInt') {
         Math::GMPq::Rmpq_set_str($r, $num->bstr, 10);
     }
@@ -823,11 +823,8 @@ sub stringify {
         Math::GMPq::Rmpq_set($n, $x);
         Math::GMPq::Rmpq_abs($n, $n) if $sgn < 0;
 
-        my $z = Math::GMPz::Rmpz_init();
-        Math::GMPz::Rmpz_ui_pow_ui($z, 10, CORE::abs($prec));
-
         my $p = Math::GMPq::Rmpq_init();
-        Math::GMPq::Rmpq_set_z($p, $z);
+        Math::GMPq::Rmpq_set_str($p, '1' . ('0' x CORE::abs($prec)), 10);
 
         if ($prec < 0) {
             Math::GMPq::Rmpq_div($n, $n, $p);
@@ -842,6 +839,7 @@ sub stringify {
             $q;
         };
 
+        my $z = Math::GMPz::Rmpz_init();
         Math::GMPq::Rmpq_add($n, $n, $half);
         Math::GMPz::Rmpz_set_q($z, $n);
 
