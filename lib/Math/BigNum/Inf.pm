@@ -1557,6 +1557,7 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan
 *dec  = \&copy;
 *bdec = \&_self;
 
+*li  = \&inf;
 *li2 = \&ninf;
 *ln  = \&inf;
 *bln = \&binf;

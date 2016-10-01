@@ -5974,6 +5974,22 @@ sub eint {
     _mpfr2big($r);
 }
 
+=head2 li
+
+    $x->li                         # => BigNum | Inf | Nan
+
+The logarithmic integral of C<$x>, defined as: C<Ei(ln(x))>.
+Returns -Inf when C<$x> is one, and Nan when C<$x> less than or equal to zero.
+
+=cut
+
+sub li {
+    my $r = _big2mpfr($_[0]);
+    Math::MPFR::Rmpfr_log($r, $r, $ROUND);
+    Math::MPFR::Rmpfr_eint($r, $r, $ROUND);
+    _mpfr2big($r);
+}
+
 =head2 li2
 
     $x->li2                        # => BigNum

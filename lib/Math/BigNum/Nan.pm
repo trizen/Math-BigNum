@@ -447,6 +447,7 @@ sub is_prime { 0 }
 *erf        = \&nan;
 *erfc       = \&nan;
 *eint       = \&nan;
+*li         = \&nan;
 *li2        = \&nan;
 
 *numerator   = \&nan;
