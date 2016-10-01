@@ -76,9 +76,11 @@ L<Maht::BigFloat> and L<Math::BigRat>, as well as to L<bigint>, L<bignum> and L<
 =head1 HOW IT WORKS
 
 Math::BigNum tries really hard to do the right thing and as efficiently as possible.
-For example, if you say C<$x**$y>, it first checks to see if C<$x> and C<$y> are integers,
+For example, when computing C<$x**$y>, it first checks to see if C<$x> and C<$y> are integers,
 so it can optimize the operation to integer exponentiation, by calling the corresponding
-I<mpz> function. Otherwise, it will fallback to the corresponding I<mpfr> function.
+I<mpz> function. When only C<$y> is an integer, it does rational exponentiation based on the
+identity: `(a/b)**n = a**n / b**n`. Otherwise, it will fallback to floating-point exponentiation,
+using the corresponding I<mpfr> function.
 
 All numbers in Math::BigNum are stored as rational L<Math::GMPq> objects. Each operation
 outside the functions provided by L<Math::GMPq>, is done by converting the internal objects to
@@ -2246,22 +2248,39 @@ and C<$y> is not an integer.
 Class::Multimethods::multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    # Do integer exponentiation when both are integers
-    if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
+    # Integer power
+    if (Math::GMPq::Rmpq_integer_p($$y)) {
 
+        my $q   = Math::GMPq::Rmpq_init();
         my $pow = Math::GMPq::Rmpq_get_d($$y);
 
-        my $z = _int2mpz($x);
-        Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+        if (Math::GMPq::Rmpq_integer_p($$x)) {
 
-        my $q = Math::GMPq::Rmpq_init();
-        Math::GMPq::Rmpq_set_z($q, $z);
+            my $z = _int2mpz($x);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+            Math::GMPq::Rmpq_set_z($q, $z);
 
-        if ($pow < 0) {
-            if (!Math::GMPq::Rmpq_sgn($q)) {
-                return inf();
+            if ($pow < 0) {
+                if (!Math::GMPq::Rmpq_sgn($q)) {
+                    return inf();
+                }
+                Math::GMPq::Rmpq_inv($q, $q);
             }
-            Math::GMPq::Rmpq_inv($q, $q);
+        }
+        else {
+            my $z = Math::GMPz::Rmpz_init();
+            Math::GMPq::Rmpq_numref($z, $$x);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
+            Math::GMPq::Rmpq_set_num($q, $z);
+
+            Math::GMPq::Rmpq_denref($z, $$x);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
+            Math::GMPq::Rmpq_set_den($q, $z);
+            Math::GMPq::Rmpq_canonicalize($q);
+
+            Math::GMPq::Rmpq_inv($q, $q) if $pow < 0;
         }
 
         return bless \$q, __PACKAGE__;
@@ -2280,27 +2299,46 @@ Class::Multimethods::multimethod pow => qw(Math::BigNum Math::BigNum::Complex) =
 =cut
 
 Class::Multimethods::multimethod pow => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
+    my ($x, $pow) = @_;
 
-    # Optimization for when both are integers
-    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI and Math::GMPq::Rmpq_integer_p($$x)) {
-        my $z = _int2mpz($x);
-        Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($y));
+    # Integer power
+    if (CORE::int($pow) eq $pow and $pow >= MIN_SI and $pow <= MAX_UI) {
+
         my $q = Math::GMPq::Rmpq_init();
-        Math::GMPq::Rmpq_set_z($q, $z);
 
-        if ($y < 0) {
-            if (!Math::GMPq::Rmpq_sgn($q)) {
-                return inf();
+        if (Math::GMPq::Rmpq_integer_p($$x)) {
+
+            my $z = _int2mpz($x);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+            Math::GMPq::Rmpq_set_z($q, $z);
+
+            if ($pow < 0) {
+                if (!Math::GMPq::Rmpq_sgn($q)) {
+                    return inf();
+                }
+                Math::GMPq::Rmpq_inv($q, $q);
             }
-            Math::GMPq::Rmpq_inv($q, $q);
+        }
+        else {
+            my $z = Math::GMPz::Rmpz_init();
+            Math::GMPq::Rmpq_numref($z, $$x);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
+            Math::GMPq::Rmpq_set_num($q, $z);
+
+            Math::GMPq::Rmpq_denref($z, $$x);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
+            Math::GMPq::Rmpq_set_den($q, $z);
+            Math::GMPq::Rmpq_canonicalize($q);
+
+            Math::GMPq::Rmpq_inv($q, $q) if $pow < 0;
         }
 
         return bless \$q, __PACKAGE__;
     }
-    else {
-        $x->pow(Math::BigNum->new($y));
-    }
+
+    $x->pow(Math::BigNum->new($pow));
 };
 
 Class::Multimethods::multimethod pow => qw(* Math::BigNum) => sub {
@@ -2341,21 +2379,39 @@ Raises C<$x> to power C<$y>, changing C<$x> in-place.
 Class::Multimethods::multimethod bpow => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    # Both are integers
-    if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
+    # Integer power
+    if (Math::GMPq::Rmpq_integer_p($$y)) {
 
+        my $q   = $$x;
         my $pow = Math::GMPq::Rmpq_get_d($$y);
 
-        my $z = Math::GMPz::Rmpz_init();
-        Math::GMPz::Rmpz_set_q($z, $$x);
-        Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
-        Math::GMPq::Rmpq_set_z($$x, $z);
+        if (Math::GMPq::Rmpq_integer_p($q)) {
+            my $z = Math::GMPz::Rmpz_init();
+            Math::GMPz::Rmpz_set_q($z, $q);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+            Math::GMPq::Rmpq_set_z($q, $z);
 
-        if ($pow < 0) {
-            if (!Math::GMPq::Rmpq_sgn($$x)) {
-                return $x->binf;
+            if ($pow < 0) {
+                if (!Math::GMPq::Rmpq_sgn($q)) {
+                    return $x->binf;
+                }
+                Math::GMPq::Rmpq_inv($q, $q);
             }
-            Math::GMPq::Rmpq_inv($$x, $$x);
+        }
+        else {
+            my $z = Math::GMPz::Rmpz_init();
+            Math::GMPq::Rmpq_numref($z, $q);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
+            Math::GMPq::Rmpq_set_num($q, $z);
+
+            Math::GMPq::Rmpq_denref($z, $q);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
+            Math::GMPq::Rmpq_set_den($q, $z);
+            Math::GMPq::Rmpq_canonicalize($q);
+
+            Math::GMPq::Rmpq_inv($q, $q) if $pow < 0;
         }
 
         return $x;
@@ -2368,22 +2424,42 @@ Class::Multimethods::multimethod bpow => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 Class::Multimethods::multimethod bpow => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
+    my ($x, $pow) = @_;
 
-    my $y_is_int = (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI);
+    my $pow_is_int = (CORE::int($pow) eq $pow and $pow >= MIN_SI and $pow <= MAX_UI);
 
-    # Both are integers
-    if ($y_is_int and Math::GMPq::Rmpq_integer_p($$x)) {
-        my $z = Math::GMPz::Rmpz_init();
-        Math::GMPz::Rmpz_set_q($z, $$x);
-        Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($y));
-        Math::GMPq::Rmpq_set_z($$x, $z);
+    # Integer power
+    if ($pow_is_int) {
 
-        if ($y < 0) {
-            if (!Math::GMPq::Rmpq_sgn($$x)) {
-                return $x->binf;
+        my $q = $$x;
+
+        if (Math::GMPq::Rmpq_integer_p($q)) {
+            my $z = Math::GMPz::Rmpz_init();
+            Math::GMPz::Rmpz_set_q($z, $q);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+            Math::GMPq::Rmpq_set_z($q, $z);
+
+            if ($pow < 0) {
+                if (!Math::GMPq::Rmpq_sgn($q)) {
+                    return $x->binf;
+                }
+                Math::GMPq::Rmpq_inv($q, $q);
             }
-            Math::GMPq::Rmpq_inv($$x, $$x);
+        }
+        else {
+            my $z = Math::GMPz::Rmpz_init();
+            Math::GMPq::Rmpq_numref($z, $$x);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
+            Math::GMPq::Rmpq_set_num($q, $z);
+
+            Math::GMPq::Rmpq_denref($z, $$x);
+            Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
+            Math::GMPq::Rmpq_set_den($q, $z);
+            Math::GMPq::Rmpq_canonicalize($q);
+
+            Math::GMPq::Rmpq_inv($q, $q) if $pow < 0;
         }
 
         return $x;
@@ -2391,16 +2467,16 @@ Class::Multimethods::multimethod bpow => qw(Math::BigNum $) => sub {
 
     # A floating-point otherwise
     my $r = _big2mpfr($x);
-    if ($y_is_int) {
-        if ($y >= 0) {
-            Math::MPFR::Rmpfr_pow_ui($r, $r, $y, $ROUND);
+    if ($pow_is_int) {
+        if ($pow >= 0) {
+            Math::MPFR::Rmpfr_pow_ui($r, $r, $pow, $ROUND);
         }
         else {
-            Math::MPFR::Rmpfr_pow_si($r, $r, $y, $ROUND);
+            Math::MPFR::Rmpfr_pow_si($r, $r, $pow, $ROUND);
         }
     }
     else {
-        Math::MPFR::Rmpfr_pow($r, $r, _str2mpfr($y) // (return $x->bpow(Math::BigNum->new($y))), $ROUND);
+        Math::MPFR::Rmpfr_pow($r, $r, _str2mpfr($pow) // (return $x->bpow(Math::BigNum->new($pow))), $ROUND);
     }
 
     _mpfr2x($x, $r);
