@@ -6,7 +6,7 @@
 # Website: https://github.com/trizen
 
 #
-## A naive approximation for the prime counting function.
+## Some simple approximations for the prime counting function.
 #
 
 # F(n) =  n^2 / ln(n!)
@@ -19,22 +19,21 @@ use strict;
 use warnings;
 
 use lib qw(../lib);
-use Math::BigNum qw(:constant e pi);
+use Math::BigNum qw(:constant);
 
-# pi(n) =~ n / (log(n) - log(n) / log(n/e))
-sub pi_approx {
+#
+## Logarithmic integral
+#
+sub Li {
     my ($n) = @_;
-    $n / ($n->log - $n->log($n / e));
+    log($n)->eint;
 }
 
-# Ramanujan's approximation for ln(n!)
-sub lnfac {
-    my ($n) = @_;
-    $n * log($n) - $n + log($n * (1 + 4 * $n * (1 + 2 * $n))) / 6 + log(pi) / 2;
-}
-
-foreach my $n (1 .. 26) {
+foreach my $n (1 .. 10) {
     my $x = 10**$n;
-    my $f = $n <= 6 ? ($x**2)->idiv(int log $x->fac) : int($x**2 / lnfac($x));
-    say "PI($x) =~ ", pi_approx($x)->int, ' =~ ', $f;
+
+    my $f1 = ($x**2)->idiv(($x+1)->lngamma);
+    my $f2 = Li($x)->int;
+
+    say "PI($x) =~ ", $f1, ' =~ ', $f2;
 }
