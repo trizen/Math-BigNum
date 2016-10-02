@@ -36,6 +36,7 @@ t/fib.t
 t/general.t
 t/inf.t
 t/inf_nan.t
+t/kronecker.t
 t/log.t
 t/manifest.t
 t/mod.t

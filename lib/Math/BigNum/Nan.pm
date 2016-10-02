@@ -430,10 +430,11 @@ sub length { 0 }
 *rsft  = \&nan;
 *brsft = \&_self;
 
-*dfac     = \&nan;
-*lucas    = \&nan;
-*binomial = \&nan;
-*bernreal = \&nan;
+*dfac      = \&nan;
+*lucas     = \&nan;
+*binomial  = \&nan;
+*bernreal  = \&nan;
+*kronecker = \&nan;
 
 sub is_prime { 0 }
 

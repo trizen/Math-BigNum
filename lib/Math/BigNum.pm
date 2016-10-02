@@ -5791,6 +5791,38 @@ Class::Multimethods::multimethod binomial => qw(Math::BigNum *) => sub {
 Class::Multimethods::multimethod binomial => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
 Class::Multimethods::multimethod binomial => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
+=head2 kronecker
+
+    $n->kronecker(BigNum)          # => Scalar
+    $n->kronecker(Scalar)          # => Scalar
+
+The Kronecker symbol (n/m) is a generalization of the Jacobi symbol for all integers `m`.
+
+=cut
+
+Class::Multimethods::multimethod kronecker => qw(Math::BigNum Math::BigNum) => sub {
+    Math::GMPz::Rmpz_kronecker(_big2mpz($_[0]), _big2mpz($_[1]));
+};
+
+Class::Multimethods::multimethod kronecker => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::GMPz::Rmpz_kronecker_ui(_big2mpz($x), $y)
+          : Math::GMPz::Rmpz_kronecker_si(_big2mpz($x), $y);
+    }
+    else {
+        $x->kronecker(Math::BigNum->new($y));
+    }
+};
+
+Class::Multimethods::multimethod kronecker => qw(Math::BigNum *) => sub {
+    $_[0]->kronecker(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod kronecker => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
+Class::Multimethods::multimethod kronecker => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
 =head2 is_prime
 
     $n->is_prime                   # => Scalar
