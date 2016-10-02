@@ -116,8 +116,8 @@ sub arithmethic_decoding {
 
         my $rem = ($enc - $pow * $cv)->idiv($fv);
 
-        #~ say "$enc / $base^$i = $div ($c)";
-        #~ say "($enc - $base^$i * $cv) / $fv = $rem\n";
+        #~ say "$enc / $base^$pow = $div ($c)";
+        #~ say "($enc - $base^$pow * $cv) / $fv = $rem\n";
 
         $enc = $rem;
         $decoded .= $c;

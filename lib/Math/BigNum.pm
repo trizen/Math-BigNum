@@ -989,7 +989,7 @@ sub stringify {
 
         while (1) {
 
-            Math::GMPz::Rmpz_tdiv_q($z, $num, $den);
+            Math::GMPz::Rmpz_div($z, $num, $den);
             push @r, Math::GMPz::Rmpz_get_str($z, 10);
 
             Math::GMPz::Rmpz_mul($z, $z, $den);
