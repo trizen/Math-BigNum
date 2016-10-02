@@ -4745,9 +4745,17 @@ Class::Multimethods::multimethod lcm => qw(Math::BigNum Math::BigNum) => sub {
 
 Class::Multimethods::multimethod lcm => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
-    my $z = _str2mpz($y) // return $x->lcm(Math::BigNum->new($y));
+
     my $r = _big2mpz($x);
-    Math::GMPz::Rmpz_lcm($r, $r, $z);
+
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        Math::GMPz::Rmpz_lcm_ui($r, $r, CORE::abs($y));
+    }
+    else {
+        my $z = _str2mpz($y) // return $x->lcm(Math::BigNum->new($y));
+        Math::GMPz::Rmpz_lcm($r, $r, $z);
+    }
+
     _mpz2big($r);
 };
 
