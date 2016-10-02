@@ -95,6 +95,8 @@ Math::BigNum does not export anything by default, but it recognizes the followin
                     # it will also export the "Inf" and "NaN" constants,
                     # which represent +Infinity and NaN special values
 
+Numerical constants:
+
     e               # "e" constant (2.7182...)
     pi              # "pi" constant (3.1415...)
     tau             # "tau" constant (which is: 2*pi)
@@ -103,6 +105,14 @@ Math::BigNum does not export anything by default, but it recognizes the followin
     Y               # Euler-Mascheroni constant (0.57721...)
     Inf             # +Infinity constant
     NaN             # Not-a-Number constant
+
+Special functions:
+
+    factorial(n)       # product of first n integers: n!
+    binomial(n,k)      # binomial coefficient
+    fibonacci(n)       # nth-Fibonacci number
+    lucas(n)           # nth-Lucas number
+    ipow(a,k)          # integer exponentiation: int(a^k)
 
 The syntax for importing something, is:
 
@@ -317,6 +327,87 @@ use overload
   sqrt => \&sqrt;
 
 {
+    my $binomial = sub {
+        my ($n, $k) = @_;
+
+        defined($k) or return nan();
+        ref($n) eq __PACKAGE__ and return $n->binomial($k);
+
+        (CORE::int($k) eq $k and $k >= MIN_SI and $k <= MAX_UI)
+          || return Math::BigNum->new($n)->binomial(Math::BigNum->new($k));
+
+        my $n_ui = (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI);
+        my $k_ui = $k >= 0;
+
+        my $z = Math::GMPz::Rmpz_init();
+
+        if ($n_ui and $k_ui) {
+            Math::GMPz::Rmpz_bin_uiui($z, $n, $k);
+        }
+        else {
+            eval { Math::GMPz::Rmpz_set_str($z, "$n", 10); 1 } // return Math::BigNum->new($n)->binomial($k);
+            $k_ui
+              ? Math::GMPz::Rmpz_bin_ui($z, $z, $k)
+              : Math::GMPz::Rmpz_bin_si($z, $z, $k);
+        }
+
+        _mpz2big($z);
+    };
+
+    my $factorial = sub {
+        my ($n) = @_;
+        ref($n) eq __PACKAGE__ and return $n->fac;
+        if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
+            my $z = Math::GMPz::Rmpz_init();
+            Math::GMPz::Rmpz_fac_ui($z, $n);
+            _mpz2big($z);
+        }
+        else {
+            Math::BigNum->new($n)->fac;
+        }
+    };
+
+    my $fibonacci = sub {
+        my ($n) = @_;
+        ref($n) eq __PACKAGE__ and return $n->fib;
+        if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
+            my $z = Math::GMPz::Rmpz_init();
+            Math::GMPz::Rmpz_fib_ui($z, $n);
+            _mpz2big($z);
+        }
+        else {
+            Math::BigNum->new($n)->fib;
+        }
+    };
+
+    my $lucas = sub {
+        my ($n) = @_;
+        ref($n) eq __PACKAGE__ and return $n->lucas;
+        if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
+            my $z = Math::GMPz::Rmpz_init();
+            Math::GMPz::Rmpz_lucnum_ui($z, $n);
+            _mpz2big($z);
+        }
+        else {
+            Math::BigNum->new($n)->lucas;
+        }
+    };
+
+    my $ipow = sub {
+        my ($n, $k) = @_;
+
+        defined($k) or return nan();
+        ref($n) eq __PACKAGE__ and return $n->ipow($k);
+
+        (CORE::int($n) eq $n and CORE::int($k) eq $k and $n <= MAX_UI and $k <= MAX_UI and $n >= MIN_SI and $k >= 0)
+          || return Math::BigNum->new($n)->ipow($k);
+
+        my $z = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_ui_pow_ui($z, CORE::abs($n), $k);
+        Math::GMPz::Rmpz_neg($z, $z) if ($n < 0 and $k % 2);
+        _mpz2big($z);
+    };
+
     my %constants = (
                      e   => \&e,
                      phi => \&phi,
@@ -326,6 +417,14 @@ use overload
                      G   => \&G,
                      Inf => \&inf,
                      NaN => \&nan,
+                    );
+
+    my %functions = (
+                     binomial  => $binomial,
+                     factorial => $factorial,
+                     fibonacci => $fibonacci,
+                     lucas     => $lucas,
+                     ipow      => $ipow,
                     );
 
     sub import {
@@ -369,6 +468,13 @@ use overload
                     my $sub   = $constants{$name};
                     my $value = Math::BigNum->$sub;
                     *$caller_sub = sub() { $value }
+                }
+            }
+            elsif (exists $functions{$name}) {
+                no strict 'refs';
+                my $caller_sub = $caller . '::' . $name;
+                if (!defined &$caller_sub) {
+                    *$caller_sub = $functions{$name};
                 }
             }
             else {
@@ -876,7 +982,7 @@ sub stringify {
 
         while (1) {
 
-            Math::GMPz::Rmpz_div($z, $num, $den);
+            Math::GMPz::Rmpz_tdiv_q($z, $num, $den);
             push @r, Math::GMPz::Rmpz_get_str($z, 10);
 
             Math::GMPz::Rmpz_mul($z, $z, $den);
@@ -2561,7 +2667,7 @@ Class::Multimethods::multimethod ipow => qw(Math::BigNum Math::BigNum) => sub {
 
     if ($pow < 0) {
         return inf() if !Math::GMPz::Rmpz_sgn($z);
-        Math::GMPz::Rmpz_div($z, $ONE_Z, $z);
+        Math::GMPz::Rmpz_tdiv_q($z, $ONE_Z, $z);
     }
 
     _mpz2big($z);
@@ -2579,7 +2685,7 @@ Class::Multimethods::multimethod ipow => qw(Math::BigNum $) => sub {
 
         if ($y < 0) {
             return inf() if !Math::GMPz::Rmpz_sgn($z);
-            Math::GMPz::Rmpz_div($z, $ONE_Z, $z);
+            Math::GMPz::Rmpz_tdiv_q($z, $ONE_Z, $z);
         }
 
         _mpz2big($z);
@@ -2616,10 +2722,12 @@ Class::Multimethods::multimethod bipow => qw(Math::BigNum Math::BigNum) => sub {
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($z, $$x);
     Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
+
     if ($pow < 0) {
         return $x->binf if !Math::GMPz::Rmpz_sgn($z);
-        Math::GMPz::Rmpz_div($z, $ONE_Z, $z);
+        Math::GMPz::Rmpz_tdiv_q($z, $ONE_Z, $z);
     }
+
     Math::GMPq::Rmpq_set_z($$x, $z);
     return $x;
 };
@@ -2634,10 +2742,12 @@ Class::Multimethods::multimethod bipow => qw(Math::BigNum $) => sub {
         my $z = Math::GMPz::Rmpz_init();
         Math::GMPz::Rmpz_set_q($z, $$x);
         Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($y));
+
         if ($y < 0) {
             return $x->binf if !Math::GMPz::Rmpz_sgn($z);
-            Math::GMPz::Rmpz_div($z, $ONE_Z, $z);
+            Math::GMPz::Rmpz_tdiv_q($z, $ONE_Z, $z);
         }
+
         Math::GMPq::Rmpq_set_z($$x, $z);
         $x;
     }

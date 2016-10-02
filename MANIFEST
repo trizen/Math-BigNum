@@ -33,6 +33,7 @@ t/bigexp.t
 t/bignum.t
 t/constant.t
 t/fib.t
+t/functions.t
 t/general.t
 t/inf.t
 t/inf_nan.t

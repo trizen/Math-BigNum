@@ -17,7 +17,7 @@ use strict;
 use warnings;
 
 use lib qw(../lib);
-use Math::BigNum qw(:constant);
+use Math::BigNum qw(:constant binomial);
 
 # This function returns the nth Bernoulli number
 # See: https://en.wikipedia.org/wiki/Bernoulli_number
@@ -38,13 +38,6 @@ sub bernoulli_number {
     return $A[0];                    # which is Bn
 }
 
-# The binomial coefficient
-# See: https://en.wikipedia.org/wiki/Binomial_coefficient
-sub nok {
-    my ($n, $k) = @_;
-    $n->binomial($k);
-}
-
 # The Faulhaber's formula
 # See: https://en.wikipedia.org/wiki/Faulhaber%27s_formula
 sub faulhaber_s_formula {
@@ -52,7 +45,7 @@ sub faulhaber_s_formula {
 
     my $sum = 0;
     for my $j (0 .. $p) {
-        $sum += nok($p + 1, $j) * bernoulli_number($j) * ($n + 1)**($p + 1 - $j);
+        $sum += binomial($p + 1, $j) * bernoulli_number($j) * ($n + 1)**($p + 1 - $j);
     }
 
     $sum / ($p + 1);
@@ -66,7 +59,7 @@ sub bernoulli_polynomials {
 
     my $sum = 0;
     for my $k (0 .. $n) {
-        $sum += nok($n, $k) * bernoulli_number($n - $k) * $x**$k;
+        $sum += binomial($n, $k) * bernoulli_number($n - $k) * $x**$k;
     }
 
     $sum;

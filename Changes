@@ -8,6 +8,15 @@ Revision history for Math-BigNum
         - Optimized the `root(a, n)` method for positive integer values of n.
         - Added the `bernreal(n)` method, which returns the nth-Bernoulli number as a floating-point value.
         - Added the `kronecker(a, b)` method, which returns the Kronecker symbol (a|b).
+        - Added the following exportable functions:
+
+                factorial(n)       # product of first n integers: n!
+                binomial(n,k)      # binomial coefficient
+                fibonacci(n)       # nth-Fibonacci number
+                lucas(n)           # nth-Lucas number
+                ipow(a,k)          # integer exponentiation: int(a^k)
+
+        - Some minor bug-fixes and improvements.
 
 0.10    2016-17-08
         - Faster creation of MPFR objects from scalar integer values.

@@ -18,28 +18,27 @@ use lib qw(../lib);
 use Memoize qw(memoize);
 use Math::BigNum qw(:constant);
 
-memoize('bernoulli_number');
+memoize('bernoulli');
+memoize('binomial');
 
-no warnings qw(recursion);
+sub binomial {
+    my ($n, $k) = @_;
+    $k == 0 || $n == $k ? 1 : binomial($n - 1, $k - 1) + binomial($n - 1, $k);
+}
 
-#sub binomial {
-#    my ($n, $k) = @_;
-#    $k == 0 || $n == $k ? 1.0 : binomial($n - 1, $k - 1) + binomial($n - 1, $k);
-#}
-
-sub bernoulli_number {
+sub bernoulli {
     my ($n) = @_;
 
-    return 1 / 2 if $n == 1;
-    return 0 / 1 if $n % 2;
+    return 0.5 if $n == 1;
+    return 0.0 if $n % 2;
 
     my $bern = 1;
     foreach my $k (0 .. $n - 1) {
-        $bern -= bernoulli_number($k) * Math::BigNum::binomial($n, $k) / ($n - $k + 1);
+        $bern -= bernoulli($k) * binomial($n, $k) / ($n - $k + 1);
     }
     $bern;
 }
 
 for (my $i = 0 ; $i <= 100 ; $i += 2) {
-    printf "B%-2d = %s\n", $i, bernoulli_number($i)->as_rat;
+    printf "B%-2d = %s\n", $i, bernoulli($i)->as_rat;
 }

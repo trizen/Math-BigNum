@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 317;
+plan tests => 349;
 
 use Math::BigNum;
 
@@ -521,6 +521,60 @@ is(lc("$r"), "inf");
     is($one,  Math::BigNum->one);
     is($mone, Math::BigNum->mone);
 }
+
+##############################################################
+# special integer truncations
+
+is(Math::BigNum->new(-3)->ipow(-5),                    0);
+is(Math::BigNum->new(-3)->ipow(Math::BigNum->new(-5)), 0);
+
+is(Math::BigNum->new(-3)->ipow(-4),    0);
+is(Math::BigNum->new(-3)->ipow($int2), 0);
+
+is(Math::BigNum->new(-3)->bipow(-5),                    0);
+is(Math::BigNum->new(-3)->bipow(Math::BigNum->new(-5)), 0);
+
+is(Math::BigNum->new(-3)->bipow(-4),    0);
+is(Math::BigNum->new(-3)->bipow($int2), 0);
+
+is(Math::BigNum->new(-1)->ipow(-5),                    -1);
+is(Math::BigNum->new(-1)->ipow(Math::BigNum->new(-5)), -1);
+
+is(Math::BigNum->new(-1)->ipow(-4),    1);
+is(Math::BigNum->new(-1)->ipow($int2), 1);
+
+is(Math::BigNum->new(-1)->bipow(-5),                    -1);
+is(Math::BigNum->new(-1)->bipow(Math::BigNum->new(-5)), -1);
+
+is(Math::BigNum->new(-1)->bipow(-4),    1);
+is(Math::BigNum->new(-1)->bipow($int2), 1);
+
+##############################################################
+# pow + int truncation
+
+is(Math::BigNum->new(-3)->pow(-5)->bint,                    0);
+is(Math::BigNum->new(-3)->pow(Math::BigNum->new(-5))->bint, 0);
+
+is(Math::BigNum->new(-3)->pow(-4)->bint,    0);
+is(Math::BigNum->new(-3)->pow($int2)->bint, 0);
+
+is(Math::BigNum->new(-3)->bpow(-5)->bint,                    0);
+is(Math::BigNum->new(-3)->bpow(Math::BigNum->new(-5))->bint, 0);
+
+is(Math::BigNum->new(-3)->bpow(-4)->bint,    0);
+is(Math::BigNum->new(-3)->bpow($int2)->bint, 0);
+
+is(Math::BigNum->new(-1)->pow(-5)->bint,                    -1);
+is(Math::BigNum->new(-1)->pow(Math::BigNum->new(-5))->bint, -1);
+
+is(Math::BigNum->new(-1)->pow(-4)->bint,    1);
+is(Math::BigNum->new(-1)->pow($int2)->bint, 1);
+
+is(Math::BigNum->new(-1)->bpow(-5)->bint,                    -1);
+is(Math::BigNum->new(-1)->bpow(Math::BigNum->new(-5))->bint, -1);
+
+is(Math::BigNum->new(-1)->bpow(-4)->bint,    1);
+is(Math::BigNum->new(-1)->bpow($int2)->bint, 1);
 
 ##############################################################
 # real test
