@@ -433,6 +433,7 @@ sub length { 0 }
 *dfac     = \&nan;
 *lucas    = \&nan;
 *binomial = \&nan;
+*bernreal = \&nan;
 
 sub is_prime { 0 }
 

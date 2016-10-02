@@ -5978,10 +5978,12 @@ sub zeta {
 
 =head2 bernreal
 
-    $x->bernreal                   # => BigNum
+    $x->bernreal                   # => BigNum | Nan
 
 The nth-Bernoulli number as a real floating-point value,
 computed as: C<zeta(-n + 1) * -n> with C<bernreal(0) = 1>.
+
+Returns Nan for negative values of C<$x>.
 
 =cut
 
@@ -6049,7 +6051,7 @@ sub eint {
     $x->li                         # => BigNum | Inf | Nan
 
 The logarithmic integral of C<$x>, defined as: C<Ei(ln(x))>.
-Returns -Inf when C<$x> is one, and Nan when C<$x> less than or equal to zero.
+Returns -Inf when C<$x> is 1, and Nan when C<$x> less than or equal to 0.
 
 =cut
 
