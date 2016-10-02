@@ -1,13 +1,17 @@
 Revision history for Math-BigNum
 
 0.11    2016-xx-xx
-        - Added the `parts` method, which returns the numerator and the denominator as BigNum objects.
+        - Added the `$n->parts` method, which returns the numerator and the denominator as BigNum objects.
         - Increased the default accuracy value for the method `is_prime` from 12 to 20.
         - Support for rational exponentiation with an integer power.
-        - Added the `li(x)` method for computing the logarithm integral of x.
-        - Optimized the `root(a, n)` method for positive integer values of n.
-        - Added the `bernreal(n)` method, which returns the nth-Bernoulli number as a floating-point value.
-        - Added the `kronecker(a, b)` method, which returns the Kronecker symbol (a|b).
+
+            Example:
+                (3/5)**3 == 27/125
+
+        - Added the `$x->li` method for computing the logarithm integral of `$x`.
+        - Optimized the `$k->root($n)` method for positive integer values of `$n`.
+        - Added the `$n->bernreal` method, which returns the nth-Bernoulli number as a floating-point value.
+        - Added the `$n->kronecker($k)` method, which returns the Kronecker symbol (n|k).
         - Added the following exportable functions:
 
                 factorial(n)       # product of first n integers: n!
@@ -16,9 +20,10 @@ Revision history for Math-BigNum
                 lucas(n)           # nth-Lucas number
                 ipow(a,k)          # integer exponentiation: int(a^k)
 
-        - Added the method `$n->popcount` which returns the number of 1s in the binary representation of `$n`.
-        - Modified the behavior of the `sign` method: now returns (-1, 0, 1) instead of ("-", "", "+").
+        - Added the method `$n->popcount`, which returns the number of 1s in the binary representation of `$n`.
+        - Changed the return values of the `sign` method from ("-", "", "+") to (-1, 0, 1).
         - Added the `:all` option to export anything that is exportable (functions + constants).
+        - Added the `$n->valuation($k)` method, which returns the number of times `$n` is divisible by `$k`.
         - Some minor bug-fixes and improvements.
 
 0.10    2016-17-08

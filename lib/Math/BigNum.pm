@@ -4766,6 +4766,35 @@ Class::Multimethods::multimethod lcm => qw(Math::BigNum *) => sub {
 Class::Multimethods::multimethod lcm => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
 Class::Multimethods::multimethod lcm => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
+=head2 valuation
+
+    $n->valuation(BigNum)          # => Scalar
+    $n->valuation(Scalar)          # => Scalar
+
+Returns the number of times n is divisible by k.
+
+=cut
+
+Class::Multimethods::multimethod valuation => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_remove($r, $r, _big2mpz($y));
+};
+
+Class::Multimethods::multimethod valuation => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    my $z = _str2mpz($y) // return $x->valuation(Math::BigNum->new($y));
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_remove($r, $r, $z);
+};
+
+Class::Multimethods::multimethod valuation => qw(Math::BigNum *) => sub {
+    $_[0]->valuation(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod valuation => qw(Math::BigNum Math::BigNum::Inf) => sub { 0 };
+Class::Multimethods::multimethod valuation => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
 =head2 int
 
     $x->int                        # => BigNum

@@ -437,6 +437,7 @@ sub length { 0 }
 *binomial  = \&nan;
 *bernreal  = \&nan;
 *kronecker = \&nan;
+*valuation = \&nan;
 
 sub is_prime { 0 }
 
