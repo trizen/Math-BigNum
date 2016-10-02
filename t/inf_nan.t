@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-use Test::More tests => 189;
+use Test::More tests => 192;
 
 use Math::BigNum qw(:constant);
 
@@ -254,6 +254,13 @@ is((+Inf)->log, Inf);
     is($ninf->root($nan),         $nan);
     is($inf->root($nan),          $nan);
     is($nan->root($nan),          $nan);
+
+    ##################################################
+    # Sign
+
+    is($inf->sign,  1);
+    is($ninf->sign, -1);
+    is($nan->sign,  undef);
 }
 
 is(Math::BigNum->new('foo'), NaN);

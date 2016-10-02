@@ -399,7 +399,9 @@ sub is_odd   { 0 }
 sub is_real  { 0 }
 sub is_int   { 0 }
 
-sub sign { $_[0]->is_pos ? '+' : '-' }
+sub sign { $_[0]->is_pos ? 1 : -1 }
+
+sub popcount { -1 }
 
 =head2 add / iadd
 

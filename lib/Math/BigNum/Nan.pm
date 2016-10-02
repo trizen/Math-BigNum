@@ -301,6 +301,9 @@ sub cmp { }
 *lt = \&cmp;
 *le = \&cmp;
 
+*popcount = \&cmp;
+*sign     = \&cmp;
+
 # Other methods
 
 *sqrt  = \&nan;
@@ -378,7 +381,6 @@ sub is_odd  { 0 }
 sub is_div  { 0 }
 sub is_psqr { 0 }
 sub is_ppow { 0 }
-sub sign    { '' }
 
 *max = \&_self;
 *min = \&_self;

@@ -95,6 +95,8 @@ Math::BigNum does not export anything by default, but it recognizes the followin
                     # it will also export the "Inf" and "NaN" constants,
                     # which represent +Infinity and NaN special values
 
+    :all            # export everything that is exportable
+
 Numerical constants:
 
     e               # "e" constant (2.7182...)
@@ -432,7 +434,9 @@ use overload
 
         my $caller = caller(0);
 
-        foreach my $name (@_) {
+        while (@_) {
+            my $name = shift(@_);
+
             if ($name eq ':constant') {
                 overload::constant
                   integer => sub { _new_uint(shift) },
@@ -476,6 +480,9 @@ use overload
                 if (!defined &$caller_sub) {
                     *$caller_sub = $functions{$name};
                 }
+            }
+            elsif ($name eq ':all') {
+                push @_, keys(%constants), keys(%functions);
             }
             else {
                 die "unknown import: <<$name>>";
@@ -4625,13 +4632,25 @@ sub is_ppow {
 
     $x->sign                       # => Scalar
 
-Returns C<'-'> when C<$x> is negative, C<'+'> when C<$x> is positive, and C<''> when C<$x> is zero.
+Returns C<-1> when C<$x> is negative, C<1> when C<$x> is positive, and C<0> when C<$x> is zero.
 
 =cut
 
 sub sign {
-    my $sign = Math::GMPq::Rmpq_sgn(${$_[0]});
-    $sign > 0 ? '+' : $sign < 0 ? '-' : '';
+    Math::GMPq::Rmpq_sgn(${$_[0]});
+}
+
+=head2 popcount
+
+    $x->popcount                   # => Scalar
+
+Returns the population count of C<$x>, which is the number of 1 bits in the binary representation.
+Also known as the Hamming weight value. When C<$x> is negative, C<-1> is returned.
+
+=cut
+
+sub popcount {
+    Math::GMPz::Rmpz_popcount(_big2mpz($_[0]));
 }
 
 =head2 min

@@ -12,20 +12,20 @@ use Math::BigNum;
 my $nan = Math::BigNum->nan();
 my $one = Math::BigNum->new(1);
 
-is($one, $one, "bone() == bone()");
+is($one, $one, "one() == one()");
 
-ok($one != $nan, "bone() != bnan()");
-ok($nan != $one, "bnan() != bone()");
-ok($nan != $nan, "bnan() != bnan()");
+ok($one != $nan, "one() != nan()");
+ok($nan != $one, "nan() != one()");
+ok($nan != $nan, "nan() != nan()");
 
-ok(!($nan == $one), "bnan() == bone()");
-ok(!($one == $nan), "bone() == bnan()");
-ok(!($nan == $nan), "bnan() == bnan()");
+ok(!($nan == $one), "nan() == one()");
+ok(!($one == $nan), "one() == nan()");
+ok(!($nan == $nan), "nan() == nan()");
 
-ok(!($nan <= $one), "bnan() <= bone()");
-ok(!($one <= $nan), "bone() <= bnan()");
-ok(!($nan <= $nan), "bnan() <= bnan()");
+ok(!($nan <= $one), "nan() <= one()");
+ok(!($one <= $nan), "one() <= nan()");
+ok(!($nan <= $nan), "nan() <= nan()");
 
-ok(!($nan >= $one), "bnan() >= bone()");
-ok(!($one >= $nan), "bone() >= bnan()");
-ok(!($nan >= $nan), "bnan() >= bnan()");
+ok(!($nan >= $one), "nan() >= one()");
+ok(!($one >= $nan), "one() >= nan()");
+ok(!($nan >= $nan), "nan() >= nan()");

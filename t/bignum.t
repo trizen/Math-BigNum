@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 240;
+plan tests => 245;
 
 # Initialization
 
@@ -609,6 +609,13 @@ plan tests => 240;
 
     $x->biadd(Math::BigNum->new(-3002));
     is("$x", "512");
+
+    is(Math::BigNum->new(12345)->popcount,     6);
+    is(Math::BigNum->new(1048576.7)->popcount, 1);
+
+    is(Math::BigNum->new("-10")->sign,    -1);
+    is(Math::BigNum->new("10")->sign,     1);
+    is(Math::BigNum->new("0.0000")->sign, 0);
 }
 
 # b* methods

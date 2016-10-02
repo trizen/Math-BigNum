@@ -17,6 +17,9 @@ Revision history for Math-BigNum
                 ipow(a,k)          # integer exponentiation: int(a^k)
 
         - Some minor bug-fixes and improvements.
+        - Added the method `$n->popcount` which returns the number of 1s in the binary representation of `$n`.
+        - Modified the behavior of the `sign` method: now returns (-1, 0, 1) instead of ("-", "", "+").
+        - Added the `:all` option to export anything that is exportable (functions + constants).
 
 0.10    2016-17-08
         - Faster creation of MPFR objects from scalar integer values.

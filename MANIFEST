@@ -32,6 +32,7 @@ t/big_e_pi.t
 t/bigexp.t
 t/bignum.t
 t/constant.t
+t/export_all.t
 t/fib.t
 t/functions.t
 t/general.t
