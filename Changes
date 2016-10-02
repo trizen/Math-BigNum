@@ -6,6 +6,7 @@ Revision history for Math-BigNum
         - Support for rational exponentiation with an integer power.
         - Added the `li(x)` method for computing the logarithm integral of x.
         - Optimized the `root(n)` method for positive integer values of n.
+        - Added the `bernreal(n)` method which returns the nth-Bernoulli number as a floating-point value.
 
 0.10    2016-17-08
         - Faster creation of MPFR objects from scalar integer values.

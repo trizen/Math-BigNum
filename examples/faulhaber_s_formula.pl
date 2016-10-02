@@ -79,6 +79,6 @@ sub faulhaber_s_formula_2 {
 
 # Test for 1^4 + 2^4 + 3^4 + ... + 10^4
 foreach my $i (0 .. 10) {
-    say "$i: ", faulhaber_s_formula(4, $i);
-    say "$i: ", faulhaber_s_formula_2(4, $i);
+    say "$i: ", faulhaber_s_formula(4, $i)->as_rat;
+    say "$i: ", faulhaber_s_formula_2(4, $i)->as_rat;
 }

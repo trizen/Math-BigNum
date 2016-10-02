@@ -3597,22 +3597,22 @@ Class::Multimethods::multimethod cmp => qw(Math::BigNum $) => sub {
           : Math::GMPq::Rmpq_cmp_si($$x, $y, 1);
     }
     else {
-        Math::GMPq::Rmpq_cmp($$x, _str2mpq($_[1]) // return $x->cmp(Math::BigNum->new($y)));
+        Math::GMPq::Rmpq_cmp($$x, _str2mpq($y) // return $x->cmp(Math::BigNum->new($y)));
     }
 };
 
 Class::Multimethods::multimethod cmp => qw($ Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
-        my $cmp =
-          $x >= 0
-          ? Math::GMPq::Rmpq_cmp_ui($$y, $x, 1)
-          : Math::GMPq::Rmpq_cmp_si($$y, $x, 1);
-        $cmp < 0 ? 1 : $cmp > 0 ? -1 : 0;
+    if (CORE::int($x) eq $x and $x >= MIN_SI and $x <= MAX_UI) {
+        -(
+           $x >= 0
+           ? Math::GMPq::Rmpq_cmp_ui($$y, $x, 1)
+           : Math::GMPq::Rmpq_cmp_si($$y, $x, 1)
+         );
     }
     else {
-        Math::GMPq::Rmpq_cmp(_str2mpq($_[0]) // (return Math::BigNum->new($x)->cmp($y)), $$y);
+        Math::GMPq::Rmpq_cmp(_str2mpq($x) // (return Math::BigNum->new($x)->cmp($y)), $$y);
     }
 };
 
@@ -5973,6 +5973,32 @@ The zeta function on C<$x>. Returns Inf when C<$x> is 1.
 sub zeta {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_zeta($r, $r, $ROUND);
+    _mpfr2big($r);
+}
+
+=head2 bernreal
+
+    $x->bernreal                   # => BigNum
+
+The nth-Bernoulli number as a real floating-point value,
+computed as: C<zeta(-n + 1) * -n> with C<bernreal(0) = 1>.
+
+=cut
+
+sub bernreal {
+    my $r = _big2mpfr($_[0]);
+
+    Math::MPFR::Rmpfr_trunc($r, $r);
+    Math::MPFR::Rmpfr_zero_p($r)  && return one();
+    Math::MPFR::Rmpfr_sgn($r) < 0 && return nan();
+    Math::MPFR::Rmpfr_neg($r, $r, $ROUND);
+
+    my $zeta = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_set($zeta, $r, $ROUND);
+    Math::MPFR::Rmpfr_add_ui($zeta, $zeta, 1, $ROUND);
+    Math::MPFR::Rmpfr_zeta($zeta, $zeta, $ROUND);
+    Math::MPFR::Rmpfr_mul($r, $r, $zeta, $ROUND);
+
     _mpfr2big($r);
 }
 

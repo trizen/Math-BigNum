@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 238;
+plan tests => 240;
 
 # Initialization
 
@@ -444,6 +444,9 @@ plan tests => 238;
     is(4 <=> Math::BigNum->new(4), 0);
     is(3 <=> Math::BigNum->new(4), -1);
     is(4 <=> Math::BigNum->new(3), 1);
+
+    is(2.3 <=> Math::BigNum->new(2), 1);
+    is(2 <=> Math::BigNum->new(2.3), -1);
 
     is(Math::BigNum->new(2) <=> 3, -1);
     is(Math::BigNum->new(4) <=> 2, 1);
