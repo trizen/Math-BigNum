@@ -4645,12 +4645,16 @@ sub sign {
     $x->popcount                   # => Scalar
 
 Returns the population count of C<$x>, which is the number of 1 bits in the binary representation.
-Also known as the Hamming weight value. When C<$x> is negative, C<-1> is returned.
+When C<$x> is negative, the population count of its absolute value is returned.
+
+This method is also known as the Hamming weight value.
 
 =cut
 
 sub popcount {
-    Math::GMPz::Rmpz_popcount(_big2mpz($_[0]));
+    my $z = _big2mpz($_[0]);
+    Math::GMPz::Rmpz_neg($z, $z) if Math::GMPz::Rmpz_sgn($z) < 0;
+    Math::GMPz::Rmpz_popcount($z);
 }
 
 =head2 min
