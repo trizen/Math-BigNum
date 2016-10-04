@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 279;
+plan tests => 311;
 
 # Initialization
 
@@ -541,28 +541,44 @@ plan tests => 279;
     #
     ## fadd
     #
-    is($x->fadd(2),    44);
-    is($x->fadd(-2),   40);
-    is($x->fadd(-1.5), 40.5);
-    is($x->fadd(1.5),  43.5);
-    is($x->fadd($y),   1269);
+    is($x->fadd(2),     44);
+    is($x->fadd(-2),    40);
+    is($x->fadd(-1.5),  40.5);
+    is($x->fadd(1.5),   43.5);
+    is($x->fadd($y),    1269);
+    is($x->fadd("abc"), "NaN");
 
     #
     ## fsub
     #
-    is($x->fsub(2),    40);
-    is($x->fsub(-2),   44);
-    is($x->fsub(-1.5), 43.5);
-    is($x->fsub(1.5),  40.5);
-    is($x->fsub($y),   -1185);
+    is($x->fsub(2),     40);
+    is($x->fsub(-2),    44);
+    is($x->fsub(-1.5),  43.5);
+    is($x->fsub(1.5),   40.5);
+    is($x->fsub($y),    -1185);
+    is($x->fsub("abc"), "NaN");
 
     #
     ## fmul
     #
+    is($x->fmul(2),     84);
+    is($x->fmul(-2),    -84);
+    is($x->fmul(-1.2),  -50.4);
+    is($x->fmul(1.5),   63);
+    is($x->fmul($y),    51534);
+    is($x->fmul("abc"), "NaN");
 
     #
     ## fdiv
     #
+    is($x->fdiv(4),    10.5);
+    is($x->fdiv(-4),   -10.5);
+    is($x->fdiv(-1.6), -26.25);
+    is($x->fdiv(1.6),  26.25);
+    like($y->fdiv($x), qr/^29\.2142/);
+    is($x->fdiv("abc"),              "NaN");
+    is($x->fdiv(0),                  "Inf");
+    is($x->fdiv(Math::BigNum->zero), "Inf");
 
     #
     ## bfadd
@@ -583,6 +599,9 @@ plan tests => 279;
     $xcp = $x->copy;
     $xcp->bfadd($y);
     is($xcp, 1269);
+    $xcp = $x->copy;
+    $xcp->bfadd("abc");
+    is($xcp, "NaN");
 
     #
     ## bfsub
@@ -602,6 +621,59 @@ plan tests => 279;
     $xcp = $x->copy;
     $xcp->bfsub($y);
     is($xcp, -1185);
+    $xcp = $x->copy;
+    $xcp->bfsub("abc");
+    is($xcp, "NaN");
+
+    #
+    ## bfmul
+    #
+    $xcp = $x->copy;
+    $xcp->bfmul(2);
+    is($xcp, 84);
+    $xcp = $x->copy;
+    $xcp->bfmul(-2);
+    is($xcp, -84);
+    $xcp = $x->copy;
+    $xcp->bfmul(-1.5);
+    is($xcp, -63);
+    $xcp = $x->copy;
+    $xcp->bfmul(1.2);
+    is($xcp, 50.4);
+    $xcp = $x->copy;
+    $xcp->bfmul($y);
+    is($xcp, 51534);
+    $xcp = $x->copy;
+    $xcp->bfmul("abc");
+    is($xcp, "NaN");
+
+    #
+    ## bfdiv
+    #
+    $xcp = $x->copy;
+    $xcp->bfdiv(4);
+    is($xcp, 10.5);
+    $xcp = $x->copy;
+    $xcp->bfdiv(-4);
+    is($xcp, -10.5);
+    $xcp = $x->copy;
+    $xcp->bfdiv(-1.6);
+    is($xcp, -26.25);
+    $xcp = $x->copy;
+    $xcp->bfdiv(1.6);
+    is($xcp, 26.25);
+    $xcp = $x->copy;
+    $xcp->bfdiv($y);
+    like($xcp, qr/^0\.034229/);
+    $xcp = $x->copy;
+    $xcp->bfdiv("abc");
+    is($xcp, "NaN");
+    $xcp = $x->copy;
+    $xcp->bfdiv(0);
+    is($xcp, "Inf");
+    $xcp = $x->copy;
+    $xcp->bfdiv(Math::BigNum->zero);
+    is($xcp, "Inf");
 
     my $i = $y**42;
     is("$i", $int);

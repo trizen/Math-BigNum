@@ -2209,6 +2209,167 @@ Class::Multimethods::multimethod bfsub => qw(Math::BigNum *) => sub {
 Class::Multimethods::multimethod bfsub => qw(Math::BigNum Math::BigNum::Inf) => \&_big2ninf;
 Class::Multimethods::multimethod bfsub => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
+=head2 fmul
+
+    $x->fmul(BigNum)               # => BigNum
+    $x->fmul(Scalar)               # => BigNum
+
+Floating-point multiplication of C<$x> by C<$y>.
+
+=cut
+
+Class::Multimethods::multimethod fmul => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    $x = _big2mpfr($x);
+    Math::MPFR::Rmpfr_mul($x, $x, _big2mpfr($y), $ROUND);
+    _mpfr2big($x);
+};
+
+Class::Multimethods::multimethod fmul => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $r = _big2mpfr($x);
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::MPFR::Rmpfr_mul_ui($r, $r, $y, $ROUND)
+          : Math::MPFR::Rmpfr_mul_si($r, $r, $y, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_mul($r, $r, _str2mpfr($y) // (return Math::BigNum->new($y)->bfmul($x)), $ROUND);
+    }
+    _mpfr2big($r);
+};
+
+Class::Multimethods::multimethod fmul => qw(Math::BigNum *) => sub {
+    Math::BigNum->new($_[1])->bfmul($_[0]);
+};
+
+Class::Multimethods::multimethod fmul => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    my $sign = Math::GMPq::Rmpq_sgn(${$_[0]});
+    $sign < 0 ? $_[1]->neg : $sign > 0 ? $_[1]->copy : nan;
+};
+
+Class::Multimethods::multimethod fmul => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 bfmul
+
+    $x->bfmul(BigNum)              # => BigNum
+    $x->bfmul(Scalar)              # => BigNum
+
+Floating-point multiplication of C<$x> by C<$y>, changing C<$x> in-place.
+
+=cut
+
+Class::Multimethods::multimethod bfmul => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = _big2mpfr($x);
+    Math::MPFR::Rmpfr_mul($r, $r, _big2mpfr($y), $ROUND);
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfmul => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $r = _big2mpfr($x);
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::MPFR::Rmpfr_mul_ui($r, $r, $y, $ROUND)
+          : Math::MPFR::Rmpfr_mul_si($r, $r, $y, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_mul($r, $r, _str2mpfr($y) // (return $x->bfmul(Math::BigNum->new($y))), $ROUND);
+    }
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfmul => qw(Math::BigNum *) => sub {
+    $_[0]->bfmul(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod bfmul => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    my ($x) = @_;
+    my $sign = Math::GMPq::Rmpq_sgn($$x);
+    $sign < 0 ? _big2ninf(@_) : $sign > 0 ? _big2inf(@_) : $x->bnan;
+};
+
+Class::Multimethods::multimethod bfmul => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
+
+=head2 fdiv
+
+    $x->fdiv(BigNum)               # => BigNum | Nan | Inf
+    $x->fdiv(Scalar)               # => BigNum | Nan | Inf
+
+Floating-point division of C<$x> by C<$y>.
+
+=cut
+
+Class::Multimethods::multimethod fdiv => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    $x = _big2mpfr($x);
+    Math::MPFR::Rmpfr_div($x, $x, _big2mpfr($y), $ROUND);
+    _mpfr2big($x);
+};
+
+Class::Multimethods::multimethod fdiv => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $r = _big2mpfr($x);
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::MPFR::Rmpfr_div_ui($r, $r, $y, $ROUND)
+          : Math::MPFR::Rmpfr_div_si($r, $r, $y, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_div($r, $r, _str2mpfr($y) // (return Math::BigNum->new($y)->bfdiv($x)->binv), $ROUND);
+    }
+    _mpfr2big($r);
+};
+
+Class::Multimethods::multimethod fdiv => qw(Math::BigNum *) => sub {
+    Math::BigNum->new($_[1])->bfdiv($_[0])->binv;
+};
+
+Class::Multimethods::multimethod fdiv => qw(Math::BigNum Math::BigNum::Inf) => \&zero;
+Class::Multimethods::multimethod fdiv => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 bfdiv
+
+    $x->bfdiv(BigNum)              # => BigNum | Nan | Inf
+    $x->bfdiv(Scalar)              # => BigNum | Nan | Inf
+
+Floating-point division of C<$x> by C<$y>, changing C<$x> in-place.
+
+=cut
+
+Class::Multimethods::multimethod bfdiv => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = _big2mpfr($x);
+    Math::MPFR::Rmpfr_div($r, $r, _big2mpfr($y), $ROUND);
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfdiv => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $r = _big2mpfr($x);
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::MPFR::Rmpfr_div_ui($r, $r, $y, $ROUND)
+          : Math::MPFR::Rmpfr_div_si($r, $r, $y, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_div($r, $r, _str2mpfr($y) // (return $x->bfdiv(Math::BigNum->new($y))), $ROUND);
+    }
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfdiv => qw(Math::BigNum *) => sub {
+    $_[0]->bfdiv(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod bfdiv => qw(Math::BigNum Math::BigNum::Inf) => \&bzero;
+Class::Multimethods::multimethod bfdiv => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
+
 =head2 fpow
 
     $x->fpow(BigNum)               # => BigNum | Inf | Nan
@@ -5974,7 +6135,8 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub 
     Math::GMPq::Rmpq_numref($z, $$x);
     Math::GMPz::Rmpz_root($r, $z, $pow);
 
-    Math::GMPz::Rmpz_remove($z, $z, $r) == $pow;
+    Math::GMPz::Rmpz_remove($z, $z, $r) == $pow
+      and Math::GMPz::Rmpz_cmp_ui($z, 1) == 0;
 };
 
 Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
@@ -5992,7 +6154,8 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
         Math::GMPq::Rmpq_numref($z, $$x);
         Math::GMPz::Rmpz_root($r, $z, $y);
 
-        Math::GMPz::Rmpz_remove($z, $z, $r) == $y;
+        Math::GMPz::Rmpz_remove($z, $z, $r) == $y
+          and Math::GMPz::Rmpz_cmp_ui($z, 1) == 0;
     }
     else {
         $x->is_pow(Math::BigNum->new($y));

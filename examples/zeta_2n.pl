@@ -35,7 +35,7 @@ sub bernoulli_number {
 
 sub zeta_2n {
     my ($n2) = 2 * $_[0];
-    ((-1)**($_[0] + 1) * 2**($n2 - 1) * PI**$n2 * bernoulli_number($n2)) / $n2->fac;
+    ((-1)**($_[0] + 1) * 2**($n2 - 1) * (PI)->fpow($n2) * bernoulli_number($n2)) / $n2->fac;
 }
 
 for my $i (1 .. 10) {

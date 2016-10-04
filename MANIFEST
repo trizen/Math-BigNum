@@ -9,6 +9,7 @@ examples/closed_form_fib.pl
 examples/coin_change.pl
 examples/faulhaber_s_formula.pl
 examples/fibonacci_validation.pl
+examples/inverse_of_factorial.pl
 examples/pi_machin.pl
 examples/power_pairs.pl
 examples/prime_count_approx.pl
