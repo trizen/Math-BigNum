@@ -167,17 +167,20 @@ Methods that begin with a B<b> followed by the actual name (e.g.: C<bsqrt>), are
 methods that change the self object in-place, while their counter-parts (e.g.: C<sqrt>)
 do not. Instead, they will create and return a new object.
 
-Also, Math::BigNum features another kind of methods that begin with an B<i> followed by
-the actual name (e.g.: C<isqrt>). This methods will do integer operations, by first
+In addition, Math::BigNum features another kind of methods that begin with an B<i> followed by
+the actual name (e.g.: C<isqrt>). This methods do integer operations, by first
 truncating their arguments to integers, whenever needed.
+
+Lastly, Math::BigNum implements another kind of methods that begin with an B<f> followed by the actual name (e.g.: C<fdiv>).
+This methods do floating-point operations and are usually faster than their rational counterparts when invoked on very large or very small real-numbers.
 
 The returned types are noted as follows:
 
-    BigNum      #-> a "Math::BigNum" object
-    Inf         #-> a "Math::BigNum::Inf" object
-    Nan         #-> a "Math::BigNum::Nan" object
-    Scalar      #-> a Perl number or string
-    Bool        #-> true or false (actually: 1 or 0)
+    BigNum      # a "Math::BigNum" object
+    Inf         # a "Math::BigNum::Inf" object
+    Nan         # a "Math::BigNum::Nan" object
+    Scalar      # a Perl number or string
+    Bool        # true or false (actually: 1 or 0)
 
 When two or more types are separated with pipe characters (B<|>), it means that the
 corresponding function can return any of the specified types.
@@ -220,11 +223,11 @@ use the B<i*> methods wherever applicable.
 
 =item *
 
-pass Perl numbers as arguments to methods, whenever you can.
+pass Perl numbers as arguments to methods, if you can.
 
 =item *
 
-avoid the stringification of Math::BigNum objects as much as possible.
+avoid the stringification of non-integers Math::BigNum objects.
 
 =item *
 
