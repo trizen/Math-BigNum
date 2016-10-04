@@ -7,7 +7,7 @@ use warnings;
 use Math::GMPq qw();
 use Math::BigNum qw();
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 =encoding utf8
 
@@ -17,7 +17,7 @@ Math::BigNum::Nan - Represents the Not-a-Number value.
 
 =head1 VERSION
 
-Version 0.10
+Version 0.11
 
 =head1 SYNOPSIS
 

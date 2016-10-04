@@ -22,7 +22,7 @@ use constant {
              };
 #>>>
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 =encoding utf8
 
@@ -32,7 +32,7 @@ Math::BigNum - Arbitrary size precision for integers, rationals and floating-poi
 
 =head1 VERSION
 
-Version 0.10
+Version 0.11
 
 =head1 SYNOPSIS
 
@@ -46,7 +46,7 @@ Version 0.10
       #    60413611879125592605458432000000000000000000000000.5
 
     # Small numbers
-    say sqrt(1 / 100->fac);     # => 1.035137811175626...92333794796710e-79
+    say sqrt(1 / 100->fac);     # => 1.035137811175626471320494591657[...]e-79
 
     # Rational numbers
     my $x = 2/3;
