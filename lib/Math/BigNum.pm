@@ -46,7 +46,7 @@ Version 0.10
       #    60413611879125592605458432000000000000000000000000.5
 
     # Small numbers
-    say sqrt(1 / 100->fac);     # => 1.0351378111756264713204945916572e-79
+    say sqrt(1 / 100->fac);     # => 1.035137811175626...92333794796710e-79
 
     # Rational numbers
     my $x = 2/3;
@@ -97,7 +97,7 @@ Math::BigNum does not export anything by default, but it recognizes the followin
 
     :all            # export everything that is exportable
 
-Numerical constants:
+B<Numerical constants:>
 
     e               # "e" constant (2.7182...)
     pi              # "pi" constant (3.1415...)
@@ -108,7 +108,7 @@ Numerical constants:
     Inf             # +Infinity constant
     NaN             # Not-a-Number constant
 
-Special functions:
+B<Special functions:>
 
     factorial(n)       # product of first n integers: n!
     primorial(n)       # product of primes <= n
@@ -116,6 +116,8 @@ Special functions:
     fibonacci(n)       # nth-Fibonacci number
     lucas(n)           # nth-Lucas number
     ipow(a,k)          # integer exponentiation: int(a^k)
+
+B<NOTE:> this functions are designed and optimized for plain scalar values as input.
 
 The syntax for importing something, is:
 
@@ -127,8 +129,8 @@ B<NOTE:> C<:constant> is lexical to the current scope only.
 
 =head1 PRECISION
 
-The default precision for floating-point numbers is 128 bits, which is equivalent with
-32 digits of precision in base 10.
+The default precision for floating-point numbers is 256 bits, which is equivalent with about
+64 digits of precision in base 10.
 
 The precision can be changed by modifying the C<$Math::BigNum::PREC> variable, such as:
 
@@ -159,7 +161,7 @@ A rational number never losses precision in rational operations, therefore if we
     say 1 / $x;                    # => 3
     say 3 / $x;                    # => 9
 
-...the results are exactly what we expect to be.
+...the results are 100% exact.
 
 =head1 NOTATIONS
 
@@ -241,7 +243,7 @@ our ($ROUND, $PREC);
 
 BEGIN {
     $ROUND = Math::MPFR::MPFR_RNDN();
-    $PREC  = 128;                       # too little?
+    $PREC  = 256;                       # too little?
 }
 
 use Math::BigNum::Inf qw();
@@ -335,7 +337,7 @@ use overload
     my $binomial = sub {
         my ($n, $k) = @_;
 
-        defined($k) or return nan();
+        (defined($n) and defined($k)) or return nan();
         ref($n) eq __PACKAGE__ and return $n->binomial($k);
 
         (CORE::int($k) eq $k and $k >= MIN_SI and $k <= MAX_UI)
@@ -361,6 +363,7 @@ use overload
 
     my $factorial = sub {
         my ($n) = @_;
+        defined($n) or return nan();
         ref($n) eq __PACKAGE__ and return $n->fac;
         if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
             my $z = Math::GMPz::Rmpz_init();
@@ -374,6 +377,7 @@ use overload
 
     my $primorial = sub {
         my ($n) = @_;
+        defined($n) or return nan();
         ref($n) eq __PACKAGE__ and return $n->primorial;
         if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
             my $z = Math::GMPz::Rmpz_init();
@@ -387,6 +391,7 @@ use overload
 
     my $fibonacci = sub {
         my ($n) = @_;
+        defined($n) or return nan();
         ref($n) eq __PACKAGE__ and return $n->fib;
         if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
             my $z = Math::GMPz::Rmpz_init();
@@ -400,6 +405,7 @@ use overload
 
     my $lucas = sub {
         my ($n) = @_;
+        defined($n) or return nan();
         ref($n) eq __PACKAGE__ and return $n->lucas;
         if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
             my $z = Math::GMPz::Rmpz_init();
@@ -414,7 +420,7 @@ use overload
     my $ipow = sub {
         my ($n, $k) = @_;
 
-        defined($k) or return nan();
+        (defined($n) and defined($k)) or return nan();
         ref($n) eq __PACKAGE__ and return $n->ipow($k);
 
         (CORE::int($n) eq $n and CORE::int($k) eq $k and $n <= MAX_UI and $k <= MAX_UI and $n >= MIN_SI and $k >= 0)
@@ -3654,7 +3660,7 @@ sub eint {
     $x->li                         # => BigNum | Inf | Nan
 
 The logarithmic integral of C<$x>, defined as: C<Ei(ln(x))>.
-Returns -Inf when C<$x> is 1, and Nan when C<$x> less than or equal to 0.
+Returns -Inf when C<$x> is 1, and Nan when C<$x> is less than or equal to 0.
 
 =cut
 
@@ -6126,6 +6132,7 @@ Example:
 
 Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
+
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
 
     my $pow = CORE::int(Math::GMPq::Rmpq_get_d($$y));
@@ -6494,7 +6501,7 @@ Class::Multimethods::multimethod in_base => qw(Math::BigNum Math::BigNum) => sub
     $_[0]->in_base(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
 };
 
-=head1 * Dissection
+=head1 * Dissections
 
 =cut
 

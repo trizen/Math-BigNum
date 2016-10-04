@@ -18,7 +18,7 @@ sub fib {
 
 sub is_fib {
     my ($i, $fib) = @_;
-    ((($fib * $W) + (-$T)**$i)->log($S)->round(-$i)) == $i;
+    ((($fib * $W) + (-$T)**$i)->log($S)->round(-$i / 4)) == $i;
 }
 
 #

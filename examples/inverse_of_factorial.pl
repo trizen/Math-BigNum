@@ -12,6 +12,7 @@ use 5.010;
 use strict;
 use warnings;
 
+use lib qw(../lib);
 use Math::BigNum qw(:constant factorial pi e);
 
 use constant S => (2 * pi)**(-1 / (2 * e));
