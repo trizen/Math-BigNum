@@ -111,6 +111,7 @@ Numerical constants:
 Special functions:
 
     factorial(n)       # product of first n integers: n!
+    primorial(n)       # product of primes <= n
     binomial(n,k)      # binomial coefficient
     fibonacci(n)       # nth-Fibonacci number
     lucas(n)           # nth-Lucas number
@@ -367,6 +368,19 @@ use overload
         }
     };
 
+    my $primorial = sub {
+        my ($n) = @_;
+        ref($n) eq __PACKAGE__ and return $n->primorial;
+        if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
+            my $z = Math::GMPz::Rmpz_init();
+            Math::GMPz::Rmpz_primorial_ui($z, $n);
+            _mpz2big($z);
+        }
+        else {
+            Math::BigNum->new($n)->primorial;
+        }
+    };
+
     my $fibonacci = sub {
         my ($n) = @_;
         ref($n) eq __PACKAGE__ and return $n->fib;
@@ -422,6 +436,7 @@ use overload
     my %functions = (
                      binomial  => $binomial,
                      factorial => $factorial,
+                     primorial => $primorial,
                      fibonacci => $fibonacci,
                      lucas     => $lucas,
                      ipow      => $ipow,
@@ -5706,6 +5721,8 @@ sub is_even {
 Returns a true value if C<$x> is divisible by C<$y>. False otherwise.
 If C<$y> is zero, returns C<0>.
 
+This method is very fast when C<$x> is an integer and the second argument is a Perl integer.
+
 =cut
 
 Class::Multimethods::multimethod is_div => qw(Math::BigNum Math::BigNum) => sub {
@@ -5745,7 +5762,7 @@ Class::Multimethods::multimethod is_div => qw(Math::BigNum Math::BigNum::Nan) =>
 
     $n->is_psqr                    # => Bool
 
-Returns a true value when C<$n> is a perfect square. False otherwise.
+Returns a true value when C<$n> is a perfect square.
 When C<$n> is not an integer, returns C<0>.
 
 =cut
@@ -5753,16 +5770,16 @@ When C<$n> is not an integer, returns C<0>.
 sub is_psqr {
     my ($x) = @_;
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
-    my $nz = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_numref($nz, $$x);
-    Math::GMPz::Rmpz_perfect_square_p($nz);
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_numref($z, $$x);
+    Math::GMPz::Rmpz_perfect_square_p($z);
 }
 
 =head2 is_ppow
 
     $n->is_ppow                    # => Bool
 
-Returns a true value when C<$n> is a perfect power. False otherwise.
+Returns a true value when C<$n> is a perfect power of some integer k.
 When C<$n> is not an integer, returns C<0>.
 
 =cut
@@ -5770,10 +5787,75 @@ When C<$n> is not an integer, returns C<0>.
 sub is_ppow {
     my ($x) = @_;
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
-    my $nz = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_numref($nz, $$x);
-    Math::GMPz::Rmpz_perfect_power_p($nz);
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_numref($z, $$x);
+    Math::GMPz::Rmpz_perfect_power_p($z);
 }
+
+=head2 is_pow
+
+    $n->is_pow(BigNum)             # => Bool
+    $n->is_pow(Scalar)             # => Bool
+
+Return a true value when C<$n> is a perfect power of a given integer C<$k>.
+When C<$n> is not an integer, returns C<0>. On the other hand, when C<$k> is not an integer,
+it will be truncated implicitly to an integer. If C<$k> is not positive after truncation,
+the method returns C<0>.
+
+In other words, a true value is returned iff there exists some integer `a` satisfying the equation: `a^k = n`.
+
+Example:
+
+    100->is_pow(2)       # true: 100 is a square (10**2)
+    125->is_pow(3)       # true: 125 is a cube   ( 5**3)
+
+=cut
+
+Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    Math::GMPq::Rmpq_integer_p($$x) || return 0;
+
+    my $pow = CORE::int(Math::GMPq::Rmpq_get_d($$y));
+
+    # Don't accept a negative power
+    $pow <= 0 && return 0;
+
+    my $z = Math::GMPz::Rmpz_init();
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_numref($z, $$x);
+    Math::GMPz::Rmpz_root($r, $z, $pow);
+
+    Math::GMPz::Rmpz_remove($z, $z, $r) == $y;
+};
+
+Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    Math::GMPq::Rmpq_integer_p($$x) || return 0;
+
+    if (CORE::int($y) eq $y and $y <= MAX_UI) {
+
+        # Don't accept a negative power
+        $y <= 0 && return 0;
+
+        my $z = Math::GMPz::Rmpz_init();
+        my $r = Math::GMPz::Rmpz_init();
+        Math::GMPq::Rmpq_numref($z, $$x);
+        Math::GMPz::Rmpz_root($r, $z, $y);
+
+        Math::GMPz::Rmpz_remove($z, $z, $r) == $y;
+    }
+    else {
+        $x->is_pow(Math::BigNum->new($y));
+    }
+};
+
+Class::Multimethods::multimethod is_pow => qw(Math::BigNum *) => sub {
+    $_[0]->is_pow(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum::Inf) => sub { 0 };
+Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
 
 =head2 sign
 

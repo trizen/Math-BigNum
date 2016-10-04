@@ -386,18 +386,20 @@ sub is_pos {
     Math::GMPq::Rmpq_sgn(${$_[0]}) > 0;
 }
 
-sub is_nan   { 0 }
-sub is_zerp  { 0 }
-sub is_one   { 0 }
-sub is_mone  { 0 }
-sub is_prime { 0 }
-sub is_psqr  { 0 }
-sub is_ppow  { 0 }
-sub is_div   { 0 }
-sub is_even  { 0 }
-sub is_odd   { 0 }
-sub is_real  { 0 }
-sub is_int   { 0 }
+sub is_nan { 0 }
+
+*is_zero  = \&is_nan;
+*is_one   = \&is_nan;
+*is_mone  = \&is_nan;
+*is_prime = \&is_nan;
+*is_psqr  = \&is_nan;
+*is_ppow  = \&is_nan;
+*is_pow   = \&is_nan;
+*is_div   = \&is_nan;
+*is_even  = \&is_nan;
+*is_odd   = \&is_nan;
+*is_real  = \&is_nan;
+*is_int   = \&is_nan;
 
 sub sign { $_[0]->is_pos ? 1 : -1 }
 
@@ -1656,7 +1658,7 @@ sub lucas {
 sub divmod { (nan(), nan()) }
 
 sub as_frac {
-    $_[0]->is_pos ? '@Inf@/1' : '-@Inf@/1';
+    $_[0]->is_pos ? 'Inf/1' : '-Inf/1';
 }
 
 *numerator   = \&copy;
@@ -1666,7 +1668,7 @@ sub parts {
     ($_[0]->copy, one());
 }
 
-sub as_bin { $_[0]->is_pos ? '@Inf@' : '-@Inf@' }
+sub as_bin { $_[0]->is_pos ? 'Inf' : '-Inf' }
 
 *as_oct   = \&as_bin;
 *as_hex   = \&as_bin;

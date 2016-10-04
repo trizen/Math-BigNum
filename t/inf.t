@@ -114,11 +114,11 @@ like("$p", qr/^-inf/i);
     is(ref($num), 'Math::BigNum::Inf');
     is(ref($den), 'Math::BigNum');
 
-    is($inf->as_rat,  '@Inf@');
-    is($ninf->as_rat, '-@Inf@');
+    is($inf->as_rat,  'Inf');
+    is($ninf->as_rat, '-Inf');
 
-    is($inf->as_frac,  '@Inf@/1');
-    is($ninf->as_frac, '-@Inf@/1');
+    is($inf->as_frac,  'Inf/1');
+    is($ninf->as_frac, '-Inf/1');
 }
 
 ###################################################

@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 246;
+plan tests => 259;
 
 # Initialization
 
@@ -512,10 +512,31 @@ plan tests => 246;
     my $x = Math::BigNum->new(42);
     my $y = Math::BigNum->new(1227);
 
+    # 1227^42
     my $int =
         '53885464952588636769288796952610833906623325457053423'
       . '69492596680077919898979278105197183545838519370517708'
       . '740399910496813982887129';
+
+    my $bint = Math::BigNum->new($int);
+
+    is($bint->valuation(-9),    21);
+    is($bint->valuation($y),    42);
+    is($bint->copy->biroot(42), 1227);
+
+    ok($bint->is_pow(42));
+    ok($bint->is_pow($x));
+
+    ok($bint->is_pow(2));
+    ok($bint->is_pow(Math::BigNum->new(2)));
+
+    ok($bint->is_pow(3));
+    ok($bint->is_pow(Math::BigNum->new(3)));
+
+    ok(!$bint->is_pow(4));
+    ok(!$bint->is_pow(Math::BigNum->new(4)));
+    ok(!$bint->is_pow(5));
+    ok(!$bint->is_pow(Math::BigNum->new(5)));
 
     my $i = $y**42;
     is("$i", $int);

@@ -130,7 +130,7 @@ sub bnan {
     $x;
 }
 
-sub in_base { '@NaN@' }
+sub in_base { 'NaN' }
 
 =head2 eq
 
@@ -366,21 +366,25 @@ sub cmp { }
 *inv    = \&nan;
 *binv   = \&_self;
 
+sub is_nan { 1 }
+
 sub is_zero { 0 }
-sub is_one  { 0 }
-sub is_mone { 0 }
-sub is_pos  { 0 }
-sub is_neg  { 0 }
-sub is_int  { 0 }
-sub is_real { 0 }
-sub is_inf  { 0 }
-sub is_ninf { 0 }
-sub is_nan  { 1 }
-sub is_even { 0 }
-sub is_odd  { 0 }
-sub is_div  { 0 }
-sub is_psqr { 0 }
-sub is_ppow { 0 }
+
+*is_one   = \&is_zero;
+*is_mone  = \&is_zero;
+*is_pos   = \&is_zero;
+*is_neg   = \&is_zero;
+*is_int   = \&is_zero;
+*is_real  = \&is_zero;
+*is_inf   = \&is_zero;
+*is_ninf  = \&is_zero;
+*is_even  = \&is_zero;
+*is_odd   = \&is_zero;
+*is_div   = \&is_zero;
+*is_psqr  = \&is_zero;
+*is_ppow  = \&is_zero;
+*is_pow   = \&is_zero;
+*is_prime = \&is_zero;
 
 *max = \&_self;
 *min = \&_self;
@@ -393,13 +397,13 @@ sub is_ppow { 0 }
 *float  = \&nan;
 *bfloat = \&_self;
 
-sub as_frac  { '' }
-sub as_rat   { '' }
-sub as_float { '' }
-sub as_int   { '' }
-sub as_bin   { '' }
-sub as_hex   { '' }
-sub as_oct   { '' }
+sub as_frac  { '0/0' }
+sub as_rat   { '0/0' }
+sub as_float { 'NaN' }
+sub as_int   { 'NaN' }
+sub as_bin   { 'NaN' }
+sub as_hex   { 'NaN' }
+sub as_oct   { 'NaN' }
 
 sub digits { () }
 sub length { 0 }
@@ -440,8 +444,6 @@ sub length { 0 }
 *bernreal  = \&nan;
 *kronecker = \&nan;
 *valuation = \&nan;
-
-sub is_prime { 0 }
 
 *next_prime = \&nan;    # next prime after NaN? Hmm...
 *agm        = \&nan;
