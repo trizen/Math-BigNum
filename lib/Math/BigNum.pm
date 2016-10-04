@@ -651,17 +651,20 @@ sub _int2mpz {
 # Converts an mpfr object to BigNum
 sub _mpfr2big {
 
-    if (Math::MPFR::Rmpfr_inf_p($_[0])) {
-        if (Math::MPFR::Rmpfr_sgn($_[0]) > 0) {
-            return inf();
-        }
-        else {
-            return ninf();
-        }
-    }
+    if (!Math::MPFR::Rmpfr_number_p($_[0])) {
 
-    if (Math::MPFR::Rmpfr_nan_p($_[0])) {
-        return nan();
+        if (Math::MPFR::Rmpfr_inf_p($_[0])) {
+            if (Math::MPFR::Rmpfr_sgn($_[0]) > 0) {
+                return inf();
+            }
+            else {
+                return ninf();
+            }
+        }
+
+        if (Math::MPFR::Rmpfr_nan_p($_[0])) {
+            return nan();
+        }
     }
 
     my $r = Math::GMPq::Rmpq_init();
@@ -672,17 +675,20 @@ sub _mpfr2big {
 # Converts an mpfr object to mpq and puts it in $x
 sub _mpfr2x {
 
-    if (Math::MPFR::Rmpfr_inf_p($_[1])) {
-        if (Math::MPFR::Rmpfr_sgn($_[1]) > 0) {
-            return $_[0]->binf;
-        }
-        else {
-            return $_[0]->bninf;
-        }
-    }
+    if (!Math::MPFR::Rmpfr_number_p($_[1])) {
 
-    if (Math::MPFR::Rmpfr_nan_p($_[1])) {
-        return $_[0]->bnan;
+        if (Math::MPFR::Rmpfr_inf_p($_[1])) {
+            if (Math::MPFR::Rmpfr_sgn($_[1]) > 0) {
+                return $_[0]->binf;
+            }
+            else {
+                return $_[0]->bninf;
+            }
+        }
+
+        if (Math::MPFR::Rmpfr_nan_p($_[1])) {
+            return $_[0]->bnan;
+        }
     }
 
     Math::MPFR::Rmpfr_get_q(${$_[0]}, $_[1]);
@@ -1677,7 +1683,10 @@ Class::Multimethods::multimethod bmod => qw(Math::BigNum *) => sub {
 # -x mod -Inf = x
 Class::Multimethods::multimethod bmod => qw(Math::BigNum Math::BigNum::Inf) => sub {
     my ($x, $y) = @_;
-    Math::GMPq::Rmpq_sgn($$x) == Math::GMPq::Rmpq_sgn($$y) ? $x : $y;
+
+    Math::GMPq::Rmpq_sgn($$x) == Math::GMPq::Rmpq_sgn($$y) ? $x
+      : $y->is_pos                                         ? $x->binf
+      :                                                      $x->bninf;
 };
 
 Class::Multimethods::multimethod bmod => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
@@ -1950,7 +1959,7 @@ Class::Multimethods::multimethod bpow => qw(Math::BigNum Math::BigNum::Inf) => s
       ? $_[1]->is_neg
           ? $_[0]->binf
           : $_[0]->bzero
-      : $_[0]->is_one || $_[0]->is_mone ? $_[0]->bone()
+      : $_[0]->is_one || $_[0]->is_mone ? $_[0]->bone
       : $_[1]->is_neg ? $_[0]->bzero
       :                 $_[0]->binf;
 };
@@ -1969,9 +1978,8 @@ sub inv {
     my ($x) = @_;
 
     # Return Inf when $x is zero.
-    if (!Math::GMPq::Rmpq_sgn($$x)) {
-        return inf;
-    }
+    Math::GMPq::Rmpq_sgn($$x)
+      || return inf();
 
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_inv($r, $$x);
@@ -1990,9 +1998,8 @@ sub binv {
     my ($x) = @_;
 
     # Return Inf when $x is zero.
-    if (!Math::GMPq::Rmpq_sgn($$x)) {
-        return $x->binf;
-    }
+    Math::GMPq::Rmpq_sgn($$x)
+      || return $x->binf;
 
     Math::GMPq::Rmpq_inv($$x, $$x);
     $x;
@@ -2036,6 +2043,203 @@ which are, in the end, converted to fraction-approximations.
 In some cases, the results are 100% exact, but this is not guaranteed.
 
 =cut
+
+=head2 fpow
+
+    $x->fpow(BigNum)               # => BigNum | Inf | Nan
+    $x->fpow(Scalar)               # => BigNum | Inf | Nan
+
+Raises C<$x> to power C<$y>. Returns Nan when C<$x> is negative
+and C<$y> is not an integer.
+
+=cut
+
+Class::Multimethods::multimethod fpow => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = _big2mpfr($x);
+    Math::MPFR::Rmpfr_pow($r, $r, _big2mpfr($y), $ROUND);
+    _mpfr2big($r);
+};
+
+Class::Multimethods::multimethod fpow => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    my $r = _big2mpfr($x);
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::MPFR::Rmpfr_pow_ui($r, $r, $y, $ROUND)
+          : Math::MPFR::Rmpfr_pow_si($r, $r, $y, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_pow($r, $r, _str2mpfr($y) // (return $x->fpow(Math::BigNum->new($y))), $ROUND);
+    }
+    _mpfr2big($r);
+};
+
+Class::Multimethods::multimethod fpow => qw(Math::BigNum *) => sub {
+    $_[0]->fpow(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod fpow => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[0]->pow($_[1]);
+};
+
+Class::Multimethods::multimethod fpow => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 bfpow
+
+    $x->bfpow(BigNum)              # => BigNum | Inf | Nan
+    $x->bfpow(Scalar)              # => BigNum | Inf | Nan
+
+Raises C<$x> to power C<$y> modifying C<$x> in-place. Returns Nan when C<$x> is negative
+and C<$y> is not an integer.
+
+=cut
+
+Class::Multimethods::multimethod bfpow => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = _big2mpfr($x);
+    Math::MPFR::Rmpfr_pow($r, $r, _big2mpfr($y), $ROUND);
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfpow => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+    my $r = _big2mpfr($x);
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::MPFR::Rmpfr_pow_ui($r, $r, $y, $ROUND)
+          : Math::MPFR::Rmpfr_pow_si($r, $r, $y, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_pow($r, $r, _str2mpfr($y) // (return $x->fpow(Math::BigNum->new($y))), $ROUND);
+    }
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfpow => qw(Math::BigNum *) => sub {
+    $_[0]->bfpow(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod bfpow => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[0]->bpow($_[1]);
+};
+
+Class::Multimethods::multimethod bfpow => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
+
+=head2 fmod
+
+    $x->fmod(BigNum)               # => BigNum | Nan
+    $x->fmod(Scalar)               # => BigNum | Nan
+
+The remainder of C<$x> when is divided by C<$y>. Nan is returned when C<$y> is zero.
+
+=cut
+
+Class::Multimethods::multimethod fmod => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $r  = _big2mpfr($x);
+    my $yf = _big2mpfr($y);
+
+    Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
+
+    my $sign_r = Math::MPFR::Rmpfr_sgn($r);
+    if (!$sign_r) {
+        return (zero);    # return faster
+    }
+    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
+        Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
+    }
+
+    _mpfr2big($r);
+};
+
+Class::Multimethods::multimethod fmod => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $yf = _str2mpfr($y) // return $x->fmod(Math::BigNum->new($y));
+    my $r = _big2mpfr($x);
+
+    Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
+
+    my $sign_r = Math::MPFR::Rmpfr_sgn($r);
+    if (!$sign_r) {
+        return (zero);    # return faster
+    }
+    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
+        Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
+    }
+
+    _mpfr2big($r);
+};
+
+Class::Multimethods::multimethod fmod => qw(Math::BigNum *) => sub {
+    $_[0]->fmod(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod fmod => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[0]->copy->bmod($_[1]);
+};
+
+Class::Multimethods::multimethod fmod => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 bfmod
+
+    $x->bfmod(BigNum)              # => BigNum | Nan
+    $x->bfmod(Scalar)              # => BigNum | Nan
+
+The remainder of C<$x> when is divided by C<$y>, modifying C<$x> in-place.
+C<$x> is promoted to Nan when C<$y> is zero.
+
+=cut
+
+Class::Multimethods::multimethod bfmod => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $r  = _big2mpfr($x);
+    my $yf = _big2mpfr($y);
+
+    Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
+
+    my $sign_r = Math::MPFR::Rmpfr_sgn($r);
+    if (!$sign_r) {
+        return $x->bzero;    # return faster
+    }
+    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
+        Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
+    }
+
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfmod => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $yf = _str2mpfr($y) // return $x->bfmod(Math::BigNum->new($y));
+    my $r = _big2mpfr($x);
+
+    Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
+
+    my $sign_r = Math::MPFR::Rmpfr_sgn($r);
+    if (!$sign_r) {
+        return $x->bzero;    # return faster
+    }
+    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
+        Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
+    }
+
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfmod => qw(Math::BigNum *) => sub {
+    $_[0]->bfmod(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod bfmod => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    $_[0]->bmod($_[1]);
+};
+
+Class::Multimethods::multimethod bfmod => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 sqrt
 
@@ -2120,7 +2324,7 @@ Class::Multimethods::multimethod root => qw(Math::BigNum $) => sub {
         _mpfr2big($x);
     }
     else {
-        $x->pow(Math::BigNum->new($y)->inv);
+        $x->pow(Math::BigNum->new($y)->binv);
     }
 };
 
@@ -2163,7 +2367,7 @@ Class::Multimethods::multimethod broot => qw(Math::BigNum $) => sub {
         _mpfr2x($x, $f);
     }
     else {
-        $x->bpow(Math::BigNum->new($y)->inv);
+        $x->bpow(Math::BigNum->new($y)->binv);
     }
 };
 
@@ -2391,8 +2595,7 @@ sub bexp {
     my ($x) = @_;
     my $r = _big2mpfr($x);
     Math::MPFR::Rmpfr_exp($r, $r, $ROUND);
-    Math::MPFR::Rmpfr_get_q($$x, $r);
-    $x;
+    _mpfr2x($x, $r);
 }
 
 =head2 exp2
@@ -3839,8 +4042,7 @@ Class::Multimethods::multimethod bimod => qw(Math::BigNum *) => sub {
 # -x mod +Inf = +Inf
 # -x mod -Inf = x
 Class::Multimethods::multimethod bimod => qw(Math::BigNum Math::BigNum::Inf) => sub {
-    my ($x, $y) = @_;
-    Math::GMPq::Rmpq_sgn($$x) == Math::GMPq::Rmpq_sgn($$y) ? $x->bint : $y;
+    $_[0]->int->bmod($_[1]);
 };
 
 Class::Multimethods::multimethod bimod => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;

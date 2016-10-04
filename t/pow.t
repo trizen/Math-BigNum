@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 349;
+plan tests => 357;
 
 use Math::BigNum;
 
@@ -575,6 +575,40 @@ is(Math::BigNum->new(-1)->bpow(Math::BigNum->new(-5))->bint, -1);
 
 is(Math::BigNum->new(-1)->bpow(-4)->bint,    1);
 is(Math::BigNum->new(-1)->bpow($int2)->bint, 1);
+
+##############################################################
+# fpow
+
+{
+    my $k = Math::BigNum->new(4.5);
+    my $x = Math::BigNum->new(3.45);
+    my $y = Math::BigNum->new(3);
+
+    my $r1 = qr/^179\.3011/;
+    my $r2 = qr/^91\.12[45]/;
+
+    like($k->fpow("3.45"), $r1);
+    like($k->fpow(3),      $r2);
+
+    like($k->fpow($x), $r1);
+    like($k->fpow($y), $r2);
+
+    my $j = $k->copy;
+    $j->bfpow($x);
+    like($j, $r1);
+
+    $j = $k->copy;
+    $j->bfpow($y);
+    like($j, $r2);
+
+    $j = $k->copy;
+    $j->bfpow("3.45");
+    like($j, $r1);
+
+    $j = $k->copy;
+    $j->bfpow(3);
+    like($j, $r2);
+}
 
 ##############################################################
 # real test

@@ -26,6 +26,7 @@ Revision history for Math-BigNum
         - Added the `$n->valuation($k)` method, which returns the number of times `$n` is divisible by `$k`.
         - Extended the method `float` to accept an optional argument with the number of bits of precision.
         - Added the `$x->bfloat` method, which truncates `$x` in-place to a floating-point value.
+        - Added the `(b)fmod` and `(b)fpow` floating-point methods.
         - Some minor bug-fixes and documentation improvements.
 
 0.10    2016-17-08

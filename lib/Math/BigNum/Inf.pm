@@ -1186,6 +1186,7 @@ Class::Multimethods::multimethod pow => qw(* Math::BigNum::Inf) => sub {
 Class::Multimethods::multimethod pow => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
 *ipow = \&pow;    # probably, truncate first?
+*fpow = \&pow;
 
 =head2 bpow / bipow
 
@@ -1224,6 +1225,7 @@ Class::Multimethods::multimethod bpow => qw(Math::BigNum::Inf Math::BigNum::Inf)
 Class::Multimethods::multimethod bpow => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 
 *bipow = \&bpow;    # probably, truncate first?
+*bfpow = \&bpow;
 
 =head2 root / iroot
 

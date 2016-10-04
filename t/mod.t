@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 64;
+plan tests => 102;
 
 use Math::BigNum qw(:constant);
 
@@ -28,6 +28,38 @@ is("-$x" % -$y, -$m);
 is("$x" % -$y,  $m - $y);
 is("-$x" % $y,  $y - $m);
 
+# imod
+
+is($x->imod($y),     $m);
+is((-$x)->imod(-$y), -$m);
+is($x->imod(-$y),    $m - $y);
+is((-$x)->imod($y),  $y - $m);
+
+is($x->imod("$y"),     $m);
+is((-$x)->imod("-$y"), -$m);
+is($x->imod("-$y"),    $m - $y);
+is((-$x)->imod("$y"),  $y - $m);
+
+# bimod
+
+is($x->copy->bimod($y),  $m);
+is((-$x)->bimod(-$y),    -$m);
+is($x->copy->bimod(-$y), $m - $y);
+is((-$x)->bimod($y),     $y - $m);
+
+is($x->copy->bimod("$y"),  $m);
+is((-$x)->bimod("-$y"),    -$m);
+is($x->copy->bimod("-$y"), $m - $y);
+is((-$x)->bimod("$y"),     $y - $m);
+
+my $xcp = $x->copy;
+$xcp->bimod($y);
+is($xcp, $m);
+
+$xcp = $x->copy;
+$xcp->bimod("-$y");
+is($xcp, $m - $y);
+
 my $f1 = 399.8;
 my $f2 = 41.2;
 
@@ -45,6 +77,41 @@ is(("$f1" % $f2)->round(0),   29);
 is(("-$f1" % -$f2)->round(0), -29);
 is(("$f1" % -$f2)->round(-1), -12.2);
 is(("-$f1" % $f2)->round(-1), 12.2);
+
+# fmod
+
+is(($f1->fmod($f2))->round(0),     29);
+is(((-$f1)->fmod(-$f2))->round(0), -29);
+is(($f1->fmod(-$f2))->round(-1),   -12.2);
+is(((-$f1)->fmod($f2))->round(-1), 12.2);
+
+is(($f1->fmod("$f2"))->round(0),     29);
+is(((-$f1)->fmod("-$f2"))->round(0), -29);
+is(($f1->fmod("-$f2"))->round(-1),   -12.2);
+is(((-$f1)->fmod("$f2"))->round(-1), 12.2);
+
+# bfmod
+
+is(($f1->copy->bfmod($f2))->round(0),   29);
+is(((-$f1)->bfmod(-$f2))->round(0),     -29);
+is(($f1->copy->bfmod(-$f2))->round(-1), -12.2);
+is(((-$f1)->bfmod($f2))->round(-1),     12.2);
+
+is(($f1->copy->bfmod("$f2"))->round(0),   29);
+is(((-$f1)->bfmod("-$f2"))->round(0),     -29);
+is(($f1->copy->bfmod("-$f2"))->round(-1), -12.2);
+is(((-$f1)->bfmod("$f2"))->round(-1),     12.2);
+
+my $f1cp = $f1->copy;
+$f1cp->bfmod($f2)->bround(0);
+is($f1cp, 29);
+
+$f1cp = $f1->copy;
+$f1cp->bfmod("-$f2")->bround(-1);
+is($f1cp, -12.2);
+
+is($f1, "399.8");
+is($f2, "41.2");
 
 ##################################################
 # extreme
