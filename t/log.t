@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 16;
+use Test::More tests => 18;
 
 use Math::BigNum;
 
@@ -53,6 +53,13 @@ is($x->log($base)->int, 56, 'blog(777**256, 12345678901234)');
 $x    = $cl->new('777')**777;
 $base = $cl->new('777');
 is($x->copy()->blog($base), 777, 'blog(777**777, 777)');
+
+#
+## lgrt
+#
+
+is($x->lgrt, '777');
+like($cl->new(100)->lgrt, qr/^3\.59728502/);
 
 # all done
 1;

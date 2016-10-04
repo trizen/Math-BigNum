@@ -28,6 +28,11 @@ Revision history for Math-BigNum
         - Extended the method `float` to accept an optional argument with the number of bits of precision.
         - Added the `$x->bfloat` method, which truncates `$x` in-place to a floating-point value.
         - Added the method `$n->is_pow($k)`, which returns true iff `a^k = n` for some positive integer `a`.
+        - Added the method `$x->lgrt`, which returns the logarithmic-root of `$x`.
+
+                100->lgrt       # solves for x in `x**x = 100` and returns: `3.59728...`
+               3125->lgrt       # returns `5` because `log(3125)/log(5) == 3125->root(5)`
+
         - Added the following floating-point functions:
 
                 (b)fadd

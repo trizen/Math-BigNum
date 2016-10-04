@@ -2734,6 +2734,58 @@ sub log10 {
     _mpfr2big($r);
 }
 
+=head2 lgrt
+
+    $x->lgrt                       # => BigNum | Nan
+
+Logarithmic-root of C<$x>, which is the solution to C<a**a = b>, where C<b> is known.
+It is defined in real numbers only for values greater than or equal to C<0.7>.
+
+The logarithmic-root of `c` is defined as the number `a` where the a'th root of `c` and
+the logarithm of `c` to base `a` are equal:
+
+    log(c)/log(a) == c->root(a)       # `a` is the logarithmic-root of `c`
+
+Example:
+         100->lgrt       # solves for x in `x**x = 100` and returns: `3.59728...`
+        3125->lgrt       # returns `5` because `log(3125)/log(5) == 3125->root(5)`
+
+=cut
+
+sub lgrt {
+    my ($x) = @_;
+
+    my $d = _big2mpfr($x);
+    Math::MPFR::Rmpfr_log($d, $d, $ROUND);
+
+    my $p = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_ui_pow_ui($p, 10, CORE::int($PREC / 4), $ROUND);
+    Math::MPFR::Rmpfr_ui_div($p, 1, $p, $ROUND);
+
+    $x = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_set_ui($x, 1, $ROUND);
+
+    my $y = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_set_ui($y, 0, $ROUND);
+
+    my $tmp = Math::MPFR::Rmpfr_init2($PREC);
+
+    while (1) {
+        Math::MPFR::Rmpfr_sub($tmp, $x, $y, $ROUND);
+        Math::MPFR::Rmpfr_cmpabs($tmp, $p) <= 0 and last;
+
+        Math::MPFR::Rmpfr_set($y, $x, $ROUND);
+
+        Math::MPFR::Rmpfr_log($tmp, $x, $ROUND);
+        Math::MPFR::Rmpfr_add_ui($tmp, $tmp, 1, $ROUND);
+
+        Math::MPFR::Rmpfr_add($x, $x, $d, $ROUND);
+        Math::MPFR::Rmpfr_div($x, $x, $tmp, $ROUND);
+    }
+
+    _mpfr2big($x);
+}
+
 =head2 exp
 
     $x->exp                        # => BigNum

@@ -1585,10 +1585,11 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan
 *dec  = \&copy;
 *bdec = \&_self;
 
-*li  = \&inf;
-*li2 = \&ninf;
-*ln  = \&inf;
-*bln = \&binf;
+*li   = \&inf;
+*li2  = \&ninf;
+*lgrt = \&inf;
+*ln   = \&inf;
+*bln  = \&binf;
 
 *bernreal  = \&nan;
 *kronecker = \&nan;
