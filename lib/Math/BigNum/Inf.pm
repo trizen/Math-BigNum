@@ -137,12 +137,24 @@ sub numify {
 
 sub boolify { 1 }
 
+# Sets x to the value of Infinity that is given.
+
+# Example:
+#   _big2ninf(x, +Inf)       # sets `x` to `+Inf`
+#   _big2ninf(x, -Inf)       # sets `x` to `-Inf`
+
 sub _big2inf {
     my ($x, $y) = @_;
     Math::GMPq::Rmpq_set($$x, $$y);
     bless $x, __PACKAGE__;
     $x;
 }
+
+# Sets x to the negated value of Infinity that is given.
+
+# Example:
+#   _big2ninf(x, +Inf)       # sets `x` to `-Inf`
+#   _big2ninf(x, -Inf)       # sets `x` to `+Inf`
 
 sub _big2ninf {
     my ($x, $y) = @_;

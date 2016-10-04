@@ -1698,10 +1698,7 @@ Class::Multimethods::multimethod bmod => qw(Math::BigNum *) => sub {
 # -x mod -Inf = x
 Class::Multimethods::multimethod bmod => qw(Math::BigNum Math::BigNum::Inf) => sub {
     my ($x, $y) = @_;
-
-    Math::GMPq::Rmpq_sgn($$x) == Math::GMPq::Rmpq_sgn($$y) ? $x
-      : $y->is_pos                                         ? $x->binf
-      :                                                      $x->bninf;
+    Math::GMPq::Rmpq_sgn($$x) == Math::GMPq::Rmpq_sgn($$y) ? $x : _big2inf($x, $y);
 };
 
 Class::Multimethods::multimethod bmod => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
@@ -2058,6 +2055,158 @@ which are, in the end, converted to fraction-approximations.
 In some cases, the results are 100% exact, but this is not guaranteed.
 
 =cut
+
+=head2 fadd
+
+    $x->fadd(BigNum)               # => BigNum
+    $x->fadd(Scalar)               # => BigNum
+
+Floating-point addition of C<$x> and C<$y>.
+
+=cut
+
+Class::Multimethods::multimethod fadd => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    $x = _big2mpfr($x);
+    Math::MPFR::Rmpfr_add($x, $x, _big2mpfr($y), $ROUND);
+    _mpfr2big($x);
+};
+
+Class::Multimethods::multimethod fadd => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $r = _big2mpfr($x);
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::MPFR::Rmpfr_add_ui($r, $r, $y, $ROUND)
+          : Math::MPFR::Rmpfr_add_si($r, $r, $y, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_add($r, $r, _str2mpfr($y) // (return Math::BigNum->new($y)->bfadd($x)), $ROUND);
+    }
+    _mpfr2big($r);
+};
+
+Class::Multimethods::multimethod fadd => qw(Math::BigNum *) => sub {
+    Math::BigNum->new($_[1])->bfadd($_[0]);
+};
+
+Class::Multimethods::multimethod fadd => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1] };
+Class::Multimethods::multimethod fadd => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 bfadd
+
+    $x->bfadd(BigNum)              # => BigNum
+    $x->bfadd(Scalar)              # => BigNum
+
+Floating-point addition of C<$x> and C<$y>, changing C<$x> in-place.
+
+=cut
+
+Class::Multimethods::multimethod bfadd => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = _big2mpfr($x);
+    Math::MPFR::Rmpfr_add($r, $r, _big2mpfr($y), $ROUND);
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfadd => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $r = _big2mpfr($x);
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::MPFR::Rmpfr_add_ui($r, $r, $y, $ROUND)
+          : Math::MPFR::Rmpfr_add_si($r, $r, $y, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_add($r, $r, _str2mpfr($y) // (return $x->bfadd(Math::BigNum->new($y))), $ROUND);
+    }
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfadd => qw(Math::BigNum *) => sub {
+    $_[0]->bfadd(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod bfadd => qw(Math::BigNum Math::BigNum::Inf) => \&_big2inf;
+Class::Multimethods::multimethod bfadd => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
+
+=head2 fsub
+
+    $x->fsub(BigNum)               # => BigNum
+    $x->fsub(Scalar)               # => BigNum
+
+Floating-point subtraction of C<$x> and C<$y>.
+
+=cut
+
+Class::Multimethods::multimethod fsub => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    $x = _big2mpfr($x);
+    Math::MPFR::Rmpfr_sub($x, $x, _big2mpfr($y), $ROUND);
+    _mpfr2big($x);
+};
+
+Class::Multimethods::multimethod fsub => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $r = _big2mpfr($x);
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::MPFR::Rmpfr_sub_ui($r, $r, $y, $ROUND)
+          : Math::MPFR::Rmpfr_sub_si($r, $r, $y, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_sub($r, $r, _str2mpfr($y) // (return Math::BigNum->new($y)->bneg->bfadd($x)), $ROUND);
+    }
+    _mpfr2big($r);
+};
+
+Class::Multimethods::multimethod fsub => qw(Math::BigNum *) => sub {
+    Math::BigNum->new($_[1])->bneg->bfadd($_[0]);
+};
+
+Class::Multimethods::multimethod fsub => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->neg };
+Class::Multimethods::multimethod fsub => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 bfsub
+
+    $x->bfsub(BigNum)              # => BigNum
+    $x->bfsub(Scalar)              # => BigNum
+
+Floating-point subtraction of C<$x> and C<$y>, changing C<$x> in-place.
+
+=cut
+
+Class::Multimethods::multimethod bfsub => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    my $r = _big2mpfr($x);
+    Math::MPFR::Rmpfr_sub($r, $r, _big2mpfr($y), $ROUND);
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfsub => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $r = _big2mpfr($x);
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $y >= 0
+          ? Math::MPFR::Rmpfr_sub_ui($r, $r, $y, $ROUND)
+          : Math::MPFR::Rmpfr_sub_si($r, $r, $y, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_sub($r, $r, _str2mpfr($y) // (return $x->bfsub(Math::BigNum->new($y))), $ROUND);
+    }
+    _mpfr2x($x, $r);
+};
+
+Class::Multimethods::multimethod bfsub => qw(Math::BigNum *) => sub {
+    $_[0]->bfsub(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod bfsub => qw(Math::BigNum Math::BigNum::Inf) => \&_big2ninf;
+Class::Multimethods::multimethod bfsub => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
 
 =head2 fpow
 
@@ -3357,7 +3506,7 @@ Class::Multimethods::multimethod iadd => qw(Math::BigNum *) => sub {
     Math::BigNum->new($_[1])->biadd($_[0]);
 };
 
-Class::Multimethods::multimethod iadd => qw(Math::BigNum Math::BigNum::Inf) => \&_big2inf;
+Class::Multimethods::multimethod iadd => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1] };
 Class::Multimethods::multimethod iadd => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
 =head2 biadd

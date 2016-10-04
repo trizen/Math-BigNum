@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 259;
+plan tests => 279;
 
 # Initialization
 
@@ -537,6 +537,71 @@ plan tests => 259;
     ok(!$bint->is_pow(Math::BigNum->new(4)));
     ok(!$bint->is_pow(5));
     ok(!$bint->is_pow(Math::BigNum->new(5)));
+
+    #
+    ## fadd
+    #
+    is($x->fadd(2),    44);
+    is($x->fadd(-2),   40);
+    is($x->fadd(-1.5), 40.5);
+    is($x->fadd(1.5),  43.5);
+    is($x->fadd($y),   1269);
+
+    #
+    ## fsub
+    #
+    is($x->fsub(2),    40);
+    is($x->fsub(-2),   44);
+    is($x->fsub(-1.5), 43.5);
+    is($x->fsub(1.5),  40.5);
+    is($x->fsub($y),   -1185);
+
+    #
+    ## fmul
+    #
+
+    #
+    ## fdiv
+    #
+
+    #
+    ## bfadd
+    #
+    my $xcp;
+    $xcp = $x->copy;
+    $xcp->bfadd(2);
+    is($xcp, 44);
+    $xcp = $x->copy;
+    $xcp->bfadd(-2);
+    is($xcp, 40);
+    $xcp = $x->copy;
+    $xcp->bfadd(-1.5);
+    is($xcp, 40.5);
+    $xcp = $x->copy;
+    $xcp->bfadd(1.5);
+    is($xcp, 43.5);
+    $xcp = $x->copy;
+    $xcp->bfadd($y);
+    is($xcp, 1269);
+
+    #
+    ## bfsub
+    #
+    $xcp = $x->copy;
+    $xcp->bfsub(2);
+    is($xcp, 40);
+    $xcp = $x->copy;
+    $xcp->bfsub(-2);
+    is($xcp, 44);
+    $xcp = $x->copy;
+    $xcp->bfsub(-1.5);
+    is($xcp, 43.5);
+    $xcp = $x->copy;
+    $xcp->bfsub(1.5);
+    is($xcp, 40.5);
+    $xcp = $x->copy;
+    $xcp->bfsub($y);
+    is($xcp, -1185);
 
     my $i = $y**42;
     is("$i", $int);
