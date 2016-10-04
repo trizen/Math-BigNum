@@ -7,6 +7,7 @@ examples/binary_arithmetic_coding.pl
 examples/binradix_arithmetic_coding.pl
 examples/closed_form_fib.pl
 examples/coin_change.pl
+examples/computing_pi.pl
 examples/faulhaber_s_formula.pl
 examples/fibonacci_validation.pl
 examples/inverse_of_factorial.pl
