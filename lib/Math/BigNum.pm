@@ -82,20 +82,20 @@ I<mpz> function. When only C<$y> is an integer, it does rational exponentiation 
 identity: `(a/b)**n = a**n / b**n`. Otherwise, it will fallback to floating-point exponentiation,
 using the corresponding I<mpfr> function.
 
-All numbers in Math::BigNum are stored as rational L<Math::GMPq> objects. Each operation
+All numbers in Math::BigNum are stored as rational L<Math::GMPq> objects. Each operation,
 outside the functions provided by L<Math::GMPq>, is done by converting the internal objects to
 L<Math::GMPz> or L<Math::MPFR> objects and calling the corresponding functions, converting
 the results back to L<Math::GMPq> objects, without loosing any precision in the process.
 
-=head1 IMPORT/EXPORT
+=head1 IMPORT / EXPORT
 
-Math::BigNum does not export anything by default, but it recognizes the following list of words:
+Math::BigNum does not export anything by default, but it recognizes the followings:
 
     :constant       # will make any number a Math::BigNum object
                     # it will also export the "Inf" and "NaN" constants,
                     # which represent +Infinity and NaN special values
 
-    :all            # export everything that is exportable
+    :all            # export everything that is exportable (functions + constants)
 
 B<Numerical constants:>
 
@@ -117,7 +117,7 @@ B<Special functions:>
     lucas(n)           # nth-Lucas number
     ipow(a,k)          # integer exponentiation: int(a^k)
 
-B<NOTE:> this functions are designed and optimized for plain scalar values as input.
+B<NOTE:> this functions are designed and optimized for native Perl integers as input.
 
 The syntax for importing something, is:
 
@@ -225,11 +225,15 @@ use the B<i*> methods wherever applicable.
 
 =item *
 
+use the B<f*> methods when accuracy is not important.
+
+=item *
+
 pass Perl numbers as arguments to methods, if you can.
 
 =item *
 
-avoid the stringification of non-integers Math::BigNum objects.
+avoid the stringification of non-integer Math::BigNum objects.
 
 =item *
 
@@ -1731,7 +1735,7 @@ When only C<$y> is an integer, it does rational exponentiation based on the iden
 which computes the exact result.
 
 When C<$x> and C<$y> are rationals, it does floating-point exponentiation, which is, in most cases, equivalent
-with: <x^y = exp(log(x) * y)>, in which the returned result may not be exact.
+with: C<x^y = exp(log(x) * y)>, in which the returned result may not be exact.
 
 =cut
 
@@ -2425,7 +2429,7 @@ Class::Multimethods::multimethod fpow => qw(Math::BigNum Math::BigNum::Nan) => \
     $x->bfpow(BigNum)              # => BigNum | Inf | Nan
     $x->bfpow(Scalar)              # => BigNum | Inf | Nan
 
-Raises C<$x> to power C<$y> modifying C<$x> in-place. Returns Nan when C<$x> is negative
+Raises C<$x> to power C<$y>, changing C<$x> in-place. Promotes C<$x> to Nan when C<$x> is negative
 and C<$y> is not an integer.
 
 =cut
@@ -2523,8 +2527,8 @@ Class::Multimethods::multimethod fmod => qw(Math::BigNum Math::BigNum::Nan) => \
     $x->bfmod(BigNum)              # => BigNum | Nan
     $x->bfmod(Scalar)              # => BigNum | Nan
 
-The remainder of C<$x> when is divided by C<$y>, modifying C<$x> in-place.
-C<$x> is promoted to Nan when C<$y> is zero.
+The remainder of C<$x> when is divided by C<$y>, changing C<$x> in-place.
+Promotes C<$x> to Nan when C<$y> is zero.
 
 =cut
 
@@ -3036,7 +3040,7 @@ sub sin {
     $x->asin                       # => BigNum | Nan
 
 Returns the inverse sine of C<$x>.
-Returns Nan for C<<$x < -1>> or C<<$x > 1>>.
+Returns Nan for "$x < -1" or "$x > 1".
 
 =cut
 
@@ -3094,7 +3098,7 @@ sub cos {
     $x->acos                       # => BigNum | Nan
 
 Returns the inverse cosine of C<$x>.
-Returns Nan for C<<$x < -1>> or C<<$x > 1>>.
+Returns Nan for "$x < -1" or "$x > 1".
 
 =cut
 
@@ -3124,7 +3128,7 @@ sub cosh {
     $x->acosh                      # => BigNum | Nan
 
 Returns the inverse hyperbolic cosine of C<$x>.
-Returns Nan for C<<$x < 1>>.
+Returns Nan for "$x < 1".
 
 =cut
 
@@ -3182,7 +3186,7 @@ sub tanh {
     $x->atanh                      # => BigNum | Nan
 
 Returns the inverse hyperbolic tangent of C<$x>.
-Returns Nan for C<<$x <= -1>> or C<<$x >= 1>>.
+Returns Nan for "$x <= -1" or "$x >= 1".
 
 =cut
 
@@ -3212,7 +3216,7 @@ sub sec {
     $x->asec                       # => BigNum | Nan
 
 Returns the inverse secant of C<$x>.
-Returns Nan for C<<$x > -1>> and C<<$x < 1>>.
+Returns Nan for "$x > -1" and "$x < 1".
 
 =cut
 
@@ -3247,7 +3251,7 @@ sub sech {
     $x->asech                      # => BigNum | Nan
 
 Returns the inverse hyperbolic secant of C<$x>.
-Returns a Nan for C<<$x < 0>> or C<<$x > 1>>.
+Returns a Nan for "$x < 0" or "$x > 1".
 
 =cut
 
@@ -3282,7 +3286,7 @@ sub csc {
     $x->acsc                       # => BigNum | Nan
 
 Returns the inverse cosecant of C<$x>.
-Returns Nan for C<<$x > -1>> and C<<$x < 1>>.
+Returns Nan for "$x > -1" and "$x < 1".
 
 =cut
 
@@ -3408,7 +3412,7 @@ sub acoth {
     atan2(BigNum, Scalar)          # => BigNum
     atan2(Scalar, BigNum)          # => BigNum
 
-Arctangent of C<$x> and C<$y>. When C<$y> is -Inf returns PI when C<<$x >= 0>>, or C<-PI> when C<<$x < 0>>.
+Arctangent of C<$x> and C<$y>. When C<$y> is -Inf returns PI when "$x >= 0", or C<-PI> when "$x < 0".
 
 =cut
 
@@ -6118,10 +6122,9 @@ sub is_ppow {
 
 Return a true value when C<$n> is a perfect power of a given integer C<$k>.
 When C<$n> is not an integer, returns C<0>. On the other hand, when C<$k> is not an integer,
-it will be truncated implicitly to an integer. If C<$k> is not positive after truncation,
-the method returns C<0>.
+it will be truncated implicitly to an integer. If C<$k> is not positive after truncation, C<0> is returned.
 
-In other words, a true value is returned iff there exists some integer `a` satisfying the equation: `a^k = n`.
+A true value is returned iff there exists some integer `a` satisfying the equation: `a^k = n`.
 
 Example:
 
@@ -6207,7 +6210,7 @@ sub length {
     Math::GMPz::Rmpz_snprintf(my $buf, 0, "%Zd", $z, 0);
 }
 
-=head1 * Transformations
+=head1 * Conversions
 
 =cut
 
@@ -6349,7 +6352,7 @@ sub as_frac {
     $x->as_rat                     # => Scalar
 
 Almost the same as C<as_frac()>, except that integers are returned as they are,
-without adding the "1" denominator. For C<$x=0.5>, it returns C<"1/2">. For
+without adding a denominator of 1. For C<$x=0.5>, it returns C<"1/2">. For
 C<$x=3>, it simply returns C<"3">.
 
 =cut
