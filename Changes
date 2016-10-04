@@ -1,5 +1,8 @@
 Revision history for Math-BigNum
 
+0.12    2016-xx-xx
+        - Decreased the default floating-point precision from 256 bits, to 200 bits.
+
 0.11    2016-04-10
         - Added the `$n->parts` method, which returns the numerator and the denominator as BigNum objects.
         - Increased the default accuracy value for the method `is_prime` from 12 to 20.

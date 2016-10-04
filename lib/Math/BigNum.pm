@@ -129,8 +129,8 @@ B<NOTE:> C<:constant> is lexical to the current scope only.
 
 =head1 PRECISION
 
-The default precision for floating-point numbers is 256 bits, which is equivalent with about
-64 digits of precision in base 10.
+The default precision for floating-point numbers is 200 bits, which is equivalent with about
+50 digits of precision in base 10.
 
 The precision can be changed by modifying the C<$Math::BigNum::PREC> variable, such as:
 
@@ -247,7 +247,7 @@ our ($ROUND, $PREC);
 
 BEGIN {
     $ROUND = Math::MPFR::MPFR_RNDN();
-    $PREC  = 256;                       # too little?
+    $PREC  = 200;                       # too little?
 }
 
 use Math::BigNum::Inf qw();
