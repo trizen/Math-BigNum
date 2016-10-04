@@ -119,8 +119,9 @@ Special functions:
 
 The syntax for importing something, is:
 
-    use Math::BigNum qw(:constant pi);
-    say cos(2*pi);
+    use Math::BigNum qw(:constant pi factorial);
+    say cos(2*pi);          # => 1
+    say factorial(5);       # => 120
 
 B<NOTE:> C<:constant> is lexical to the current scope only.
 
@@ -3491,7 +3492,6 @@ Class::Multimethods::multimethod iadd => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
         $y < 0
           ? Math::GMPz::Rmpz_sub_ui($r, $r, CORE::abs($y))
           : Math::GMPz::Rmpz_add_ui($r, $r, $y);
@@ -3531,7 +3531,6 @@ Class::Multimethods::multimethod biadd => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
         $y < 0
           ? Math::GMPz::Rmpz_sub_ui($r, $r, CORE::abs($y))
           : Math::GMPz::Rmpz_add_ui($r, $r, $y);
@@ -3571,7 +3570,6 @@ Class::Multimethods::multimethod isub => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
         $y < 0
           ? Math::GMPz::Rmpz_add_ui($r, $r, CORE::abs($y))
           : Math::GMPz::Rmpz_sub_ui($r, $r, $y);
@@ -3610,9 +3608,7 @@ Class::Multimethods::multimethod bisub => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
-
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
         $y < 0
           ? Math::GMPz::Rmpz_add_ui($r, $r, CORE::abs($y))
           : Math::GMPz::Rmpz_sub_ui($r, $r, $y);
@@ -3652,7 +3648,6 @@ Class::Multimethods::multimethod imul => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
         $y < 0
           ? Math::GMPz::Rmpz_mul_si($r, $r, $y)
           : Math::GMPz::Rmpz_mul_ui($r, $r, $y);
@@ -3696,7 +3691,6 @@ Class::Multimethods::multimethod bimul => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
         $y < 0
           ? Math::GMPz::Rmpz_mul_si($r, $r, $y)
           : Math::GMPz::Rmpz_mul_ui($r, $r, $y);
@@ -3747,8 +3741,7 @@ Class::Multimethods::multimethod idiv => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
 
-        $y = CORE::int($y);
-
+        # When `y` is zero, return +/-Inf or NaN
         $y || do {
             my $sign = Math::GMPq::Rmpq_sgn($$x);
             return (
@@ -3806,8 +3799,7 @@ Class::Multimethods::multimethod bidiv => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
 
-        $y = CORE::int($y);
-
+        # When `y` is zero, return +/-Inf or NaN
         $y || do {
             my $sign = Math::GMPq::Rmpq_sgn($$x);
             return
@@ -3863,8 +3855,6 @@ Class::Multimethods::multimethod ipow => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
-
-        $y = CORE::int($y);
 
         my $z = _big2mpz($x);
         Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($y));
@@ -3922,8 +3912,6 @@ Class::Multimethods::multimethod bipow => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
-
-        $y = CORE::int($y);
 
         my $z = Math::GMPz::Rmpz_init();
         Math::GMPz::Rmpz_set_q($z, $$x);
@@ -4117,8 +4105,7 @@ Class::Multimethods::multimethod imod => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
 
-        $y = CORE::int($y);
-        return nan if ($y == 0);
+        $y || return nan();
 
         my $r     = _big2mpz($x);
         my $neg_y = $y < 0;
@@ -4178,8 +4165,7 @@ Class::Multimethods::multimethod bimod => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
 
-        $y = CORE::int($y);
-        return $x->bnan if ($y == 0);
+        $y || return $x->bnan;
 
         my $r     = _big2mpz($x);
         my $neg_y = $y < 0;
@@ -4238,12 +4224,12 @@ Class::Multimethods::multimethod divmod => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
 
-        CORE::int($y) || return (nan, nan);
+        $y || return (nan, nan);
 
         my $r1 = _big2mpz($x);
         my $r2 = Math::GMPz::Rmpz_init();
 
-        Math::GMPz::Rmpz_divmod_ui($r1, $r2, $r1, CORE::int($y));
+        Math::GMPz::Rmpz_divmod_ui($r1, $r2, $r1, $y);
         (_mpz2big($r1), _mpz2big($r2));
     }
     else {
@@ -4324,10 +4310,10 @@ Class::Multimethods::multimethod modpow => qw(Math::BigNum $ $) => sub {
         my $zz = _str2mpz($z) // return $x->modpow($y, Math::BigNum->new($z));
         my $r = _big2mpz($x);
         if ($y >= 0) {
-            Math::GMPz::Rmpz_powm_ui($r, $r, CORE::int($y), $zz);
+            Math::GMPz::Rmpz_powm_ui($r, $r, $y, $zz);
         }
         else {
-            Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y), $zz);
+            Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y) // (return $x->modpow(Math::BigNum->new($y), $z)), $zz);
         }
         _mpz2big($r);
     }
@@ -4342,10 +4328,10 @@ Class::Multimethods::multimethod modpow => qw(Math::BigNum $ Math::BigNum) => su
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
         my $r = _big2mpz($x);
         if ($y >= 0) {
-            Math::GMPz::Rmpz_powm_ui($r, $r, CORE::int($y), _big2mpz($z));
+            Math::GMPz::Rmpz_powm_ui($r, $r, $y, _big2mpz($z));
         }
         else {
-            Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y), _big2mpz($z));
+            Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y) // (return $x->modpow(Math::BigNum->new($y), $z)), _big2mpz($z));
         }
         _mpz2big($r);
     }
@@ -4392,7 +4378,7 @@ Class::Multimethods::multimethod gcd => qw(Math::BigNum Math::BigNum) => sub {
 Class::Multimethods::multimethod gcd => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpz($x);
-    Math::GMPz::Rmpz_gcd($r, $r, _str2mpz($y));
+    Math::GMPz::Rmpz_gcd($r, $r, _str2mpz($y) // (return $x->gcd(Math::BigNum->new($y))));
     _mpz2big($r);
 };
 
@@ -4675,7 +4661,6 @@ Class::Multimethods::multimethod binomial => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
         $y >= 0
           ? Math::GMPz::Rmpz_bin_ui($r, $r, $y)
           : Math::GMPz::Rmpz_bin_si($r, $r, $y);
@@ -4974,12 +4959,9 @@ Integer left-shift operation. (C<$x * (2 ** $y)>)
 Class::Multimethods::multimethod lsft => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _big2mpz($_[0]);
     my $i = CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]}));
-    if ($i < 0) {
-        Math::GMPz::Rmpz_div_2exp($r, $r, CORE::abs($i));
-    }
-    else {
-        Math::GMPz::Rmpz_mul_2exp($r, $r, $i);
-    }
+    $i < 0
+      ? Math::GMPz::Rmpz_div_2exp($r, $r, CORE::abs($i))
+      : Math::GMPz::Rmpz_mul_2exp($r, $r, $i);
     _mpz2big($r);
 };
 
@@ -4987,16 +4969,10 @@ Class::Multimethods::multimethod lsft => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
-
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
-
-        if ($y < 0) {
-            Math::GMPz::Rmpz_div_2exp($r, $r, CORE::abs($y));
-        }
-        else {
-            Math::GMPz::Rmpz_mul_2exp($r, $r, $y);
-        }
+        $y < 0
+          ? Math::GMPz::Rmpz_div_2exp($r, $r, CORE::abs($y))
+          : Math::GMPz::Rmpz_mul_2exp($r, $r, $y);
         _mpz2big($r);
     }
     else {
@@ -5009,12 +4985,9 @@ Class::Multimethods::multimethod lsft => qw($ Math::BigNum) => sub {
 
     my $r = _str2mpz($_[0]) // return Math::BigNum->new($x)->blsft($y);
     my $i = CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]}));
-    if ($i < 0) {
-        Math::GMPz::Rmpz_div_2exp($r, $r, CORE::abs($i));
-    }
-    else {
-        Math::GMPz::Rmpz_mul_2exp($r, $r, $i);
-    }
+    $i < 0
+      ? Math::GMPz::Rmpz_div_2exp($r, $r, CORE::abs($i))
+      : Math::GMPz::Rmpz_mul_2exp($r, $r, $i);
     _mpz2big($r);
 };
 
@@ -5050,12 +5023,9 @@ Integer left-shift operation, changing C<$x> in-place. Promotes C<$x> to Nan whe
 Class::Multimethods::multimethod blsft => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _big2mpz($_[0]);
     my $i = CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]}));
-    if ($i < 0) {
-        Math::GMPz::Rmpz_div_2exp($r, $r, CORE::abs($i));
-    }
-    else {
-        Math::GMPz::Rmpz_mul_2exp($r, $r, $i);
-    }
+    $i < 0
+      ? Math::GMPz::Rmpz_div_2exp($r, $r, CORE::abs($i))
+      : Math::GMPz::Rmpz_mul_2exp($r, $r, $i);
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
@@ -5065,13 +5035,9 @@ Class::Multimethods::multimethod blsft => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
-        if ($y < 0) {
-            Math::GMPz::Rmpz_div_2exp($r, $r, CORE::abs($y));
-        }
-        else {
-            Math::GMPz::Rmpz_mul_2exp($r, $r, $y);
-        }
+        $y < 0
+          ? Math::GMPz::Rmpz_div_2exp($r, $r, CORE::abs($y))
+          : Math::GMPz::Rmpz_mul_2exp($r, $r, $y);
         Math::GMPq::Rmpq_set_z($$x, $r);
         $x;
     }
@@ -5108,12 +5074,9 @@ Integer right-shift operation. (C<$x / (2 ** $y)>)
 Class::Multimethods::multimethod rsft => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _big2mpz($_[0]);
     my $i = CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]}));
-    if ($i < 0) {
-        Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::abs($i));
-    }
-    else {
-        Math::GMPz::Rmpz_div_2exp($r, $r, $i);
-    }
+    $i < 0
+      ? Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::abs($i))
+      : Math::GMPz::Rmpz_div_2exp($r, $r, $i);
     _mpz2big($r);
 };
 
@@ -5122,13 +5085,9 @@ Class::Multimethods::multimethod rsft => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
-        if ($y < 0) {
-            Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::abs($y));
-        }
-        else {
-            Math::GMPz::Rmpz_div_2exp($r, $r, $y);
-        }
+        $y < 0
+          ? Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::abs($y))
+          : Math::GMPz::Rmpz_div_2exp($r, $r, $y);
         _mpz2big($r);
     }
     else {
@@ -5139,12 +5098,9 @@ Class::Multimethods::multimethod rsft => qw(Math::BigNum $) => sub {
 Class::Multimethods::multimethod rsft => qw($ Math::BigNum) => sub {
     my $r = _str2mpz($_[0]) // return Math::BigNum->new($_[0])->brsft($_[1]);
     my $i = CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]}));
-    if ($i < 0) {
-        Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::abs($i));
-    }
-    else {
-        Math::GMPz::Rmpz_div_2exp($r, $r, $i);
-    }
+    $i < 0
+      ? Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::abs($i))
+      : Math::GMPz::Rmpz_div_2exp($r, $r, $i);
     _mpz2big($r);
 };
 
@@ -5179,12 +5135,9 @@ Integer right-shift operation, changing C<$x> in-place. (C<$x / (2 ** $y)>)
 Class::Multimethods::multimethod brsft => qw(Math::BigNum Math::BigNum) => sub {
     my $r = _big2mpz($_[0]);
     my $i = CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]}));
-    if ($i < 0) {
-        Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::abs($i));
-    }
-    else {
-        Math::GMPz::Rmpz_div_2exp($r, $r, $i);
-    }
+    $i < 0
+      ? Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::abs($i))
+      : Math::GMPz::Rmpz_div_2exp($r, $r, $i);
     Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
     $_[0];
 };
@@ -5193,15 +5146,10 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
-
         my $r = _big2mpz($x);
-        $y = CORE::int($y);
-        if ($y < 0) {
-            Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::abs($y));
-        }
-        else {
-            Math::GMPz::Rmpz_div_2exp($r, $r, $y);
-        }
+        $y < 0
+          ? Math::GMPz::Rmpz_mul_2exp($r, $r, CORE::abs($y))
+          : Math::GMPz::Rmpz_div_2exp($r, $r, $y);
         Math::GMPq::Rmpq_set_z($$x, $r);
         $x;
     }
