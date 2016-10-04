@@ -5914,7 +5914,7 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub 
 
     my $pow = CORE::int(Math::GMPq::Rmpq_get_d($$y));
 
-    # Don't accept a negative power
+    # Don't accept a non-positive power
     $pow <= 0 && return 0;
 
     my $z = Math::GMPz::Rmpz_init();
@@ -5922,7 +5922,7 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub 
     Math::GMPq::Rmpq_numref($z, $$x);
     Math::GMPz::Rmpz_root($r, $z, $pow);
 
-    Math::GMPz::Rmpz_remove($z, $z, $r) == $y;
+    Math::GMPz::Rmpz_remove($z, $z, $r) == $pow;
 };
 
 Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
@@ -5932,7 +5932,7 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y <= MAX_UI) {
 
-        # Don't accept a negative power
+        # Don't accept a non-positive power
         $y <= 0 && return 0;
 
         my $z = Math::GMPz::Rmpz_init();
