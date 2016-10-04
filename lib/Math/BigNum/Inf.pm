@@ -448,6 +448,7 @@ Class::Multimethods::multimethod add => qw(Math::BigNum::Inf Math::BigNum)      
 Class::Multimethods::multimethod add => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
 *iadd = \&add;
+*fadd = \&add;
 
 =head2 badd / biadd
 
@@ -475,6 +476,7 @@ Class::Multimethods::multimethod badd => qw(Math::BigNum::Inf Math::BigNum)     
 Class::Multimethods::multimethod badd => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 
 *biadd = \&badd;
+*bfadd = \&badd;
 
 =head2 sub / isub
 
@@ -508,6 +510,7 @@ Class::Multimethods::multimethod sub => qw(Math::BigNum::Inf Math::BigNum::Inf) 
 Class::Multimethods::multimethod sub => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
 *isub = \&sub;
+*fsub = \&sub;
 
 =head2 bsub / bisub
 
@@ -536,6 +539,7 @@ Class::Multimethods::multimethod bsub => qw(Math::BigNum::Inf *) => sub {
 Class::Multimethods::multimethod bsub => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 
 *bisub = \&bsub;
+*bfsub = \&bsub;
 
 =head2 mul / imul
 
@@ -571,6 +575,7 @@ Class::Multimethods::multimethod mul => qw(* Math::BigNum::Inf) => sub {
 Class::Multimethods::multimethod mul => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
 *imul = \&mul;
+*fmul = \&mul;
 
 =head2 bmul / bimul
 
@@ -625,6 +630,7 @@ Class::Multimethods::multimethod bmul => qw(Math::BigNum::Inf *) => sub {
 Class::Multimethods::multimethod bmul => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 
 *bimul = \&bmul;
+*bfmul = \&bmul;
 
 =head2 div / idiv
 
@@ -657,6 +663,7 @@ Class::Multimethods::multimethod div => qw(Math::BigNum::Inf Math::BigNum::Inf) 
 Class::Multimethods::multimethod div => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&nan;
 
 *idiv = \&div;
+*fdiv = \&div;
 
 =head2 bdiv / bidiv
 
@@ -684,6 +691,7 @@ Class::Multimethods::multimethod bdiv => qw(Math::BigNum::Inf Math::BigNum::Inf)
 Class::Multimethods::multimethod bdiv => qw(Math::BigNum::Inf Math::BigNum::Nan) => \&bnan;
 
 *bidiv = \&bdiv;
+*bfdiv = \&bdiv;
 
 #
 ## Comparisons

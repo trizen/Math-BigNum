@@ -189,8 +189,10 @@ Always returns Nan.
 
 *add   = \&nan;
 *iadd  = \&nan;
+*fadd  = \&nan;
 *badd  = \&_self;
 *biadd = \&_self;
+*bfadd = \&_self;
 
 =head2 sub / bsub
 
@@ -203,8 +205,10 @@ Always returns Nan.
 
 *sub   = \&nan;
 *isub  = \&nan;
+*fsub  = \&nan;
 *bsub  = \&_self;
 *bisub = \&_self;
+*bfadd = \&_self;
 
 =head2 mul / bmul
 
@@ -217,8 +221,10 @@ Always returns Nan.
 
 *mul   = \&nan;
 *imul  = \&nan;
+*fmul  = \&nan;
 *bmul  = \&_self;
 *bimul = \&_self;
+*bfmul = \&_self;
 
 =head2 div / bdiv
 
@@ -231,8 +237,10 @@ Always returns Nan.
 
 *div   = \&nan;
 *idiv  = \&nan;
+*fdiv  = \&nan;
 *bdiv  = \&_self;
 *bidiv = \&_self;
+*bfdiv = \&_self;
 
 =head2 pow / ipow / bpow / bipow
 
@@ -244,9 +252,11 @@ Always returns Nan.
 =cut
 
 *pow   = \&nan;
-*bpow  = \&_self;
 *ipow  = \&nan;
+*fpow  = \&nan;
+*bpow  = \&_self;
 *bipow = \&_self;
+*bfpow = \&_self;
 
 =head2 mod / imod / bmod / bimod
 
@@ -258,9 +268,11 @@ Always returns Nan.
 =cut
 
 *mod   = \&nan;
-*bmod  = \&_self;
 *imod  = \&nan;
+*fmod  = \&nan;
+*bmod  = \&_self;
 *bimod = \&_self;
+*bfmod = \&_self;
 
 =head2 fac / bfac
 
