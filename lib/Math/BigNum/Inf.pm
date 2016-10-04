@@ -1549,7 +1549,9 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan
 *round  = \&copy;
 *bround = \&_self;
 
-*float = \&copy;
+*float  = \&copy;
+*bfloat = \&_self;
+
 *floor = \&copy;
 *ceil  = \&copy;
 

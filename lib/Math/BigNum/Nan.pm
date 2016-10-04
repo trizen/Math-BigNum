@@ -385,11 +385,13 @@ sub is_ppow { 0 }
 *max = \&_self;
 *min = \&_self;
 
-*gcd   = \&nan;
-*lcm   = \&nan;
-*int   = \&nan;
-*bint  = \&_self;
-*float = \&nan;
+*gcd  = \&nan;
+*lcm  = \&nan;
+*int  = \&nan;
+*bint = \&_self;
+
+*float  = \&nan;
+*bfloat = \&_self;
 
 sub as_frac  { '' }
 sub as_rat   { '' }

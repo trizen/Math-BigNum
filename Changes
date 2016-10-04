@@ -24,7 +24,9 @@ Revision history for Math-BigNum
         - Changed the return values of the `sign` method from ("-", "", "+") to (-1, 0, 1).
         - Added the `:all` option to export anything that is exportable (functions + constants).
         - Added the `$n->valuation($k)` method, which returns the number of times `$n` is divisible by `$k`.
-        - Some minor bug-fixes and improvements.
+        - Extended the method `float` to accept an optional argument with the number of bits of precision.
+        - Added the `$x->bfloat` method, which truncates `$x` in-place to a floating-point value.
+        - Some minor bug-fixes and documentation improvements.
 
 0.10    2016-17-08
         - Faster creation of MPFR objects from scalar integer values.
