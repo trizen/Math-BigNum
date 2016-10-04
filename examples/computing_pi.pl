@@ -3,12 +3,11 @@
 # Code from:
 #   http://www.perlmonks.org/?node_id=992580
 
-use lib qw(../);
-
 use 5.010;
 use strict;
 use warnings;
 
+use lib qw(../lib);
 use Math::BigNum;
 
 my $digits = int($ARGV[0] // 0) || 60;
