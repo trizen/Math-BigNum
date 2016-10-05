@@ -4219,36 +4219,59 @@ Nan when C<$x> is negative and C<$y> is even.
 
 =cut
 
+Class::Multimethods::multimethod iroot => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $z = _big2mpz($x);
+
+    my $root = CORE::int(Math::GMPq::Rmpq_get_d($$y));
+
+    if ($root == 0) {
+        Math::GMPz::Rmpz_sgn($z) || return zero();    # 0^Inf = 0
+        Math::GMPz::Rmpz_cmpabs($z, $ONE_Z) == 0 and return one();    # 1^Inf = 1 ; (-1)^Inf = 1
+        return inf();
+    }
+    elsif ($root < 0) {
+        my $sign = Math::GMPz::Rmpz_sgn($z) || return inf();          # 1 / 0^k = Inf
+        Math::GMPz::Rmpz_cmp($z, $ONE_Z) == 0 and return one();       # 1 / 1^k = 1
+        return $sign < 0 ? nan() : zero();
+    }
+    elsif ($root % 2 == 0 and Math::GMPz::Rmpz_sgn($z) < 0) {
+        return nan();
+    }
+
+    Math::GMPz::Rmpz_root($z, $z, $root);
+    _mpz2big($z);
+};
+
 Class::Multimethods::multimethod iroot => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
 
-        my $root = CORE::int($y);
-        if ($root % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0) {
+        my $z = _big2mpz($x);
+
+        my $root = $y;
+        if ($root == 0) {
+            Math::GMPz::Rmpz_sgn($z) || return zero();    # 0^Inf = 0
+            Math::GMPz::Rmpz_cmpabs($z, $ONE_Z) == 0 and return one();    # 1^Inf = 1 ; (-1)^Inf = 1
+            return inf();
+        }
+        elsif ($root < 0) {
+            my $sign = Math::GMPz::Rmpz_sgn($z) || return inf();          # 1 / 0^k = Inf
+            Math::GMPz::Rmpz_cmp($z, $ONE_Z) == 0 and return one();       # 1 / 1^k = 1
+            return $sign < 0 ? nan() : zero();
+        }
+        elsif ($root % 2 == 0 and Math::GMPz::Rmpz_sgn($z) < 0) {
             return nan();
         }
 
-        my $z = _big2mpz($x);
         Math::GMPz::Rmpz_root($z, $z, $root);
         _mpz2big($z);
     }
     else {
         $x->iroot(Math::BigNum->new($y));
     }
-};
-
-Class::Multimethods::multimethod iroot => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-
-    my $root = CORE::int(Math::GMPq::Rmpq_get_d($$y));
-    if ($root % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0) {
-        return nan();
-    }
-
-    my $z = _big2mpz($x);
-    Math::GMPz::Rmpz_root($z, $z, $root);
-    _mpz2big($z);
 };
 
 Class::Multimethods::multimethod iroot => qw(Math::BigNum *) => sub {
@@ -4268,17 +4291,54 @@ C<$x> to Nan when C<$x> is negative and C<$y> is even.
 
 =cut
 
+Class::Multimethods::multimethod biroot => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $z = _big2mpz($x);
+
+    my $root = CORE::int(Math::GMPq::Rmpq_get_d($$y));
+
+    if ($root == 0) {
+        Math::GMPz::Rmpz_sgn($z) || return $x->bzero();    # 0^Inf = 0
+        Math::GMPz::Rmpz_cmpabs($z, $ONE_Z) == 0 and return $x->bone();    # 1^Inf = 1 ; (-1)^Inf = 1
+        return $x->binf();
+    }
+    elsif ($root < 0) {
+        my $sign = Math::GMPz::Rmpz_sgn($z) || return $x->binf();          # 1 / 0^k = Inf
+        Math::GMPz::Rmpz_cmp($z, $ONE_Z) == 0 and return $x->bone();       # 1 / 1^k = 1
+        return $sign < 0 ? $x->bnan() : $x->bzero();
+    }
+    elsif ($root % 2 == 0 and Math::GMPz::Rmpz_sgn($z) < 0) {
+        return $x->bnan();
+    }
+
+    Math::GMPz::Rmpz_root($z, $z, $root);
+    Math::GMPq::Rmpq_set_z($$x, $z);
+    $x;
+};
+
 Class::Multimethods::multimethod biroot => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
 
-        my $root = CORE::int($y);
-        if ($root % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0) {
-            return $x->bnan;
+        my $z = _big2mpz($x);
+
+        my $root = $y;
+        if ($root == 0) {
+            Math::GMPz::Rmpz_sgn($z) || return $x->bzero();    # 0^Inf = 0
+            Math::GMPz::Rmpz_cmpabs($z, $ONE_Z) == 0 and return $x->bone();    # 1^Inf = 1 ; (-1)^Inf = 1
+            return $x->binf();
+        }
+        elsif ($root < 0) {
+            my $sign = Math::GMPz::Rmpz_sgn($z) || return $x->binf();          # 1 / 0^k = Inf
+            Math::GMPz::Rmpz_cmp($z, $ONE_Z) == 0 and return $x->bone();       # 1 / 1^k = 1
+            return $sign < 0 ? $x->bnan() : $x->bzero();
+        }
+        elsif ($root % 2 == 0 and Math::GMPz::Rmpz_sgn($z) < 0) {
+            return $x->bnan();
         }
 
-        my $z = _big2mpz($x);
         Math::GMPz::Rmpz_root($z, $z, $root);
         Math::GMPq::Rmpq_set_z($$x, $z);
         $x;
@@ -4286,20 +4346,6 @@ Class::Multimethods::multimethod biroot => qw(Math::BigNum $) => sub {
     else {
         $x->biroot(Math::BigNum->new($y));
     }
-};
-
-Class::Multimethods::multimethod biroot => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-
-    my $root = CORE::int(Math::GMPq::Rmpq_get_d($$y));
-    if ($root % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0) {
-        return $x->bnan;
-    }
-
-    my $z = _big2mpz($x);
-    Math::GMPz::Rmpz_root($z, $z, $root);
-    Math::GMPq::Rmpq_set_z($$x, $z);
-    $x;
 };
 
 Class::Multimethods::multimethod biroot => qw(Math::BigNum *) => sub {
@@ -4677,12 +4723,15 @@ Returns the number of times n is divisible by k.
 Class::Multimethods::multimethod valuation => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpz($x);
-    Math::GMPz::Rmpz_remove($r, $r, _big2mpz($y));
+    my $z = _big2mpz($y);
+    Math::GMPz::Rmpz_sgn($z) || return 0;
+    Math::GMPz::Rmpz_remove($r, $r, $z);
 };
 
 Class::Multimethods::multimethod valuation => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
     my $z = _str2mpz($y) // return $x->valuation(Math::BigNum->new($y));
+    Math::GMPz::Rmpz_sgn($z) || return 0;
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_remove($r, $r, $z);
 };
@@ -6152,6 +6201,9 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub 
 
     my $pow = CORE::int(Math::GMPq::Rmpq_get_d($$y));
 
+    # Return a true value when $x=-1 and $y is odd
+    Math::GMPq::Rmpq_equal($$x, $MONE) and CORE::abs($pow) % 2 and return 1;
+
     # Don't accept a non-positive power
     # Also, when $x is negative and $y is even, return faster
     if ($pow <= 0 or ($pow % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0)) {
@@ -6175,6 +6227,9 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
     Math::GMPq::Rmpq_equal($$x, $ONE) && return 1;
 
     if (CORE::int($y) eq $y and $y <= MAX_UI) {
+
+        # Return a true value when $x=-1 and $y is odd
+        Math::GMPq::Rmpq_equal($$x, $MONE) and CORE::abs($y) % 2 and return 1;
 
         # Don't accept a non-positive power
         # Also, when $x is negative and $y is even, return faster

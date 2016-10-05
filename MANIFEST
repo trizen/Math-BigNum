@@ -11,6 +11,7 @@ examples/computing_pi.pl
 examples/faulhaber_s_formula.pl
 examples/fibonacci_validation.pl
 examples/inverse_of_factorial.pl
+examples/is_power.pl
 examples/pi_machin.pl
 examples/power_pairs.pl
 examples/prime_count_approx.pl

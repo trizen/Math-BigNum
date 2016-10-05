@@ -1,6 +1,6 @@
-#!perl
+#!perl -T
 
-# test that overloaded compare works when NaN are involved
+# test that overloaded comparison works when NaN is involved
 
 use strict;
 use warnings;

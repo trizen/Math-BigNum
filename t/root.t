@@ -1,9 +1,11 @@
-#!perl
+#!perl -T
 
+use 5.006;
 use strict;
 use warnings;
+use Test::More;
 
-use Test::More tests => 6 * 8 + 8;
+plan tests => 148;
 
 use Math::BigNum;
 
@@ -70,3 +72,161 @@ is(Math::BigNum->new(-1234)->iroot(Math::BigNum->new(4)), Math::BigNum->nan);
     $x = $n->copy->biroot(Math::BigNum->new(4));
     is($x, Math::BigNum->nan);
 }
+
+#########################################
+# More tests
+
+my $one  = Math::BigNum->one;
+my $mone = Math::BigNum->mone;
+my $zero = Math::BigNum->zero;
+
+my $inf  = Math::BigNum->inf;
+my $ninf = Math::BigNum->ninf;
+my $nan  = Math::BigNum->nan;
+
+# [i]root(BigNum)
+is($one->root($mone),  $one);
+is($one->iroot($mone), $one);
+
+is($zero->root($zero),  $zero);
+is($zero->iroot($zero), $zero);
+
+is($zero->root($mone),  $inf);
+is($zero->iroot($mone), $inf);
+
+is($mone->root($zero),  $one);
+is($mone->iroot($zero), $one);
+
+is($mone->root($one),  $mone);
+is($mone->iroot($one), $mone);
+
+my $two  = $one->add($one);
+my $mtwo = $two->neg;
+
+is($mone->root($two),  $nan);
+is($mone->iroot($two), $nan);
+
+is($one->root($mtwo),  $one);
+is($one->iroot($mtwo), $one);
+
+is($mone->root($mtwo),  $nan);
+is($mone->iroot($mtwo), $nan);
+
+is($mtwo->root($mtwo),  $nan);    # complex root
+is($mtwo->iroot($mtwo), $nan);    # =//=
+
+is($zero->root($mone),  $inf);
+is($zero->iroot($mone), $inf);
+
+is($two->root($mone), $one->div($two));
+
+is($two->iroot($mone), $zero);
+is($two->iroot($mtwo), $zero);
+
+# b[i]root(BigNum)
+is($one->copy->broot($mone),  $one);
+is($one->copy->biroot($mone), $one);
+
+is($zero->copy->broot($zero),  $zero);
+is($zero->copy->biroot($zero), $zero);
+
+is($zero->copy->broot($mone),  $inf);
+is($zero->copy->biroot($mone), $inf);
+
+is($mone->copy->broot($zero),  $one);
+is($mone->copy->biroot($zero), $one);
+
+is($mone->copy->broot($one),  $mone);
+is($mone->copy->biroot($one), $mone);
+
+is($mone->copy->broot($two),  $nan);
+is($mone->copy->biroot($two), $nan);
+
+is($one->copy->broot($mtwo),  $one);
+is($one->copy->biroot($mtwo), $one);
+
+is($mone->copy->broot($mtwo),  $nan);
+is($mone->copy->biroot($mtwo), $nan);
+
+is($mtwo->copy->broot($mtwo),  $nan);    # complex root
+is($mtwo->copy->biroot($mtwo), $nan);    # =//=
+
+is($zero->copy->broot($mone),  $inf);
+is($zero->copy->biroot($mone), $inf);
+
+is($two->copy->broot($mone), $one->copy->bdiv($two));
+
+is($two->copy->biroot($mone), $zero);
+is($two->copy->biroot($mtwo), $zero);
+
+# [i]root(Scalar)
+is($one->root(-1),  $one);
+is($one->iroot(-1), $one);
+
+is($zero->root(0),  $zero);
+is($zero->iroot(0), $zero);
+
+is($zero->root(-1),  $inf);
+is($zero->iroot(-1), $inf);
+
+is($mone->root(0),  $one);
+is($mone->iroot(0), $one);
+
+is($mone->root(1),  $mone);
+is($mone->iroot(1), $mone);
+
+is($mone->root(2),  $nan);
+is($mone->iroot(2), $nan);
+
+is($one->root(-2),  $one);
+is($one->iroot(-2), $one);
+
+is($mone->root(-2),  $nan);
+is($mone->iroot(-2), $nan);
+
+is($mtwo->root(-2),  $nan);    # complex root
+is($mtwo->iroot(-2), $nan);    # =//=
+
+is($zero->root(-1),  $inf);
+is($zero->iroot(-1), $inf);
+
+is($two->root(-1), $one->div($two));
+
+is($two->iroot(-1), $zero);
+is($two->iroot(-2), $zero);
+
+# b[i]root(Scalar)
+is($one->copy->broot(-1),  $one);
+is($one->copy->biroot(-1), $one);
+
+is($zero->copy->broot(0),  $zero);
+is($zero->copy->biroot(0), $zero);
+
+is($zero->copy->broot(-1),  $inf);
+is($zero->copy->biroot(-1), $inf);
+
+is($mone->copy->broot(0),  $one);
+is($mone->copy->biroot(0), $one);
+
+is($mone->copy->broot(1),  $mone);
+is($mone->copy->biroot(1), $mone);
+
+is($mone->copy->broot(2),  $nan);
+is($mone->copy->biroot(2), $nan);
+
+is($one->copy->broot(-2),  $one);
+is($one->copy->biroot(-2), $one);
+
+is($mone->copy->broot(-2),  $nan);
+is($mone->copy->biroot(-2), $nan);
+
+is($mtwo->copy->broot(-2),  $nan);    # complex root
+is($mtwo->copy->biroot(-2), $nan);    # =//=
+
+is($zero->copy->broot(-1),  $inf);
+is($zero->copy->biroot(-1), $inf);
+
+is($two->copy->broot(-1), $one->copy->bdiv($two));
+
+is($two->copy->biroot(-1), $zero);
+is($two->copy->biroot(-2), $zero);

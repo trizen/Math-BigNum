@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 329;
+plan tests => 337;
 
 # Initialization
 
@@ -526,6 +526,18 @@ plan tests => 329;
 
     ok($bint->is_pow(42));
     ok($bint->is_pow($x));
+
+    ok(Math::BigNum->mone->is_pow(3));
+    ok(!(Math::BigNum->mone->is_pow(2)));
+
+    ok(Math::BigNum->mone->is_pow(-3));
+    ok(!(Math::BigNum->mone->is_pow(-2)));
+
+    ok(Math::BigNum->mone->is_pow(Math::BigNum->new(3)));
+    ok(!(Math::BigNum->mone->is_pow(Math::BigNum->new(2))));
+
+    ok(Math::BigNum->mone->is_pow(Math::BigNum->new(-3)));
+    ok(!(Math::BigNum->mone->is_pow(Math::BigNum->new(-2))));
 
     ok(Math::BigNum->new(-27)->is_pow(3));
     ok(Math::BigNum->new(-27)->is_pow(Math::BigNum->new(3)));

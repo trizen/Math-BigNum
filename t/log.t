@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!perl -T
 
 # Test blog function (and bpow, since it uses blog), as well as bexp().
 
