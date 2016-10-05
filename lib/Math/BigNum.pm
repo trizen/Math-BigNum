@@ -46,7 +46,7 @@ Version 0.11
       #    60413611879125592605458432000000000000000000000000.5
 
     # Small numbers
-    say sqrt(1 / 100->fac);     # => 1.035137811175626471320494591657[...]e-79
+    say sqrt(1 / 100->fac);     # => 1.03513781117562647132049[...]e-79
 
     # Rational numbers
     my $x = 2/3;
@@ -79,7 +79,7 @@ Math::BigNum tries really hard to do the right thing and as efficiently as possi
 For example, when computing C<$x**$y>, it first checks to see if C<$x> and C<$y> are integers,
 so it can optimize the operation to integer exponentiation, by calling the corresponding
 I<mpz> function. When only C<$y> is an integer, it does rational exponentiation based on the
-identity: `(a/b)**n = a**n / b**n`. Otherwise, it will fallback to floating-point exponentiation,
+identity: I<(a/b)**n = a**n / b**n>. Otherwise, it will fallback to floating-point exponentiation,
 using the corresponding I<mpfr> function.
 
 All numbers in Math::BigNum are stored as rational L<Math::GMPq> objects. Each operation,
@@ -95,7 +95,8 @@ Math::BigNum does not export anything by default, but it recognizes the followin
                     # it will also export the "Inf" and "NaN" constants,
                     # which represent +Infinity and NaN special values
 
-    :all            # export everything that is exportable (functions + constants)
+    :all            # export everything that is exportable
+    PREC n          # set the global precision to the value of `n`
 
 B<Numerical constants:>
 
@@ -115,7 +116,7 @@ B<Special functions:>
     binomial(n,k)      # binomial coefficient
     fibonacci(n)       # nth-Fibonacci number
     lucas(n)           # nth-Lucas number
-    ipow(a,k)          # integer exponentiation: int(a^k)
+    ipow(a,k)          # integer exponentiation: a^k
 
 B<NOTE:> this functions are designed and optimized for native Perl integers as input.
 
@@ -135,6 +136,10 @@ The default precision for floating-point numbers is 200 bits, which is equivalen
 The precision can be changed by modifying the C<$Math::BigNum::PREC> variable, such as:
 
     local $Math::BigNum::PREC = 1024;
+
+or by specifying the precision at import (this sets the precision globally):
+
+    use Math::BigNum PREC => 1024;
 
 However, an important thing to take into account, unlike the L<Math::MPFR> objects, Math::BigNum
 objects do not have a fixed precision stored inside. Rather, they can grow or shrink dynamically,
@@ -510,6 +515,9 @@ use overload
             }
             elsif ($name eq ':all') {
                 push @_, keys(%constants), keys(%functions);
+            }
+            elsif ($name eq 'PREC') {
+                $Math::BigNum::PREC = CORE::abs(CORE::int(shift(@_))) || die "invalid value for <<PREC>>";
             }
             else {
                 die "unknown import: <<$name>>";
@@ -2915,14 +2923,15 @@ sub log10 {
 Logarithmic-root of C<$x>, which is the solution to C<a**a = b>, where C<b> is known.
 It is defined in real numbers only for values greater than or equal to C<0.7>.
 
-The logarithmic-root of `c` is defined as the number `a` where the a'th root of `c` and
-the logarithm of `c` to base `a` are equal:
+The logarithmic-root of I<c> is defined as the number I<a> where the I<a>'th root of I<c> and
+the logarithm of I<c> to base I<a> are equal:
 
-    log(c)/log(a) == c->root(a)       # `a` is the logarithmic-root of `c`
+    log(c)/log(a) == c->root(a)       # "a" is the logarithmic-root of "c"
 
 Example:
-         100->lgrt       # solves for x in `x**x = 100` and returns: `3.59728...`
-        3125->lgrt       # returns `5` because `log(3125)/log(5) == 3125->root(5)`
+
+     100->lgrt   # solves for x in `x**x = 100` and returns: `3.59728...`
+    3125->lgrt   # returns "5" because `log(3125)/log(5) == 3125->root(5)`
 
 =cut
 
@@ -4688,7 +4697,7 @@ Class::Multimethods::multimethod valuation => qw(Math::BigNum Math::BigNum::Nan)
     $n->kronecker(BigNum)          # => Scalar
     $n->kronecker(Scalar)          # => Scalar
 
-Returns the Kronecker symbol (n|m), which is a generalization of the Jacobi symbol for all integers `m`.
+Returns the Kronecker symbol I<(n|m)>, which is a generalization of the Jacobi symbol for all integers I<m>.
 
 =cut
 
@@ -5432,12 +5441,12 @@ it returns a number between C<$x> and C<$y>, otherwise, a number between C<0> (i
 C<$x> (exclusive) is returned.
 
 The PRNG behind this method is called the "Mersenne Twister". Although it generates pseudorandom
-numbers of very good quality, it is B<NOT> cryptographically secure.
+numbers of very good quality, it is B<NOT> cryptographically secure!
 
 Example:
 
-    10->rand;       # a random number between 0 and 10 (exclusive)
-    10->rand(20);   # a random number between 10 and 20 (exclusive)
+    10->rand       # a random number between 0 and 10 (exclusive)
+    10->rand(20)   # a random number between 10 and 20 (exclusive)
 
 =cut
 
@@ -6124,7 +6133,7 @@ Return a true value when C<$n> is a perfect power of a given integer C<$k>.
 When C<$n> is not an integer, returns C<0>. On the other hand, when C<$k> is not an integer,
 it will be truncated implicitly to an integer. If C<$k> is not positive after truncation, C<0> is returned.
 
-A true value is returned iff there exists some integer `a` satisfying the equation: `a^k = n`.
+A true value is returned iff there exists some integer I<a> satisfying the equation: I<a^k = n>.
 
 Example:
 

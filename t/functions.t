@@ -5,13 +5,12 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 32;
+plan tests => 31;
 
 use Math::BigNum qw(
   factorial
   binomial
   fibonacci
-  primorial
   lucas
   ipow
   );
@@ -56,5 +55,3 @@ is(ipow(Math::BigNum->new(2.5), 10.5),                    1024);
 is(ipow(Math::BigNum->new(2),   10.5),                    1024);
 is(ipow(Math::BigNum->new(2.5), Math::BigNum->new(10)),   1024);
 is(ipow(Math::BigNum->new(2.5), 10),                      1024);
-
-is(primorial(19), 9699690);

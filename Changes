@@ -2,6 +2,12 @@ Revision history for Math-BigNum
 
 0.12    2016-xx-xx
         - Decreased the default floating-point precision from 256 bits, to 200 bits.
+        - Added support for specifying default the precision as an import value.
+
+            Example:
+                use Math::BigNum PREC => 1024;
+
+        - Minor POD fixes.
 
 0.11    2016-04-10
         - Added the `$n->parts` method, which returns the numerator and the denominator as BigNum objects.
@@ -11,18 +17,18 @@ Revision history for Math-BigNum
             Example:
                 (3/5)**3 == 27/125
 
-        - Added the `$x->li` method for computing the logarithm integral of `$x`.
+        - Added the `$x->li` method for computing the logarithmic integral of `$x`.
         - Optimized the `$k->root($n)` method for positive integer values of `$n`.
         - Added the `$n->bernreal` method, which returns the nth-Bernoulli number as a floating-point value.
         - Added the `$n->kronecker($k)` method, which returns the Kronecker symbol (n|k).
         - Added the following exportable functions:
 
-                factorial(n)       # product of first n integers: n!
-                primorial(n)       # product of primes <= n
-                binomial(n,k)      # binomial coefficient
-                fibonacci(n)       # nth-Fibonacci number
-                lucas(n)           # nth-Lucas number
-                ipow(a,k)          # integer exponentiation: int(a^k)
+                + factorial(n)       # product of first n integers: n!
+                + primorial(n)       # product of primes <= n
+                + binomial(n,k)      # binomial coefficient
+                + fibonacci(n)       # nth-Fibonacci number
+                + lucas(n)           # nth-Lucas number
+                + ipow(a,k)          # integer exponentiation: int(a^k)
 
         - Added the method `$n->popcount`, which returns the number of 1s in the binary representation of `$n`.
         - Changed the return values of the `sign` method from ("-", "", "+") to (-1, 0, 1).
@@ -33,17 +39,17 @@ Revision history for Math-BigNum
         - Added the method `$n->is_pow($k)`, which returns true iff `a^k = n` for some positive integer `a`.
         - Added the method `$x->lgrt`, which returns the logarithmic-root of `$x`.
 
-                100->lgrt       # solves for x in `x**x = 100` and returns: `3.59728...`
-               3125->lgrt       # returns `5` because `log(3125)/log(5) == 3125->root(5)`
+               +  100->lgrt       # solves for x in `x**x = 100` and returns: `3.59728...`
+               + 3125->lgrt       # returns `5` because `log(3125)/log(5) == 3125->root(5)`
 
         - Added the following floating-point functions:
 
-                (b)fadd
-                (b)fsub
-                (b)fmul
-                (b)fdiv
-                (b)fmod
-                (b)fpow
+                + (b)fadd
+                + (b)fsub
+                + (b)fmul
+                + (b)fdiv
+                + (b)fmod
+                + (b)fpow
 
         - Increased the default precision of floating-point numbers from 128 to 256 bits.
         - Some minor bug-fixes and documentation improvements.
