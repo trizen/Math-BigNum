@@ -517,7 +517,11 @@ use overload
                 push @_, keys(%constants), keys(%functions);
             }
             elsif ($name eq 'PREC') {
-                $Math::BigNum::PREC = CORE::abs(CORE::int(shift(@_))) || die "invalid value for <<PREC>>";
+                my $prec = CORE::int(shift(@_));
+                if ($prec < 2 or $prec > MAX_UI) {
+                    die "invalid value for <<PREC>>: must be between 2 and ", MAX_UI;
+                }
+                $Math::BigNum::PREC = $prec;
             }
             else {
                 die "unknown import: <<$name>>";
