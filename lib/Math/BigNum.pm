@@ -2927,15 +2927,9 @@ sub log10 {
 Logarithmic-root of C<$x>, which is the solution to C<a**a = b>, where C<b> is known.
 It is defined in real numbers only for values greater than or equal to C<0.7>.
 
-The logarithmic-root of I<c> is defined as the number I<a> where the I<a>'th root of I<c> and
-the logarithm of I<c> to base I<a> are equal:
-
-    log(c)/log(a) == c->root(a)       # "a" is the logarithmic-root of "c"
-
 Example:
 
      100->lgrt   # solves for x in `x**x = 100` and returns: `3.59728...`
-    3125->lgrt   # returns "5" because `log(3125)/log(5) == 3125->root(5)`
 
 =cut
 
