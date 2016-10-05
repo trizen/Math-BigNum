@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 311;
+plan tests => 329;
 
 # Initialization
 
@@ -526,6 +526,31 @@ plan tests => 311;
 
     ok($bint->is_pow(42));
     ok($bint->is_pow($x));
+
+    ok(Math::BigNum->new(-27)->is_pow(3));
+    ok(Math::BigNum->new(-27)->is_pow(Math::BigNum->new(3)));
+
+    ok(!(Math::BigNum->new(-16)->is_pow(2)));
+    ok(!(Math::BigNum->new(-25)->is_pow(Math::BigNum->new(2))));
+
+    ok(!(Math::BigNum->new(-27)->is_pow(-3)));
+    ok(!(Math::BigNum->new(-27)->is_pow(Math::BigNum->new(-3))));
+
+    ok(Math::BigNum->one->is_pow(3));
+    ok(Math::BigNum->one->is_pow(Math::BigNum->new(3)));
+
+    ok(Math::BigNum->one->is_pow(-2));
+    ok(Math::BigNum->one->is_pow(Math::BigNum->new(-2)));
+
+    ok(Math::BigNum->zero->is_pow(1));
+    ok(Math::BigNum->zero->is_pow(10));
+    ok(Math::BigNum->zero->is_pow(Math::BigNum->new(3)));
+
+    ok(!(Math::BigNum->zero->is_pow(0)));
+    ok(!(Math::BigNum->zero->is_pow(-3)));
+    ok(!(Math::BigNum->zero->is_pow(-4)));
+    ok(!(Math::BigNum->zero->is_pow(Math::BigNum->new(-2))));
+    ok(!(Math::BigNum->zero->is_pow(Math::BigNum->zero)));
 
     ok($bint->is_pow(2));
     ok($bint->is_pow(Math::BigNum->new(2)));

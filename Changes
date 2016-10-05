@@ -7,6 +7,7 @@ Revision history for Math-BigNum
             Example:
                 use Math::BigNum PREC => 1024;
 
+        - Fixed a minor-bug in the method `is_pow` for some special cases.
         - Minor POD fixes.
 
 0.11    2016-04-10

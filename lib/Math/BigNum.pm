@@ -6146,38 +6146,49 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub 
     my ($x, $y) = @_;
 
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
+    Math::GMPq::Rmpq_equal($$x, $ONE) && return 1;
 
     my $pow = CORE::int(Math::GMPq::Rmpq_get_d($$y));
 
     # Don't accept a non-positive power
-    $pow <= 0 && return 0;
+    # Also, when $x is negative and $y is even, return faster
+    if ($pow <= 0 or ($pow % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0)) {
+        return 0;
+    }
 
     my $z = Math::GMPz::Rmpz_init();
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPq::Rmpq_numref($z, $$x);
     Math::GMPz::Rmpz_root($r, $z, $pow);
+    Math::GMPz::Rmpz_sgn($r) || return 1;    # $x was zero
 
     Math::GMPz::Rmpz_remove($z, $z, $r) == $pow
-      and Math::GMPz::Rmpz_cmp_ui($z, 1) == 0;
+      and Math::GMPz::Rmpz_cmp($z, $ONE_Z) == 0;
 };
 
 Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
+    Math::GMPq::Rmpq_equal($$x, $ONE) && return 1;
 
     if (CORE::int($y) eq $y and $y <= MAX_UI) {
 
         # Don't accept a non-positive power
-        $y <= 0 && return 0;
+        # Also, when $x is negative and $y is even, return faster
+        if ($y <= 0 or ($y % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0)) {
+            return 0;
+        }
 
         my $z = Math::GMPz::Rmpz_init();
-        my $r = Math::GMPz::Rmpz_init();
         Math::GMPq::Rmpq_numref($z, $$x);
+
+        my $r = Math::GMPz::Rmpz_init();
         Math::GMPz::Rmpz_root($r, $z, $y);
+        Math::GMPz::Rmpz_sgn($r) || return 1;    # $x was zero
 
         Math::GMPz::Rmpz_remove($z, $z, $r) == $y
-          and Math::GMPz::Rmpz_cmp_ui($z, 1) == 0;
+          and Math::GMPz::Rmpz_cmp($z, $ONE_Z) == 0;
     }
     else {
         $x->is_pow(Math::BigNum->new($y));
