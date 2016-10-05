@@ -6202,7 +6202,9 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub 
     my $pow = CORE::int(Math::GMPq::Rmpq_get_d($$y));
 
     # Return a true value when $x=-1 and $y is odd
-    Math::GMPq::Rmpq_equal($$x, $MONE) and CORE::abs($pow) % 2 and return 1;
+    Math::GMPq::Rmpq_equal($$x, $MONE)
+      and $pow % 2
+      and return 1;
 
     # Don't accept a non-positive power
     # Also, when $x is negative and $y is even, return faster
@@ -6211,8 +6213,9 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub 
     }
 
     my $z = Math::GMPz::Rmpz_init();
-    my $r = Math::GMPz::Rmpz_init();
     Math::GMPq::Rmpq_numref($z, $$x);
+
+    my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_root($r, $z, $pow);
     Math::GMPz::Rmpz_sgn($r) || return 1;    # $x was zero
 
@@ -6229,7 +6232,9 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
     if (CORE::int($y) eq $y and $y <= MAX_UI) {
 
         # Return a true value when $x=-1 and $y is odd
-        Math::GMPq::Rmpq_equal($$x, $MONE) and CORE::abs($y) % 2 and return 1;
+        Math::GMPq::Rmpq_equal($$x, $MONE)
+          and $y % 2
+          and return 1;
 
         # Don't accept a non-positive power
         # Also, when $x is negative and $y is even, return faster
