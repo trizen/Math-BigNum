@@ -3976,9 +3976,11 @@ Class::Multimethods::multimethod idiv => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
 
+        my $r = _big2mpz($x);
+
         # When `y` is zero, return +/-Inf or NaN
         $y || do {
-            my $sign = Math::GMPq::Rmpq_sgn($$x);
+            my $sign = Math::GMPz::Rmpz_sgn($r);
             return (
                       $sign > 0 ? inf
                     : $sign < 0 ? ninf
@@ -3986,7 +3988,6 @@ Class::Multimethods::multimethod idiv => qw(Math::BigNum $) => sub {
                    );
         };
 
-        my $r = _big2mpz($x);
         Math::GMPz::Rmpz_div_ui($r, $r, CORE::abs($y));
         Math::GMPz::Rmpz_neg($r, $r) if $y < 0;
         _mpz2big($r);
@@ -4036,16 +4037,17 @@ Class::Multimethods::multimethod bidiv => qw(Math::BigNum $) => sub {
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
 
+        my $r = _big2mpz($x);
+
         # When `y` is zero, return +/-Inf or NaN
         $y || do {
-            my $sign = Math::GMPq::Rmpq_sgn($$x);
+            my $sign = Math::GMPz::Rmpz_sgn($r);
             return
                 $sign > 0 ? $x->binf
               : $sign < 0 ? $x->bninf
               :             $x->bnan;
         };
 
-        my $r = _big2mpz($x);
         Math::GMPz::Rmpz_div_ui($r, $r, CORE::abs($y));
         Math::GMPq::Rmpq_set_z($$x, $r);
         Math::GMPq::Rmpq_neg($$x, $$x) if $y < 0;
@@ -4722,16 +4724,20 @@ Returns the number of times n is divisible by k.
 
 Class::Multimethods::multimethod valuation => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
-    my $r = _big2mpz($x);
+
     my $z = _big2mpz($y);
     Math::GMPz::Rmpz_sgn($z) || return 0;
+
+    my $r = _big2mpz($x);
     Math::GMPz::Rmpz_remove($r, $r, $z);
 };
 
 Class::Multimethods::multimethod valuation => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
+
     my $z = _str2mpz($y) // return $x->valuation(Math::BigNum->new($y));
     Math::GMPz::Rmpz_sgn($z) || return 0;
+
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_remove($r, $r, $z);
 };
@@ -4831,10 +4837,11 @@ Factorial of C<$n>. Returns Nan when C<$n> is negative. (C<1*2*3*...*$n>)
 =cut
 
 sub fac {
-    my ($x) = @_;
-    return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
+    my ($n) = @_;
+    $n = CORE::int(Math::GMPq::Rmpq_get_d($$n));
+    return nan() if $n < 0;
     my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_fac_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
+    Math::GMPz::Rmpz_fac_ui($r, $n);
     _mpz2big($r);
 }
 
@@ -4848,9 +4855,10 @@ Factorial of C<$n>, modifying C<$n> in-place.
 
 sub bfac {
     my ($x) = @_;
-    return $x->bnan if Math::GMPq::Rmpq_sgn($$x) < 0;
+    my $n = CORE::int(Math::GMPq::Rmpq_get_d($$x));
+    return $x->bnan() if $n < 0;
     my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_fac_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
+    Math::GMPz::Rmpz_fac_ui($r, $n);
     Math::GMPq::Rmpq_set_z($$x, $r);
     $x;
 }
@@ -4864,10 +4872,11 @@ Double factorial of C<$n>. Returns Nan when C<$n> is negative.
 =cut
 
 sub dfac {
-    my ($x) = @_;
-    return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
+    my ($n) = @_;
+    $n = CORE::int(Math::GMPq::Rmpq_get_d($$n));
+    return nan() if $n < 0;
     my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_2fac_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
+    Math::GMPz::Rmpz_2fac_ui($r, $n);
     _mpz2big($r);
 }
 
@@ -4880,10 +4889,11 @@ Returns the product of all the primes less than or equal to C<$n>.
 =cut
 
 sub primorial {
-    my ($x) = @_;
-    return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
+    my ($n) = @_;
+    $n = CORE::int(Math::GMPq::Rmpq_get_d($$n));
+    return nan() if $n < 0;
     my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_primorial_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
+    Math::GMPz::Rmpz_primorial_ui($r, $n);
     _mpz2big($r);
 }
 
@@ -4896,10 +4906,11 @@ The n-th Fibonacci number. Returns Nan when C<$n> is negative.
 =cut
 
 sub fib {
-    my ($x) = @_;
-    return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
+    my ($n) = @_;
+    $n = CORE::int(Math::GMPq::Rmpq_get_d($$n));
+    return nan() if $n < 0;
     my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_fib_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
+    Math::GMPz::Rmpz_fib_ui($r, $n);
     _mpz2big($r);
 }
 
@@ -4912,10 +4923,11 @@ The n-th Lucas number. Returns Nan when C<$n> is negative.
 =cut
 
 sub lucas {
-    my ($x) = @_;
-    return nan if Math::GMPq::Rmpq_sgn($$x) < 0;
+    my ($n) = @_;
+    $n = CORE::int(Math::GMPq::Rmpq_get_d($$n));
+    return nan() if $n < 0;
     my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_lucnum_ui($r, CORE::int(Math::GMPq::Rmpq_get_d($$x)));
+    Math::GMPz::Rmpz_lucnum_ui($r, $n);
     _mpz2big($r);
 }
 
