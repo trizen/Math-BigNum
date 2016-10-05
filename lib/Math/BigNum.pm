@@ -3966,13 +3966,13 @@ Class::Multimethods::multimethod idiv => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     $y = _big2mpz($y);
+    my $r = _big2mpz($x);
 
     if (!Math::GMPz::Rmpz_sgn($y)) {
-        my $sign = Math::GMPq::Rmpq_sgn($$x);
+        my $sign = Math::GMPz::Rmpz_sgn($r);
         return (!$sign ? nan : $sign > 0 ? inf : ninf);
     }
 
-    my $r = _big2mpz($x);
     Math::GMPz::Rmpz_div($r, $r, $y);
     _mpz2big($r);
 };
@@ -4022,16 +4022,16 @@ Class::Multimethods::multimethod bidiv => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
     $y = _big2mpz($y);
+    my $r = _big2mpz($x);
 
     if (!Math::GMPz::Rmpz_sgn($y)) {
-        my $sign = Math::GMPq::Rmpq_sgn($$x);
+        my $sign = Math::GMPz::Rmpz_sgn($r);
         return
             $sign > 0 ? $x->binf
           : $sign < 0 ? $x->bninf
           :             $x->bnan;
     }
 
-    my $r = _big2mpz($x);
     Math::GMPz::Rmpz_div($r, $r, $y);
     Math::GMPq::Rmpq_set_z($$x, $r);
     $x;
