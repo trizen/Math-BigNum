@@ -4575,16 +4575,19 @@ Calculates C<($x ** $y) % $z>, where all three values are integers.
 
 Class::Multimethods::multimethod modpow => qw(Math::BigNum Math::BigNum Math::BigNum) => sub {
     my ($x, $y, $z) = @_;
+    my $mod = _big2mpz($z);
+    Math::GMPz::Rmpz_sgn($mod) || return nan();
     my $r = _big2mpz($x);
-    Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), _big2mpz($z));
+    Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), $mod);
     _mpz2big($r);
 };
 
 Class::Multimethods::multimethod modpow => qw(Math::BigNum Math::BigNum $) => sub {
     my ($x, $y, $z) = @_;
-    my $zz = _str2mpz($z) // return $x->modpow($y, Math::BigNum->new($z));
+    my $mod = _str2mpz($z) // return $x->modpow($y, Math::BigNum->new($z));
+    Math::GMPz::Rmpz_sgn($mod) || return nan();
     my $r = _big2mpz($x);
-    Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), $zz);
+    Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), $mod);
     _mpz2big($r);
 };
 
@@ -4592,13 +4595,14 @@ Class::Multimethods::multimethod modpow => qw(Math::BigNum $ $) => sub {
     my ($x, $y, $z) = @_;
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
-        my $zz = _str2mpz($z) // return $x->modpow($y, Math::BigNum->new($z));
+        my $mod = _str2mpz($z) // return $x->modpow($y, Math::BigNum->new($z));
+        Math::GMPz::Rmpz_sgn($mod) || return nan();
         my $r = _big2mpz($x);
         if ($y >= 0) {
-            Math::GMPz::Rmpz_powm_ui($r, $r, $y, $zz);
+            Math::GMPz::Rmpz_powm_ui($r, $r, $y, $mod);
         }
         else {
-            Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y) // (return $x->modpow(Math::BigNum->new($y), $z)), $zz);
+            Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y) // (return $x->modpow(Math::BigNum->new($y), $z)), $mod);
         }
         _mpz2big($r);
     }
@@ -4610,13 +4614,16 @@ Class::Multimethods::multimethod modpow => qw(Math::BigNum $ $) => sub {
 Class::Multimethods::multimethod modpow => qw(Math::BigNum $ Math::BigNum) => sub {
     my ($x, $y, $z) = @_;
 
+    my $mod = _big2mpz($z);
+    Math::GMPz::Rmpz_sgn($mod) || return nan();
+
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
         my $r = _big2mpz($x);
         if ($y >= 0) {
-            Math::GMPz::Rmpz_powm_ui($r, $r, $y, _big2mpz($z));
+            Math::GMPz::Rmpz_powm_ui($r, $r, $y, $mod);
         }
         else {
-            Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y) // (return $x->modpow(Math::BigNum->new($y), $z)), _big2mpz($z));
+            Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y) // (return $x->modpow(Math::BigNum->new($y), $z)), $mod);
         }
         _mpz2big($r);
     }

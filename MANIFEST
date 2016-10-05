@@ -12,6 +12,7 @@ examples/faulhaber_s_formula.pl
 examples/fibonacci_validation.pl
 examples/inverse_of_factorial.pl
 examples/is_power.pl
+examples/miller_rabin_primality_test.pl
 examples/pi_machin.pl
 examples/power_pairs.pl
 examples/prime_count_approx.pl
@@ -44,6 +45,7 @@ t/inf_nan.t
 t/kronecker.t
 t/log.t
 t/manifest.t
+t/miller_rabin_test.t
 t/mod.t
 t/nan_cmp.t
 t/new.t
