@@ -1,8 +1,8 @@
 Revision history for Math-BigNum
 
-0.12    2016-xx-xx
+0.12    2016-05-10
         - Decreased the default floating-point precision from 256 bits, to 200 bits.
-        - Added support for specifying default the precision as an import value.
+        - Added support for specifying the default precision as an import value.
 
             Example:
                 use Math::BigNum PREC => 1024;

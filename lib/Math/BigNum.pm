@@ -22,7 +22,7 @@ use constant {
              };
 #>>>
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 =encoding utf8
 
@@ -32,7 +32,7 @@ Math::BigNum - Arbitrary size precision for integers, rationals and floating-poi
 
 =head1 VERSION
 
-Version 0.11
+Version 0.12
 
 =head1 SYNOPSIS
 
