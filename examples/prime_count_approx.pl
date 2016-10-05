@@ -24,7 +24,7 @@ use Math::BigNum qw(:constant);
 foreach my $n (1 .. 10) {
     my $x = 10**$n;
 
-    my $f1 = ($x**2)->idiv(($x + 1)->lngamma);
+    my $f1 = $x->sqr->bidiv(($x + 1)->lngamma);
     my $f2 = int $x->li;
 
     say "PI($x) =~ ", $f1, ' =~ ', $f2;

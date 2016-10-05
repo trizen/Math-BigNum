@@ -3965,13 +3965,15 @@ Integer division of C<$x> by C<$y>.
 Class::Multimethods::multimethod idiv => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    if (!Math::GMPq::Rmpq_sgn($$y)) {
+    $y = _big2mpz($y);
+
+    if (!Math::GMPz::Rmpz_sgn($y)) {
         my $sign = Math::GMPq::Rmpq_sgn($$x);
         return (!$sign ? nan : $sign > 0 ? inf : ninf);
     }
 
     my $r = _big2mpz($x);
-    Math::GMPz::Rmpz_div($r, $r, _big2mpz($y));
+    Math::GMPz::Rmpz_div($r, $r, $y);
     _mpz2big($r);
 };
 
@@ -4019,7 +4021,9 @@ Integer division of C<$x> by C<$y>, changing C<$x> in-place.
 Class::Multimethods::multimethod bidiv => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    if (!Math::GMPq::Rmpq_sgn($$y)) {
+    $y = _big2mpz($y);
+
+    if (!Math::GMPz::Rmpz_sgn($y)) {
         my $sign = Math::GMPq::Rmpq_sgn($$x);
         return
             $sign > 0 ? $x->binf
@@ -4028,7 +4032,7 @@ Class::Multimethods::multimethod bidiv => qw(Math::BigNum Math::BigNum) => sub {
     }
 
     my $r = _big2mpz($x);
-    Math::GMPz::Rmpz_div($r, $r, _big2mpz($y));
+    Math::GMPz::Rmpz_div($r, $r, $y);
     Math::GMPq::Rmpq_set_z($$x, $r);
     $x;
 };
