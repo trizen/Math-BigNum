@@ -31,16 +31,14 @@ sub bernoulli_number {
     my ($h, $w) = (1, 1);
     foreach my $i (0 .. $n - 1) {
         if ($w ^= 1) {
-            foreach my $k (1 .. $h - 1) {
-                $D[$k] += $D[$k - 1];
-            }
+            $D[$_] += $D[$_ - 1] for (1 .. $h-1);
         }
         else {
-            for (my $k = $h++ ; $k > 0 ; --$k) {
-                $D[$k] += $D[$k + 1];
-            }
+            $w = $h++;
+            $D[$w] += $D[$w + 1] while --$w;
         }
     }
+
     $D[$h - 1] / ((1 << ($n + 1)) - 2) * ($n % 4 == 0 ? -1 : 1);
 }
 
