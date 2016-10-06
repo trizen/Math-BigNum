@@ -16,21 +16,33 @@ use lib qw(../lib);
 use Math::BigNum qw(:constant);
 use constant PI => Math::BigNum->pi;
 
+# Sidel's algorithm for bernoulli(2n)
+#   http://oeis.org/wiki/User:Peter_Luschny/ComputationAndAsymptoticsOfBernoulliNumbers#Seidel
+
 sub bernoulli_number {
     my ($n) = @_;
 
-    return 0 if $n > 1 && $n % 2;    # Bn = 0 for all odd n > 1
+    $n == 0 and return 1;
+    $n == 1 and return 0.5;
+    $n % 2  and return 0;
 
-    my @A;
-    for my $m (0 .. $n) {
-        $A[$m] = 1 / ($m + 1);
+    my @D = (0, 1, (0) x ($n - 1));
 
-        for (my $j = $m ; $j > 0 ; $j--) {
-            $A[$j - 1] = $j * ($A[$j - 1] - $A[$j]);
+    my ($h, $w) = (1, 1);
+    foreach my $i (0 .. $n - 1) {
+        if ($w ^= 1) {
+            foreach my $k (1 .. $h - 1) {
+                $D[$k] += $D[$k - 1];
+            }
+        }
+        else {
+            for (my $k = $h ; $k > 0 ; --$k) {
+                $D[$k] += $D[$k + 1];
+            }
+            ++$h;
         }
     }
-
-    return $A[0];                    # which is Bn
+    $D[$h - 1] / (((1 << ($n + 1)) - 2) * ($n % 4 == 0 ? -1 : 1));
 }
 
 sub zeta_2n {

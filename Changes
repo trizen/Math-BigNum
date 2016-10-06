@@ -4,7 +4,7 @@ Revision history for Math-BigNum
         - Stricter validation of the precision specified as an import value.
         - Minor bug-fix in the method `is_pow` for `is_pow(-1, odd_n)` -- it now returns `1`.
         - Fixed some special cases in the method `iroot`.
-        - Fixed a special case in the method `valuation` when the second argument is 0.
+        - Fixed a special case in the method `valuation` when the second argument is `0`.
 
 0.12    2016-05-10
         - Decreased the default floating-point precision from 256 bits, to 200 bits.
