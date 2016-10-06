@@ -4733,7 +4733,8 @@ Class::Multimethods::multimethod valuation => qw(Math::BigNum Math::BigNum) => s
     my ($x, $y) = @_;
 
     my $z = _big2mpz($y);
-    Math::GMPz::Rmpz_sgn($z) || return 0;
+    my $sgn = Math::GMPz::Rmpz_sgn($z) || return 0;
+    Math::GMPz::Rmpz_abs($z, $z) if $sgn < 0;
 
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_remove($r, $r, $z);
@@ -4743,7 +4744,8 @@ Class::Multimethods::multimethod valuation => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
     my $z = _str2mpz($y) // return $x->valuation(Math::BigNum->new($y));
-    Math::GMPz::Rmpz_sgn($z) || return 0;
+    my $sgn = Math::GMPz::Rmpz_sgn($z) || return 0;
+    Math::GMPz::Rmpz_abs($z, $z) if $sgn < 0;
 
     my $r = _big2mpz($x);
     Math::GMPz::Rmpz_remove($r, $r, $z);
