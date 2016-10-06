@@ -2101,9 +2101,8 @@ sub bernfrac {
             $D[$_] += $D[$_ - 1] for (1 .. $h - 1);
         }
         else {
-            for (my $k = $h++ ; $k ; --$k) {
-                $D[$k] += $D[$k + 1];
-            }
+            $w = $h++;
+            $D[$w] += $D[$w + 1] while --$w;
         }
     }
 
