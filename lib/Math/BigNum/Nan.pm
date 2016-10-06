@@ -455,6 +455,7 @@ sub length { 0 }
 *lucas     = \&nan;
 *binomial  = \&nan;
 *bernreal  = \&nan;
+*bernfrac  = \&nan;
 *kronecker = \&nan;
 *valuation = \&nan;
 
