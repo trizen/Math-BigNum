@@ -24,7 +24,7 @@ sub bernoulli_number {
 
     $n == 0 and return 1;
     $n == 1 and return 0.5;
-    $n % 2  and return 0;
+    $n %  2 and return 0;
 
     my @D = (0, 1, (0) x ($n - 1));
 
@@ -36,18 +36,17 @@ sub bernoulli_number {
             }
         }
         else {
-            for (my $k = $h ; $k > 0 ; --$k) {
+            for (my $k = $h++ ; $k > 0 ; --$k) {
                 $D[$k] += $D[$k + 1];
             }
-            ++$h;
         }
     }
-    $D[$h - 1] / (((1 << ($n + 1)) - 2) * ($n % 4 == 0 ? -1 : 1));
+    $D[$h - 1] / ((1 << ($n + 1)) - 2) * ($n % 4 == 0 ? -1 : 1);
 }
 
 sub zeta_2n {
     my ($n2) = 2 * $_[0];
-    ((-1)**($_[0] + 1) * 2**($n2 - 1) * (PI)->fpow($n2) * bernoulli_number($n2)) / $n2->fac;
+    ((-1)**($_[0] + 1) * (1 << ($n2 - 1)) * (PI)->fpow($n2) * bernoulli_number($n2)) / $n2->fac;
 }
 
 for my $i (1 .. 10) {

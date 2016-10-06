@@ -276,7 +276,8 @@ my $ONE = do {
     $r;
 };
 
-my $ONE_Z = Math::GMPz::Rmpz_init_set_ui(1);
+my $ONE_Z  = Math::GMPz::Rmpz_init_set_ui(1);
+my $ZERO_Z = Math::GMPz::Rmpz_init_set_ui(0);
 
 use overload
   '""' => \&stringify,
@@ -372,7 +373,7 @@ use overload
 
     my $factorial = sub {
         my ($n) = @_;
-        defined($n) or return nan();
+        $n // return nan();
         ref($n) eq __PACKAGE__ and return $n->fac;
         if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
             my $z = Math::GMPz::Rmpz_init();
@@ -386,7 +387,7 @@ use overload
 
     my $primorial = sub {
         my ($n) = @_;
-        defined($n) or return nan();
+        $n // return nan();
         ref($n) eq __PACKAGE__ and return $n->primorial;
         if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
             my $z = Math::GMPz::Rmpz_init();
@@ -400,7 +401,7 @@ use overload
 
     my $fibonacci = sub {
         my ($n) = @_;
-        defined($n) or return nan();
+        $n // return nan();
         ref($n) eq __PACKAGE__ and return $n->fib;
         if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
             my $z = Math::GMPz::Rmpz_init();
@@ -414,7 +415,7 @@ use overload
 
     my $lucas = sub {
         my ($n) = @_;
-        defined($n) or return nan();
+        $n // return nan();
         ref($n) eq __PACKAGE__ and return $n->lucas;
         if (CORE::int($n) eq $n and $n >= 0 and $n <= MAX_UI) {
             my $z = Math::GMPz::Rmpz_init();
@@ -2072,6 +2073,53 @@ sub bsqr {
     $x;
 }
 
+=head2 bernfrac
+
+    $n->bernfrac                   # => BigNum | Nan
+
+The nth-Bernoulli number as an exact fraction, computed with an
+improved version of Seidel's algorithm, starting with C<bernfrac(0) = 1>.
+
+Returns Nan for negative values of C<$n>.
+
+=cut
+
+sub bernfrac {
+    my ($n) = @_;
+
+    $n = CORE::int(Math::GMPq::Rmpq_get_d($$n));
+
+    $n == 0 and return one();
+    $n > 1 and $n % 2 and return zero();    # Bn=0 for odd n>1
+    $n < 0 and return nan();
+
+    my @D = ($ZERO_Z, $ONE_Z, ($ZERO_Z) x $n);
+
+    my ($h, $w) = (1, 1);
+    foreach my $i (0 .. $n - 1) {
+        if ($w ^= 1) {
+            $D[$_] += $D[$_ - 1] for (1 .. $h - 1);
+        }
+        else {
+            for (my $k = $h++ ; $k ; --$k) {
+                $D[$k] += $D[$k + 1];
+            }
+        }
+    }
+
+    my $den = Math::GMPz::Rmpz_init_set($ONE_Z);
+    Math::GMPz::Rmpz_mul_2exp($den, $den, $n + 1);
+    Math::GMPz::Rmpz_sub_ui($den, $den, 2);
+    Math::GMPz::Rmpz_neg($den, $den) if $n % 4 == 0;
+
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_num($r, $D[$h - 1]);
+    Math::GMPq::Rmpq_set_den($r, $den);
+    Math::GMPq::Rmpq_canonicalize($r);
+
+    bless \$r, __PACKAGE__;
+}
+
 ############################ FLOATING-POINT OPERATIONS ############################
 
 =head1 FLOATING-POINT OPERATIONS
@@ -3598,12 +3646,12 @@ sub zeta {
 
 =head2 bernreal
 
-    $x->bernreal                   # => BigNum | Nan
+    $n->bernreal                   # => BigNum | Nan
 
 The nth-Bernoulli number as a floating-point value,
 computed as: C<zeta(-n + 1) * -n> with C<bernreal(0) = 1>.
 
-Returns Nan for negative values of C<$x>.
+Returns Nan for negative values of C<$n>.
 
 =cut
 

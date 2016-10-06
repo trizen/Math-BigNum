@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 337;
+plan tests => 345;
 
 # Initialization
 
@@ -860,6 +860,25 @@ plan tests => 337;
 
     $z->binf;
     is($z, Inf);
+}
+
+# Bernoulli numbers
+{
+    my %results = qw(
+      0   1
+      1   1/2
+      2   1/6
+      3   0
+      4   -1/30
+      5   0
+      6   1/42
+      );
+
+    foreach my $i (keys %results) {
+        is(Math::BigNum->new($i)->bernfrac->as_rat, $results{$i});
+    }
+
+    is(Math::BigNum->new(-2)->bernfrac, NaN);    # make sure we check for even correctly
 }
 
 # op= operations
