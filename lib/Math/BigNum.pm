@@ -4691,6 +4691,10 @@ Class::Multimethods::multimethod modpow => qw(Math::BigNum * Math::BigNum) => su
     $_[0]->modpow(Math::BigNum->new($_[1]), $_[2]);
 };
 
+Class::Multimethods::multimethod modpow => qw(Math::BigNum * *) => sub {
+    $_[0]->modpow(Math::BigNum->new($_[1]), Math::BigNum->new($_[2]));
+};
+
 Class::Multimethods::multimethod modpow => qw(Math::BigNum Math::BigNum::Inf *) => sub {
     $_[0]->pow($_[1])->bmod($_[3]);
 };
