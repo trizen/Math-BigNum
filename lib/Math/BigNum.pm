@@ -530,6 +530,10 @@ use overload
         }
         return;
     }
+
+    sub unimport {
+        overload::remove_constant('binary', '', 'float', '', 'integer');
+    }
 }
 
 # Converts a string representing a floating-point number into a rational representation

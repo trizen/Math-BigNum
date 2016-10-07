@@ -1,5 +1,10 @@
 Revision history for Math-BigNum
 
+0.15    2016-xx-xx
+        - Added unimport support.
+
+            no Math::BigNum;     # disables the `:constant` behavior in the current scope
+
 0.14    2016-07-10
         - Fixed a minor bug inside the method `n->is_pow(p)` when `n` is negative (for old versions of GMP).
 
