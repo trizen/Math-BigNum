@@ -1,5 +1,8 @@
 Revision history for Math-BigNum
 
+0.14    2016-08-10
+        - Fixed a minor bug inside the method `n->is_pow(p)` when `n` is negative (for old versions of GMP).
+
 0.13    2016-07-10
         - Added the `bernfrac` method, powered by an improved version of Seidel's algorithm.
         - Stricter validation of the precision specified as an import value.

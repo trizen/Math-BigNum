@@ -6283,10 +6283,11 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub 
 
     my $r = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_root($r, $z, $pow);
-    Math::GMPz::Rmpz_sgn($r) || return 1;    # $x was zero
+    my $sgn = Math::GMPz::Rmpz_sgn($r) || return 1;    # $x was zero
+    Math::GMPz::Rmpz_neg($r, $r) if $sgn < 0;
 
     Math::GMPz::Rmpz_remove($z, $z, $r) == $pow
-      and Math::GMPz::Rmpz_cmp($z, $ONE_Z) == 0;
+      and Math::GMPz::Rmpz_cmpabs($z, $ONE_Z) == 0;
 };
 
 Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
@@ -6311,10 +6312,11 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
 
         my $r = Math::GMPz::Rmpz_init();
         Math::GMPz::Rmpz_root($r, $z, $y);
-        Math::GMPz::Rmpz_sgn($r) || return 1;    # $x was zero
+        my $sgn = Math::GMPz::Rmpz_sgn($r) || return 1;    # $x was zero
+        Math::GMPz::Rmpz_neg($r, $r) if $sgn < 0;
 
         Math::GMPz::Rmpz_remove($z, $z, $r) == $y
-          and Math::GMPz::Rmpz_cmp($z, $ONE_Z) == 0;
+          and Math::GMPz::Rmpz_cmpabs($z, $ONE_Z) == 0;
     }
     else {
         $x->is_pow(Math::BigNum->new($y));
