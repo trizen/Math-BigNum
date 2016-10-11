@@ -2097,7 +2097,7 @@ sub bernfrac {
     $n > 1 and $n % 2 and return zero();    # Bn=0 for odd n>1
     $n < 0 and return nan();
 
-    my @D = ($ZERO_Z, $ONE_Z, ($ZERO_Z) x $n);
+    my @D = ($ZERO_Z, $ONE_Z, ($ZERO_Z) x ($n / 2));
 
     my ($h, $w) = (1, 1);
     foreach my $i (0 .. $n - 1) {
