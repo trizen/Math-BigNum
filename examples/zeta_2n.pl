@@ -16,7 +16,7 @@ use lib qw(../lib);
 use Math::BigNum qw(:constant);
 use constant PI => Math::BigNum->pi;
 
-# Sidel's algorithm for bernoulli(2n)
+# An improved version of Sidel's algorithm
 #   http://oeis.org/wiki/User:Peter_Luschny/ComputationAndAsymptoticsOfBernoulliNumbers#Seidel
 
 sub bernoulli_number {
@@ -26,7 +26,7 @@ sub bernoulli_number {
     $n == 1 and return 0.5;
     $n %  2 and return 0;
 
-    my @D = (0, 1, (0) x ($n - 1));
+    my @D = (0, 1, (0) x ($n / 2));
 
     my ($h, $w) = (1, 1);
     foreach my $i (0 .. $n - 1) {

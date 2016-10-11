@@ -1,20 +1,10 @@
 #!/usr/bin/perl
 
-# Author: Daniel "Trizen" Șuteu
-# License: GPLv3
-# Date: 19 September 2015
-# Website: https://github.com/trizen
-
 #
-## Some simple approximations for the prime counting function.
+## Some simple approximations to the prime counting function.
 #
-
-# F(n) =  n^2 / ln(n!)
-#      =~ n^2 / (n * ln(n) - n)
-#      =~ n / (ln(n) - 1)
 
 use 5.010;
-use utf8;
 use strict;
 use warnings;
 

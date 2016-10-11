@@ -1,10 +1,5 @@
 #!/usr/bin/perl
 
-# Author: Daniel "Trizen" Șuteu
-# License: GPLv3
-# Date: 01 May 2015
-# Website: http://github.com/trizen
-
 #
 ## The arithmetic coding algorithm.
 #

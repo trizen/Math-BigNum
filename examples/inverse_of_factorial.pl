@@ -1,10 +1,5 @@
 #!/usr/bin/perl
 
-# Daniel "Trizen" Șuteu
-# License: GPLv3
-# Date: 18 September 2016
-# Website: https://github.com/trizen
-
 # The inverse of n factorial, based on the inverse of Stirling approximation,
 # computed with the `lgrt()` method, which calculates the logarithmic-root of n.
 
@@ -21,8 +16,9 @@ sub inverse_of_factorial {
     (S * $_[0]->root(e))->lgrt * e - 0.5;
 }
 
-# Run some tests
-
+#
+## Run some tests
+#
 foreach my $n (50 .. 60) {
     my $i = inverse_of_factorial(factorial($n));
 

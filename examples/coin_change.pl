@@ -1,10 +1,5 @@
 #!/usr/bin/perl
 
-# Author: Daniel "Trizen" Șuteu
-# License: GPLv3
-# Date: 14 November 2015
-# Website: https://github.com/trizen
-
 # The classic coin-change problem
 
 use 5.010;

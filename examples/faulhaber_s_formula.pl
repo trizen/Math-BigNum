@@ -1,10 +1,5 @@
 #!/usr/bin/perl
 
-# Author: Daniel "Trizen" Șuteu
-# License: GPLv3
-# Date: 03 September 2015
-# Website: https://github.com/trizen
-
 # The formula for calculating the sum of consecutive
 # numbers raised to a given power, such as:
 #    1^p + 2^p + 3^p + ... + n^p
@@ -19,7 +14,7 @@ use warnings;
 use lib qw(../lib);
 use Math::BigNum qw(:constant binomial);
 
-# This function returns the nth Bernoulli number
+# This function returns the nth Bernoulli number (Akiyama–Tanigawa algorithm)
 # See: https://en.wikipedia.org/wiki/Bernoulli_number
 sub bernoulli_number {
     my ($n) = @_;
@@ -53,7 +48,6 @@ sub faulhaber_s_formula {
 
 # Alternate expression using Bernoulli polynomials
 # See: https://en.wikipedia.org/wiki/Faulhaber%27s_formula#Alternate_expressions
-
 sub bernoulli_polynomials {
     my ($n, $x) = @_;
 

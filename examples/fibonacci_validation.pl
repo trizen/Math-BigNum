@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+# Fibonacci tests
+
 use 5.010;
 use strict;
 use warnings;
@@ -11,14 +13,32 @@ my $S = sqrt(1.25) + 0.5;
 my $T = sqrt(1.25) - 0.5;
 my $W = $S + $T;            #=> sqrt(5);
 
+my @fib_pos_funcs = (
+
+    #\&fib_pos1,            # requires complex numbers
+    \&fib_pos2,
+
+    #\&fib_pos3,            # requires complex numbers
+    #\&fib_pos4,            # requires complex numbers
+    \&fib_pos5
+);
+
+# Returns the nth Fibonacci number
 sub fib {
     my ($n) = @_;
     (($S**$n - (-$T)**$n) / $W)->round(0);
 }
 
+# Returns true if a given number if the nth-Fibonacci number
 sub is_fib {
     my ($i, $fib) = @_;
     ((($fib * $W) + (-$T)**$i)->log($S)->round(-$i / 4)) == $i;
+}
+
+# Returns true if a given number is probably a Fibonacci number
+sub is_prob_fib {
+    my ($n) = @_;
+    fib($fib_pos_funcs[rand @fib_pos_funcs]->($n)) == $n;
 }
 
 #
@@ -61,21 +81,6 @@ sub fib_pos4 {
 sub fib_pos5 {
     my ($n) = @_;
     ($n * sqrt(5))->log($S)->round(0);
-}
-
-my @fib_pos_funcs = (
-
-    #\&fib_pos1,
-    \&fib_pos2,
-
-    #\&fib_pos3,
-    #\&fib_pos4,
-    \&fib_pos5
-);
-
-sub is_prob_fib {
-    my ($n) = @_;
-    fib($fib_pos_funcs[rand @fib_pos_funcs]->($n)) == $n;
 }
 
 foreach my $group (

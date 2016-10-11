@@ -1,10 +1,5 @@
 #!/usr/bin/perl
 
-# Author: Daniel "Trizen" Șuteu
-# License: GPLv3
-# Date: 21 September 2015
-# Website: https://github.com/trizen
-
 # Recursive computation of Bernoulli numbers.
 # https://en.wikipedia.org/wiki/Bernoulli_number#Recursive_definition
 
