@@ -6280,22 +6280,22 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub 
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
     Math::GMPq::Rmpq_equal($$x, $ONE) && return 1;
 
+    $x = $$x;
     $y = CORE::int(Math::GMPq::Rmpq_get_d($$y));
 
     # Everything is a first power
     $y == 1 and return 1;
 
     # Return a true value when $x=-1 and $y is odd
-    $y % 2 and Math::GMPq::Rmpq_equal($$x, $MONE) and return 1;
+    $y % 2 and Math::GMPq::Rmpq_equal($x, $MONE) and return 1;
 
     # Don't accept a non-positive power
     # Also, when $x is negative and $y is even, return faster
-    if ($y <= 0 or ($y % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0)) {
+    if ($y <= 0 or ($y % 2 == 0 and Math::GMPq::Rmpq_sgn($x) < 0)) {
         return 0;
     }
 
-    my $z = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_numref($z, $$x);
+    my $z = Math::GMPz::Rmpz_init_set($x);
 
     # Optimization for perfect squares
     $y == 2 and return Math::GMPz::Rmpz_perfect_square_p($z);
@@ -6315,17 +6315,19 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
         # Everything is a first power
         $y == 1 and return 1;
 
+        # Deref $x
+        $x = $$x;
+
         # Return a true value when $x=-1 and $y is odd
-        $y % 2 and Math::GMPq::Rmpq_equal($$x, $MONE) and return 1;
+        $y % 2 and Math::GMPq::Rmpq_equal($x, $MONE) and return 1;
 
         # Don't accept a non-positive power
         # Also, when $x is negative and $y is even, return faster
-        if ($y <= 0 or ($y % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0)) {
+        if ($y <= 0 or ($y % 2 == 0 and Math::GMPq::Rmpq_sgn($x) < 0)) {
             return 0;
         }
 
-        my $z = Math::GMPz::Rmpz_init();
-        Math::GMPq::Rmpq_numref($z, $$x);
+        my $z = Math::GMPz::Rmpz_init_set($x);
 
         # Optimization for perfect squares
         $y == 2 and return Math::GMPz::Rmpz_perfect_square_p($z);
