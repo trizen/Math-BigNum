@@ -276,8 +276,7 @@ my $ONE = do {
     $r;
 };
 
-my $ONE_Z  = Math::GMPz::Rmpz_init_set_ui(1);
-my $ZERO_Z = Math::GMPz::Rmpz_init_set_ui(0);
+my $ONE_Z = Math::GMPz::Rmpz_init_set_ui(1);
 
 use overload
   '""' => \&stringify,
@@ -2097,16 +2096,22 @@ sub bernfrac {
     $n > 1 and $n % 2 and return zero();    # Bn=0 for odd n>1
     $n < 0 and return nan();
 
-    my @D = ($ZERO_Z, $ONE_Z, ($ZERO_Z) x ($n / 2));
+#<<<
+    my @D =(
+        Math::GMPz::Rmpz_init_set_ui(0),
+        Math::GMPz::Rmpz_init_set_ui(1),
+        map { Math::GMPz::Rmpz_init_set_ui(0) } 1 .. $n / 2
+    );
+#>>>
 
     my ($h, $w) = (1, 1);
     foreach my $i (0 .. $n - 1) {
         if ($w ^= 1) {
-            $D[$_] += $D[$_ - 1] for (1 .. $h - 1);
+            Math::GMPz::Rmpz_add($D[$_], $D[$_], $D[$_ - 1]) for (1 .. $h - 1);
         }
         else {
             $w = $h++;
-            $D[$w] += $D[$w + 1] while --$w;
+            Math::GMPz::Rmpz_add($D[$w], $D[$w], $D[$w + 1]) while --$w;
         }
     }
 

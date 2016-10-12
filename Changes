@@ -5,17 +5,19 @@ Revision history for Math-BigNum
 
             no Math::BigNum;     # disables the `:constant` behavior in the current scope
 
-0.14    2016-07-10
+        - Minor optimizations in the `bernfrac()` method.
+
+0.14    2016-10-07
         - Fixed a minor bug inside the method `n->is_pow(p)` when `n` is negative (for old versions of GMP).
 
-0.13    2016-07-10
+0.13    2016-10-07
         - Added the `bernfrac` method, powered by an improved version of Seidel's algorithm.
         - Stricter validation of the precision specified as an import value.
         - Minor bug-fix in the method `is_pow` for `is_pow(-1, odd_n)` -- it now returns true.
         - Fixed some special cases in the method `iroot`.
         - Fixed a special case in the method `valuation` when the second argument is `0`.
 
-0.12    2016-05-10
+0.12    2016-10-05
         - Decreased the default floating-point precision from 256 bits, to 200 bits.
         - Added support for specifying the default precision as an import value.
 
@@ -25,7 +27,7 @@ Revision history for Math-BigNum
         - Fixed a minor-bug in the method `is_pow` for some special cases.
         - Minor POD fixes.
 
-0.11    2016-04-10
+0.11    2016-10-04
         - Added the `$n->parts` method, which returns the numerator and the denominator as BigNum objects.
         - Increased the default accuracy value for the method `is_prime` from 12 to 20.
         - Support for rational exponentiation with an integer power.
@@ -52,11 +54,10 @@ Revision history for Math-BigNum
         - Added the `$n->valuation($k)` method, which returns the number of times `$n` is divisible by `$k`.
         - Extended the method `float` to accept an optional argument with the number of bits of precision.
         - Added the `$x->bfloat` method, which truncates `$x` in-place to a floating-point value.
-        - Added the method `$n->is_pow($k)`, which returns true iff `a^k = n` for some positive integer `a`.
+        - Added the method `$n->is_pow($k)`, which returns true iff `a^k = n` for some integer `a`.
         - Added the method `$x->lgrt`, which returns the logarithmic-root of `$x`.
 
                +  100->lgrt       # solves for x in `x**x = 100` and returns: `3.59728...`
-               + 3125->lgrt       # returns `5` because `log(3125)/log(5) == 3125->root(5)`
 
         - Added the following floating-point functions:
 
@@ -70,7 +71,7 @@ Revision history for Math-BigNum
         - Increased the default precision of floating-point numbers from 128 to 256 bits.
         - Some minor bug-fixes and documentation improvements.
 
-0.10    2016-17-08
+0.10    2016-08-17
         - Faster creation of MPFR objects from scalar integer values.
         - Conversion of scalar values to MPFR objects is done more strictly, by validating each conversion.
         - Added the missing `[b|i]mul` methods in the `Nan` class.
@@ -80,43 +81,43 @@ Revision history for Math-BigNum
         - Require Math::GMPz >= 0.39 (for Rmpz_bin_si).
         - Use Math::GMPq's (>=0.41) `_ulong_max()` and `_long_min()` to determine the integer limits.
 
-0.09    2016-15-08
+0.09    2016-08-15
         - Better support for scalar values.
         - Better performance for `idiv()` and `bidiv()` when called with negative scalar integers.
         - Faster creation of Math::BigNum objects with scalar integer values.
         - Scalar values passed to `(b)i*` methods are now validated or converted correspondingly.
 
-0.08    2016-13-08
+0.08    2016-08-13
         - Added support for `+inf`, `-inf` and `nan`, each represented as a scalar value.
         - Improved the support for infinity to work with any numerical object and any special scalar values.
 
-0.07    2016-06-08
+0.07    2016-08-06
         - Fixed a critical bug in the stringification of very small floating-point values
 
-0.06    2016-06-08
+0.06    2016-08-06
         - Fixed bpow(0, Inf) to return `0` and bpow(0, -Inf) to return `Inf`
         - Added more tests for bpow() and bipow()
         - Added the irand() method, which returns a random integer
         - Slightly faster stringification of floating-point numbers
 
-0.05    2016-26-05
+0.05    2016-05-26
         - 5% optimization in pow(), mod() and is_div() with integer arguments.
         - Fixed `0**Inf` to return `0` and `0**(-Inf)` to return `Inf`
 
-0.04    2016-16-03
+0.04    2016-03-16
         - Added more multimethods to support any kind of numerical object, such as Math::BigInt, Math::BigFloat, etc...
         - Improved the support for infinity.
         - `BigNum <=> NaN` will now return `undef` instead of `0`.
 
-0.03    2016-08-02
+0.03    2016-02-08
         - Minor performance improvement in the creation of BigNum objects with integers or fractions.
         - Changed the result of `(-Inf)**(Float)` from `NaN` to `Inf`.
         - Changed the result of `sqrt(-Inf)` from `NaN` to `Inf`.
         - Improved the documentation.
 
-0.02    2016-06-02
+0.02    2016-02-06
         - Support for decimal numbers with underscores (`_`)
         - Fixed a non-portable test.
 
-0.01    2016-05-02
+0.01    2016-02-05
         - First version, released on an unsuspecting world.
