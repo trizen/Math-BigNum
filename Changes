@@ -6,6 +6,7 @@ Revision history for Math-BigNum
             no Math::BigNum;     # disables the `:constant` behavior in the current scope
 
         - Minor optimizations in the `bernfrac()` method.
+        - Optimizations in method `is_pow`. (Thanks Dana Jacobsen)
 
 0.14    2016-10-07
         - Fixed a minor bug inside the method `n->is_pow(p)` when `n` is negative (for old versions of GMP).
@@ -46,7 +47,7 @@ Revision history for Math-BigNum
                 + binomial(n,k)      # binomial coefficient
                 + fibonacci(n)       # nth-Fibonacci number
                 + lucas(n)           # nth-Lucas number
-                + ipow(a,k)          # integer exponentiation: int(a^k)
+                + ipow(a,k)          # integer exponentiation: a^k
 
         - Added the method `$n->popcount`, which returns the number of 1s in the binary representation of `$n`.
         - Changed the return values of the `sign` method from ("-", "", "+") to (-1, 0, 1).
@@ -59,7 +60,7 @@ Revision history for Math-BigNum
 
                +  100->lgrt       # solves for x in `x**x = 100` and returns: `3.59728...`
 
-        - Added the following floating-point functions:
+        - Added the following floating-point methods:
 
                 + (b)fadd
                 + (b)fsub

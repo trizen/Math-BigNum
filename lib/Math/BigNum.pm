@@ -6280,27 +6280,28 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub 
     Math::GMPq::Rmpq_integer_p($$x) || return 0;
     Math::GMPq::Rmpq_equal($$x, $ONE) && return 1;
 
-    my $pow = CORE::int(Math::GMPq::Rmpq_get_d($$y));
+    $y = CORE::int(Math::GMPq::Rmpq_get_d($$y));
+
+    # Everything is a first power
+    $y == 1 and return 1;
 
     # Return a true value when $x=-1 and $y is odd
-    $pow % 2 and Math::GMPq::Rmpq_equal($$x, $MONE) and return 1;
+    $y % 2 and Math::GMPq::Rmpq_equal($$x, $MONE) and return 1;
 
     # Don't accept a non-positive power
     # Also, when $x is negative and $y is even, return faster
-    if ($pow <= 0 or ($pow % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0)) {
+    if ($y <= 0 or ($y % 2 == 0 and Math::GMPq::Rmpq_sgn($$x) < 0)) {
         return 0;
     }
 
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPq::Rmpq_numref($z, $$x);
 
-    my $r = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_root($r, $z, $pow);
-    my $sgn = Math::GMPz::Rmpz_sgn($r) || return 1;    # $x was zero
-    Math::GMPz::Rmpz_neg($r, $r) if $sgn < 0;
+    # Optimization for perfect squares
+    $y == 2 and return Math::GMPz::Rmpz_perfect_square_p($z);
 
-    Math::GMPz::Rmpz_remove($z, $z, $r) == $pow
-      and Math::GMPz::Rmpz_cmpabs($z, $ONE_Z) == 0;
+    Math::GMPz::Rmpz_perfect_power_p($z) || return 0;
+    Math::GMPz::Rmpz_root($z, $z, $y);
 };
 
 Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
@@ -6310,6 +6311,9 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
     Math::GMPq::Rmpq_equal($$x, $ONE) && return 1;
 
     if (CORE::int($y) eq $y and $y <= MAX_UI) {
+
+        # Everything is a first power
+        $y == 1 and return 1;
 
         # Return a true value when $x=-1 and $y is odd
         $y % 2 and Math::GMPq::Rmpq_equal($$x, $MONE) and return 1;
@@ -6323,13 +6327,11 @@ Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
         my $z = Math::GMPz::Rmpz_init();
         Math::GMPq::Rmpq_numref($z, $$x);
 
-        my $r = Math::GMPz::Rmpz_init();
-        Math::GMPz::Rmpz_root($r, $z, $y);
-        my $sgn = Math::GMPz::Rmpz_sgn($r) || return 1;    # $x was zero
-        Math::GMPz::Rmpz_neg($r, $r) if $sgn < 0;
+        # Optimization for perfect squares
+        $y == 2 and return Math::GMPz::Rmpz_perfect_square_p($z);
 
-        Math::GMPz::Rmpz_remove($z, $z, $r) == $y
-          and Math::GMPz::Rmpz_cmpabs($z, $ONE_Z) == 0;
+        Math::GMPz::Rmpz_perfect_power_p($z) || return 0;
+        Math::GMPz::Rmpz_root($z, $z, $y);
     }
     else {
         $x->is_pow(Math::BigNum->new($y));
