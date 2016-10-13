@@ -2083,7 +2083,7 @@ sub bsqr {
 The nth-Bernoulli number as an exact fraction, computed with an
 improved version of Seidel's algorithm, starting with C<bernfrac(0) = 1>.
 
-For n >= 50, a more efficient algorithm is used, based on the Zeta function value of n.
+For n >= 50, a more efficient algorithm is used, based on Zeta(n).
 
 For negative values of C<$n>, Nan is returned.
 
@@ -2121,7 +2121,7 @@ sub bernfrac {
         Math::MPFR::Rmpfr_pow_ui($p, $p, $n, $ROUND);                  # p = p^n
 
         Math::MPFR::Rmpfr_div($f, $f, $p, $ROUND);                     # f = f/p
-        Math::MPFR::Rmpfr_div_2ui($f, $f, $n - 1, $ROUND);             # f = f/2^(-n + 1)
+        Math::MPFR::Rmpfr_div_2ui($f, $f, $n - 1, $ROUND);             # f = f/2^(n-1)
 
         Math::GMPz::Rmpz_set_ui($z, 1);                                # z = 1
         Math::GMPz::Rmpz_mul_2exp($z, $z, $n + 1);                     # z = 2^(n+1)
