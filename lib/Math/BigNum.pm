@@ -2143,7 +2143,7 @@ sub bernfrac {
     my @D = (
         Math::GMPz::Rmpz_init_set_ui(0),
         Math::GMPz::Rmpz_init_set_ui(1),
-        map { Math::GMPz::Rmpz_init_set_ui(0) } 1 .. $n / 2
+        map { Math::GMPz::Rmpz_init_set_ui(0) } (1 .. $n/2 - 1)
     );
 #>>>
 
