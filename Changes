@@ -8,6 +8,7 @@ Revision history for Math-BigNum
         - Minor optimizations inside the `bernfrac()` method.
         - Optimizations inside the method `is_pow`. (Thanks Dana Jacobsen)
         - Faster algorithm in `bernfrac()` for values of `n` greater than 49. (based on the Zeta function)
+        - Faster algorithm in `bernreal()`, using positive values of the Zeta function. (before, negative values were used)
 
 0.14    2016-10-07
         - Fixed a minor bug inside the method `n->is_pow(p)` when `n` is negative (for old versions of GMP).
