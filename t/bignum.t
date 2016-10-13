@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 349;
+plan tests => 351;
 
 # Initialization
 
@@ -883,6 +883,10 @@ plan tests => 349;
     }
 
     is(Math::BigNum->new(-2)->bernfrac, NaN);    # make sure we check for even correctly
+
+    is(Math::BigNum->new(52)->bernfrac->as_frac, '-801165718135489957347924991853/1590');
+    is(Math::BigNum->new(106)->bernfrac->as_frac,
+        '36373903172617414408151820151593427169231298640581690038930816378281879873386202346572901/642');
 }
 
 # op= operations

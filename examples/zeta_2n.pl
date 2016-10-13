@@ -19,6 +19,8 @@ use constant PI => Math::BigNum->pi;
 # An improved version of Sidel's algorithm
 #   http://oeis.org/wiki/User:Peter_Luschny/ComputationAndAsymptoticsOfBernoulliNumbers#Seidel
 
+# However, for practical purposes, `Math::BigNum::bernfrac()` is recommended.
+
 sub bernoulli_number {
     my ($n) = @_;
 
