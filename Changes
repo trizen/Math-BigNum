@@ -6,7 +6,7 @@ Revision history for Math-BigNum
             no Math::BigNum;     # disables the `:constant` behavior in the current scope
 
         - Minor optimizations inside the `bernfrac()` method.
-        - Optimizations inside the method `is_pow`. (Thanks Dana Jacobsen)
+        - Optimizations inside the method `is_pow`. (Thanks to Dana Jacobsen)
         - Faster algorithm in `bernfrac()` for values of `n` greater than 49. (based on the Zeta function)
         - Faster algorithm in `bernreal()`, using positive values of the Zeta function. (before, negative values were used)
 
