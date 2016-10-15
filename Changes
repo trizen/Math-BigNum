@@ -1,14 +1,30 @@
 Revision history for Math-BigNum
 
 0.15    2016-xx-xx
-        - Added unimport support.
+
+        [ADDED]
+
+        - Unimport support.
 
             no Math::BigNum;     # disables the `:constant` behavior in the current scope
 
-        - Minor optimizations inside the `bernfrac()` method.
-        - Optimizations inside the method `is_pow`. (Thanks to Dana Jacobsen)
-        - Faster algorithm in `bernfrac()` for values of `n` greater than 49. (based on the Zeta function)
+        [PERFORMANCE IMPROVEMENTS]
+
+        - Noticeable optimizations in method `is_pow`. (Thanks to Dana Jacobsen)
+        - Minor optimization in `bernfrac()` for values of n < 50.
+        - Faster algorithm in `bernfrac()` for values of `n` >= 50. (based on the Zeta function)
         - Faster algorithm in `bernreal()`, using positive values of the Zeta function. (before, negative values were used)
+
+        [BUG FIXES]
+
+        - When a base is specified, special values, such "Inf" and "NaN", are no longer parsed specially.
+
+            + Math::BigNum->new('inf', 36) == 24171
+            + Math::BigNum->new('num', 36) == 30191
+
+        [OTHER]
+
+        - Documentation improvements.
 
 0.14    2016-10-07
         - Fixed a minor bug inside the method `n->is_pow(p)` when `n` is negative (for old versions of GMP).

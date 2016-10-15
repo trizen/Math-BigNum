@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 357;
+plan tests => 369;
 
 # Initialization
 
@@ -19,6 +19,28 @@ plan tests => 357;
 
     $x = Math::BigNum->new(255);
     is($x->in_base(16), "ff");
+
+    # 'inf' and 'nan' without base
+    is(Math::BigNum->new('inf'),  "Inf");
+    is(Math::BigNum->new('-Inf'), "-Inf");
+    is(Math::BigNum->new("nan"),  "NaN");
+    is(Math::BigNum->new("abc"),  "NaN");
+
+    # 'inf' in base 36
+    is(Math::BigNum->new('inf',  36), 24171);
+    is(Math::BigNum->new('Inf',  36), 24171);
+    is(Math::BigNum->new('-Inf', 36), -24171);
+
+    # 'nan' in base 36
+    is(Math::BigNum->new('nan', 36), 30191);
+    is(Math::BigNum->new('NaN', 36), 30191);
+
+    # fraction in base 10
+    is(Math::BigNum->new('123/45')->as_rat, '41/15');
+
+    # fraction in base 36
+    is(Math::BigNum->new("h5/1e", 36),         12.34);
+    is(Math::BigNum->new("14/1e", 36)->as_rat, "4/5");
 }
 
 # Basic operations

@@ -798,12 +798,12 @@ sub new {
     my $ref = ref($num);
 
     # Be forgetful about undefined values or empty strings
-    if (!defined($num) or ($ref eq '' and $num eq '')) {
+    if ($ref eq '' and !$num) {
         return zero();
     }
 
     # Special string values
-    elsif ($ref eq '') {
+    elsif (!defined($base) and $ref eq '') {
         my $lc = lc($num);
         if ($lc eq 'inf' or $lc eq '+inf') {
             return inf();
@@ -879,7 +879,7 @@ sub new {
     }
 
     # Number with base
-    elsif ($ref eq '' and defined($base)) {
+    elsif (defined($base) and $ref eq '') {
 
         if ($base < 2 or $base > 36) {
             require Carp;
@@ -892,7 +892,9 @@ sub new {
 
     # Other reference (which may support stringification)
     else {
-        Math::GMPq::Rmpq_set($r, _str2mpq("$num") // return nan());
+        $num = "$num";
+        Math::GMPq::Rmpq_set($r, _str2mpq($num) // return nan());
+        Math::GMPq::Rmpq_canonicalize($r) if (index($num, '/') != -1);
     }
 
     # Return a blessed BigNum object
@@ -1996,6 +1998,12 @@ Class::Multimethods::multimethod bpow => qw(Math::BigNum *) => sub {
     $_[0]->bpow(Math::BigNum->new($_[1]));
 };
 
+# 0 ** Inf = 0
+# 0 ** -Inf = Inf
+# (+/-1) ** (+/-Inf) = 1
+# x ** (-Inf) = 0
+# x ** Inf = Inf
+
 Class::Multimethods::multimethod bpow => qw(Math::BigNum Math::BigNum::Inf) => sub {
     $_[0]->is_zero
       ? $_[1]->is_neg
@@ -2113,15 +2121,13 @@ sub bernfrac {
 
         my $z = Math::GMPz::Rmpz_init();
         Math::GMPz::Rmpz_fac_ui($z, $n);                               # z = n!
-
+        Math::GMPz::Rmpz_div_2exp($z, $z, $n - 1);                     # z = z / 2^(n-1)
         Math::MPFR::Rmpfr_mul_z($f, $f, $z, $ROUND);                   # f = f*z
 
         my $p = Math::MPFR::Rmpfr_init2($prec);
         Math::MPFR::Rmpfr_const_pi($p, $ROUND);                        # p = PI
         Math::MPFR::Rmpfr_pow_ui($p, $p, $n, $ROUND);                  # p = p^n
-
         Math::MPFR::Rmpfr_div($f, $f, $p, $ROUND);                     # f = f/p
-        Math::MPFR::Rmpfr_div_2ui($f, $f, $n - 1, $ROUND);             # f = f/2^(n-1)
 
         Math::GMPz::Rmpz_set_ui($z, 1);                                # z = 1
         Math::GMPz::Rmpz_mul_2exp($z, $z, $n + 1);                     # z = 2^(n+1)
@@ -2945,7 +2951,7 @@ Class::Multimethods::multimethod log => qw(Math::BigNum Math::BigNum::Inf) => su
     $x->log(Scalar)                # => BigNum | Nan
 
 Logarithm of C<$x> in base C<$y>, changing the C<$x> in-place.
-When C<$y> is not specified, it defaults to base e.
+When C<$y> is not specified, it defaults to base I<e>.
 
 =cut
 
@@ -3324,6 +3330,10 @@ sub sec {
 Returns the inverse secant of C<$x>.
 Returns Nan for "$x > -1" and "$x < 1".
 
+Defined as:
+
+    asec(x) = acos(1/x)
+
 =cut
 
 #
@@ -3331,9 +3341,8 @@ Returns Nan for "$x > -1" and "$x < 1".
 #
 sub asec {
     my ($x) = @_;
-    state $one = Math::MPFR->new(1);
     my $r = _big2mpfr($x);
-    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
+    Math::MPFR::Rmpfr_ui_div($r, 1, $r, $ROUND);
     Math::MPFR::Rmpfr_acos($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -3359,6 +3368,10 @@ sub sech {
 Returns the inverse hyperbolic secant of C<$x>.
 Returns a Nan for "$x < 0" or "$x > 1".
 
+Defined as:
+
+    asech(x) = acosh(1/x)
+
 =cut
 
 #
@@ -3366,9 +3379,8 @@ Returns a Nan for "$x < 0" or "$x > 1".
 #
 sub asech {
     my ($x) = @_;
-    state $one = Math::MPFR->new(1);
     my $r = _big2mpfr($x);
-    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
+    Math::MPFR::Rmpfr_ui_div($r, 1, $r, $ROUND);
     Math::MPFR::Rmpfr_acosh($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -3394,6 +3406,10 @@ sub csc {
 Returns the inverse cosecant of C<$x>.
 Returns Nan for "$x > -1" and "$x < 1".
 
+Defined as:
+
+    acsc(x) = asin(1/x)
+
 =cut
 
 #
@@ -3401,9 +3417,8 @@ Returns Nan for "$x > -1" and "$x < 1".
 #
 sub acsc {
     my ($x) = @_;
-    state $one = Math::MPFR->new(1);
     my $r = _big2mpfr($x);
-    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
+    Math::MPFR::Rmpfr_ui_div($r, 1, $r, $ROUND);
     Math::MPFR::Rmpfr_asin($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -3428,6 +3443,10 @@ sub csch {
 
 Returns the inverse hyperbolic cosecant of C<$x>.
 
+Defined as:
+
+    acsch(x) = asinh(1/x)
+
 =cut
 
 #
@@ -3435,9 +3454,8 @@ Returns the inverse hyperbolic cosecant of C<$x>.
 #
 sub acsch {
     my ($x) = @_;
-    state $one = Math::MPFR->new(1);
     my $r = _big2mpfr($x);
-    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
+    Math::MPFR::Rmpfr_ui_div($r, 1, $r, $ROUND);
     Math::MPFR::Rmpfr_asinh($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -3462,6 +3480,10 @@ sub cot {
 
 Returns the inverse cotangent of C<$x>.
 
+Defined as:
+
+    acot(x) = atan(1/x)
+
 =cut
 
 #
@@ -3469,9 +3491,8 @@ Returns the inverse cotangent of C<$x>.
 #
 sub acot {
     my ($x) = @_;
-    state $one = Math::MPFR->new(1);
     my $r = _big2mpfr($x);
-    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
+    Math::MPFR::Rmpfr_ui_div($r, 1, $r, $ROUND);
     Math::MPFR::Rmpfr_atan($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -3496,15 +3517,18 @@ sub coth {
 
 Returns the inverse hyperbolic cotangent of C<$x>.
 
+Defined as:
+
+    acoth(x) = atanh(1/x)
+
 =cut
 
 #
 ## acoth(x) = atanh(1/x)
 #
 sub acoth {
-    state $one = Math::MPFR->new(1);
     my $r = _big2mpfr($_[0]);
-    Math::MPFR::Rmpfr_div($r, $one, $r, $ROUND);
+    Math::MPFR::Rmpfr_ui_div($r, 1, $r, $ROUND);
     Math::MPFR::Rmpfr_atanh($r, $r, $ROUND);
     _mpfr2big($r);
 }
@@ -4905,6 +4929,131 @@ Class::Multimethods::multimethod kronecker => qw(Math::BigNum *) => sub {
 Class::Multimethods::multimethod kronecker => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
 Class::Multimethods::multimethod kronecker => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
+=head2 is_psqr
+
+    $n->is_psqr                    # => Bool
+
+Returns a true value when C<$n> is a perfect square.
+When C<$n> is not an integer, returns C<0>.
+
+=cut
+
+sub is_psqr {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_integer_p($$x) || return 0;
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_numref($z, $$x);
+    Math::GMPz::Rmpz_perfect_square_p($z);
+}
+
+=head2 is_ppow
+
+    $n->is_ppow                    # => Bool
+
+Returns a true value when C<$n> is a perfect power of some integer k.
+When C<$n> is not an integer, returns C<0>.
+
+=cut
+
+sub is_ppow {
+    my ($x) = @_;
+    Math::GMPq::Rmpq_integer_p($$x) || return 0;
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPq::Rmpq_numref($z, $$x);
+    Math::GMPz::Rmpz_perfect_power_p($z);
+}
+
+=head2 is_pow
+
+    $n->is_pow(BigNum)             # => Bool
+    $n->is_pow(Scalar)             # => Bool
+
+Return a true value when C<$n> is a perfect power of a given integer C<$k>.
+When C<$n> is not an integer, returns C<0>. On the other hand, when C<$k> is not an integer,
+it will be truncated implicitly to an integer. If C<$k> is not positive after truncation, C<0> is returned.
+
+A true value is returned iff there exists some integer I<a> satisfying the equation: I<a^k = n>.
+
+Example:
+
+    100->is_pow(2)       # true: 100 is a square (10**2)
+    125->is_pow(3)       # true: 125 is a cube   ( 5**3)
+
+=cut
+
+Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    Math::GMPq::Rmpq_integer_p($$x) || return 0;
+    Math::GMPq::Rmpq_equal($$x, $ONE) && return 1;
+
+    $x = $$x;
+    $y = CORE::int(Math::GMPq::Rmpq_get_d($$y));
+
+    # Everything is a first power
+    $y == 1 and return 1;
+
+    # Return a true value when $x=-1 and $y is odd
+    $y % 2 and Math::GMPq::Rmpq_equal($x, $MONE) and return 1;
+
+    # Don't accept a non-positive power
+    # Also, when $x is negative and $y is even, return faster
+    if ($y <= 0 or ($y % 2 == 0 and Math::GMPq::Rmpq_sgn($x) < 0)) {
+        return 0;
+    }
+
+    my $z = Math::GMPz::Rmpz_init_set($x);
+
+    # Optimization for perfect squares
+    $y == 2 and return Math::GMPz::Rmpz_perfect_square_p($z);
+
+    Math::GMPz::Rmpz_perfect_power_p($z) || return 0;
+    Math::GMPz::Rmpz_root($z, $z, $y);
+};
+
+Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    Math::GMPq::Rmpq_integer_p($$x) || return 0;
+    Math::GMPq::Rmpq_equal($$x, $ONE) && return 1;
+
+    if (CORE::int($y) eq $y and $y <= MAX_UI) {
+
+        # Everything is a first power
+        $y == 1 and return 1;
+
+        # Deref $x
+        $x = $$x;
+
+        # Return a true value when $x=-1 and $y is odd
+        $y % 2 and Math::GMPq::Rmpq_equal($x, $MONE) and return 1;
+
+        # Don't accept a non-positive power
+        # Also, when $x is negative and $y is even, return faster
+        if ($y <= 0 or ($y % 2 == 0 and Math::GMPq::Rmpq_sgn($x) < 0)) {
+            return 0;
+        }
+
+        my $z = Math::GMPz::Rmpz_init_set($x);
+
+        # Optimization for perfect squares
+        $y == 2 and return Math::GMPz::Rmpz_perfect_square_p($z);
+
+        Math::GMPz::Rmpz_perfect_power_p($z) || return 0;
+        Math::GMPz::Rmpz_root($z, $z, $y);
+    }
+    else {
+        $x->is_pow(Math::BigNum->new($y));
+    }
+};
+
+Class::Multimethods::multimethod is_pow => qw(Math::BigNum *) => sub {
+    $_[0]->is_pow(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum::Inf) => sub { 0 };
+Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
+
 =head2 is_prime
 
     $n->is_prime                   # => Scalar
@@ -4993,6 +5142,11 @@ sub bfac {
 
 Double factorial of C<$n>. Returns Nan when C<$n> is negative.
 
+Example:
+
+    7->dfac       # 1*3*5*7 = 105
+    8->dfac       # 2*4*6*8 = 384
+
 =cut
 
 sub dfac {
@@ -5027,6 +5181,12 @@ sub primorial {
 
 The n-th Fibonacci number. Returns Nan when C<$n> is negative.
 
+Defined as:
+
+    fib(0) = 0
+    fib(1) = 1
+    fib(n) = fib(n-1) + fib(n-2)
+
 =cut
 
 sub fib {
@@ -5043,6 +5203,12 @@ sub fib {
     $n->lucas                      # => BigNum | Nan
 
 The n-th Lucas number. Returns Nan when C<$n> is negative.
+
+Defined as:
+
+    lucas(0) = 2
+    lucas(1) = 1
+    lucas(n) = lucas(n-1) + lucas(n-2)
 
 =cut
 
@@ -5697,8 +5863,8 @@ Although it generates high-quality pseudorandom integers, it is B<NOT> cryptogra
 
 Example:
 
-    10->irand;       # a random integer between 0 and 10 (exclusive)
-    10->irand(20);   # a random integer between 10 and 20 (exclusive)
+    10->irand        # a random integer between 0 and 10 (exclusive)
+    10->irand(20)    # a random integer between 10 and 20 (exclusive)
 
 =cut
 
@@ -5767,13 +5933,17 @@ sub copy {
     $x->floor                      # => BigNum
 
 Returns C<$x> if C<$x> is an integer, otherwise it rounds C<$x> towards -Infinity.
-For C<$x=2.5>, returns C<2>, and for C<$x=-2.5>, returns C<-3>.
+
+Example:
+
+    floor( 2.5) =  2
+    floor(-2.5) = -3
 
 =cut
 
 sub floor {
     my ($x) = @_;
-    Math::GMPq::Rmpq_integer_p($$x) && return $x;
+    Math::GMPq::Rmpq_integer_p($$x) && return $x->copy;
 
     if (Math::GMPq::Rmpq_sgn($$x) > 0) {
         my $z = Math::GMPz::Rmpz_init();
@@ -5793,13 +5963,17 @@ sub floor {
     $x->ceil                       # => BigNum
 
 Returns C<$x> if C<$x> is an integer, otherwise it rounds C<$x> towards +Infinity.
-For C<$x=2.5>, returns C<3>, and for C<$x=-2.5>, returns C<-2>.
+
+Example:
+
+    ceil( 2.5) =  3
+    ceil(-2.5) = -2
 
 =cut
 
 sub ceil {
     my ($x) = @_;
-    Math::GMPq::Rmpq_integer_p($$x) && return $x;
+    Math::GMPq::Rmpq_integer_p($$x) && return $x->copy;
 
     if (Math::GMPq::Rmpq_sgn($$x) > 0) {
         my $z = Math::GMPz::Rmpz_init();
@@ -5820,6 +5994,11 @@ sub ceil {
     int($x)                        # => BigNum
 
 Returns a truncated integer from the value of C<$x>.
+
+Example:
+
+    int( 2.5) =  2
+    int(-2.5) = -2
 
 =cut
 
@@ -5968,7 +6147,7 @@ Class::Multimethods::multimethod bround => qw(Math::BigNum Math::BigNum) => sub 
     $x->neg                        # => BigNum
     -$x                            # => BigNum
 
-Negative value of C<$x>. Returns C<abs($x)> when C<$x> is negative, and C<-$x> when C<$x> is positive.
+Negative value of C<$x>.
 
 =cut
 
@@ -5998,6 +6177,11 @@ sub bneg {
     abs($x)                        # => BigNum
 
 Absolute value of C<$x>.
+
+Example:
+
+    abs(-42) = 42
+    abs( 42) = 42
 
 =cut
 
@@ -6236,16 +6420,43 @@ sub is_even {
     $x->is_div(BigNum)             # => Bool
     $x->is_div(Scalar)             # => Bool
 
-Returns a true value if C<$x> is divisible by C<$y>. False otherwise.
-If C<$y> is zero, returns C<0>.
+Returns a true value if C<$x> is divisible by C<$y> (i.e. when the
+result of division of C<$x> by C<$y> is an integer). False otherwise.
 
-This method is very fast when C<$x> is an integer and the second argument is a Perl integer.
+Example:
+
+    is_div(15, 3) = true
+    is_div(15, 4) = false
+
+It is also defined for rational numbers, returning a true value when the quotient of division is an integer:
+
+    is_div(17, 3.4) = true       # because: 17/3.4 = 5
+
+This method is very fast when the first argument is an integer and the second argument is a I<Perl> integer.
 
 =cut
 
 Class::Multimethods::multimethod is_div => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
+
     Math::GMPq::Rmpq_sgn($$y) || return 0;
+
+#<<<
+    #---------------------------------------------------------------------------------
+    ## Optimization for integers, but it turns out to be slower for small integers...
+    #---------------------------------------------------------------------------------
+    #~ if (Math::GMPq::Rmpq_integer_p($$y) and Math::GMPq::Rmpq_integer_p($$x)) {
+        #~ my $d = CORE::int(CORE::abs(Math::GMPq::Rmpq_get_d($$y)));
+        #~ if ($d <= MAX_UI) {
+            #~ Math::GMPz::Rmpz_set_q((my $z = Math::GMPz::Rmpz_init()), $$x);
+            #~ return Math::GMPz::Rmpz_divisible_ui_p($z, $d);
+        #~ }
+        #~ else {
+            #~ return Math::GMPz::Rmpz_divisible_p(_int2mpz($x), _int2mpz($y));
+        #~ }
+    #~ }
+#>>>
+
     my $q = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_div($q, $$x, $$y);
     Math::GMPq::Rmpq_integer_p($q);
@@ -6254,10 +6465,10 @@ Class::Multimethods::multimethod is_div => qw(Math::BigNum Math::BigNum) => sub 
 Class::Multimethods::multimethod is_div => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    $y == 0 and return 0;
+    $y || return 0;
 
     # Use a faster method when both $x and $y are integers
-    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI and Math::GMPq::Rmpq_integer_p($$x)) {
+    if (CORE::int($y) eq $y and CORE::abs($y) <= MAX_UI and Math::GMPq::Rmpq_integer_p($$x)) {
         Math::GMPz::Rmpz_divisible_ui_p(_int2mpz($x), CORE::abs($y));
     }
 
@@ -6276,131 +6487,6 @@ Class::Multimethods::multimethod is_div => qw(Math::BigNum *) => sub {
 Class::Multimethods::multimethod is_div => qw(Math::BigNum Math::BigNum::Inf) => sub { 0 };
 Class::Multimethods::multimethod is_div => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
 
-=head2 is_psqr
-
-    $n->is_psqr                    # => Bool
-
-Returns a true value when C<$n> is a perfect square.
-When C<$n> is not an integer, returns C<0>.
-
-=cut
-
-sub is_psqr {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_integer_p($$x) || return 0;
-    my $z = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_numref($z, $$x);
-    Math::GMPz::Rmpz_perfect_square_p($z);
-}
-
-=head2 is_ppow
-
-    $n->is_ppow                    # => Bool
-
-Returns a true value when C<$n> is a perfect power of some integer k.
-When C<$n> is not an integer, returns C<0>.
-
-=cut
-
-sub is_ppow {
-    my ($x) = @_;
-    Math::GMPq::Rmpq_integer_p($$x) || return 0;
-    my $z = Math::GMPz::Rmpz_init();
-    Math::GMPq::Rmpq_numref($z, $$x);
-    Math::GMPz::Rmpz_perfect_power_p($z);
-}
-
-=head2 is_pow
-
-    $n->is_pow(BigNum)             # => Bool
-    $n->is_pow(Scalar)             # => Bool
-
-Return a true value when C<$n> is a perfect power of a given integer C<$k>.
-When C<$n> is not an integer, returns C<0>. On the other hand, when C<$k> is not an integer,
-it will be truncated implicitly to an integer. If C<$k> is not positive after truncation, C<0> is returned.
-
-A true value is returned iff there exists some integer I<a> satisfying the equation: I<a^k = n>.
-
-Example:
-
-    100->is_pow(2)       # true: 100 is a square (10**2)
-    125->is_pow(3)       # true: 125 is a cube   ( 5**3)
-
-=cut
-
-Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum) => sub {
-    my ($x, $y) = @_;
-
-    Math::GMPq::Rmpq_integer_p($$x) || return 0;
-    Math::GMPq::Rmpq_equal($$x, $ONE) && return 1;
-
-    $x = $$x;
-    $y = CORE::int(Math::GMPq::Rmpq_get_d($$y));
-
-    # Everything is a first power
-    $y == 1 and return 1;
-
-    # Return a true value when $x=-1 and $y is odd
-    $y % 2 and Math::GMPq::Rmpq_equal($x, $MONE) and return 1;
-
-    # Don't accept a non-positive power
-    # Also, when $x is negative and $y is even, return faster
-    if ($y <= 0 or ($y % 2 == 0 and Math::GMPq::Rmpq_sgn($x) < 0)) {
-        return 0;
-    }
-
-    my $z = Math::GMPz::Rmpz_init_set($x);
-
-    # Optimization for perfect squares
-    $y == 2 and return Math::GMPz::Rmpz_perfect_square_p($z);
-
-    Math::GMPz::Rmpz_perfect_power_p($z) || return 0;
-    Math::GMPz::Rmpz_root($z, $z, $y);
-};
-
-Class::Multimethods::multimethod is_pow => qw(Math::BigNum $) => sub {
-    my ($x, $y) = @_;
-
-    Math::GMPq::Rmpq_integer_p($$x) || return 0;
-    Math::GMPq::Rmpq_equal($$x, $ONE) && return 1;
-
-    if (CORE::int($y) eq $y and $y <= MAX_UI) {
-
-        # Everything is a first power
-        $y == 1 and return 1;
-
-        # Deref $x
-        $x = $$x;
-
-        # Return a true value when $x=-1 and $y is odd
-        $y % 2 and Math::GMPq::Rmpq_equal($x, $MONE) and return 1;
-
-        # Don't accept a non-positive power
-        # Also, when $x is negative and $y is even, return faster
-        if ($y <= 0 or ($y % 2 == 0 and Math::GMPq::Rmpq_sgn($x) < 0)) {
-            return 0;
-        }
-
-        my $z = Math::GMPz::Rmpz_init_set($x);
-
-        # Optimization for perfect squares
-        $y == 2 and return Math::GMPz::Rmpz_perfect_square_p($z);
-
-        Math::GMPz::Rmpz_perfect_power_p($z) || return 0;
-        Math::GMPz::Rmpz_root($z, $z, $y);
-    }
-    else {
-        $x->is_pow(Math::BigNum->new($y));
-    }
-};
-
-Class::Multimethods::multimethod is_pow => qw(Math::BigNum *) => sub {
-    $_[0]->is_pow(Math::BigNum->new($_[1]));
-};
-
-Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum::Inf) => sub { 0 };
-Class::Multimethods::multimethod is_pow => qw(Math::BigNum Math::BigNum::Nan) => sub { 0 };
-
 =head2 sign
 
     $x->sign                       # => Scalar
@@ -6418,6 +6504,7 @@ sub sign {
     $x->length                     # => Scalar
 
 Returns the number of digits of C<$x> in base 10 before the decimal point.
+
 For C<$x=-1234.56>, it returns C<4>.
 
 =cut
@@ -6437,8 +6524,13 @@ sub length {
 
     $x->stringify                  # => Scalar
 
-Returns a string representing the value of C<$x>, either as an integer
-or as a floating-point number. For C<$x=1/2>, it returns C<"0.5">.
+Returns a string representing the value of C<$x>, either as a base-10 integer,
+or a decimal expansion.
+
+Example:
+
+    stringify(1/2) = "0.5"
+    stringify(100) = "100"
 
 =cut
 
@@ -6556,8 +6648,12 @@ sub boolify {
 
     $x->as_frac                    # => Scalar
 
-Returns a string representing the number as a fraction.
-For C<$x=0.5>, it returns C<"1/2">. For C<$x=3>, it returns C<"3/1">.
+Returns a string representing the number as a base-10 fraction.
+
+Example:
+
+    as_frac(3.5) = "7/2"
+    as_frac(3.0) = "3/1"
 
 =cut
 
@@ -6571,8 +6667,12 @@ sub as_frac {
     $x->as_rat                     # => Scalar
 
 Almost the same as C<as_frac()>, except that integers are returned as they are,
-without adding a denominator of 1. For C<$x=0.5>, it returns C<"1/2">. For
-C<$x=3>, it simply returns C<"3">.
+without adding a denominator of 1.
+
+Example:
+
+    as_rat(3.5) = "7/2"
+    as_rat(3.0) = "3"
 
 =cut
 
@@ -6590,9 +6690,9 @@ Returns the self-number as a floating-point scalar. The method also accepts
 an optional argument for precision after the decimal point. When no argument
 is provided, it uses the default precision.
 
-Example for C<$x = 1/3>:
+Example:
 
-    $x->as_float(4);        # returns "0.3333"
+    as_float(1/3, 4) = "0.3333"
 
 If the self number is an integer, it will be returned as it is.
 
@@ -6621,10 +6721,10 @@ Class::Multimethods::multimethod as_float => qw(Math::BigNum Math::BigNum) => su
 Returns the self-number as an integer in a given base. When the base is omitted, it
 defaults to 10.
 
-Example for C<$x = 255>:
+Example:
 
-    $x->as_int          # returns: "255"
-    $x->as_int(16)      # returns: "ff"
+    as_int(255)     = "255"
+    as_int(255, 16) = "ff"
 
 =cut
 
@@ -6656,7 +6756,10 @@ Class::Multimethods::multimethod as_int => qw(Math::BigNum Math::BigNum) => sub 
     $x->as_bin                     # => Scalar
 
 Returns a string representing the value of C<$x> in binary.
-For C<$x=42>, it returns C<"101010">.
+
+Example:
+
+    as_bin(42) = "101010"
 
 =cut
 
@@ -6671,7 +6774,10 @@ sub as_bin {
     $x->as_oct                     # => Scalar
 
 Returns a string representing the value of C<$x> in octal.
-For C<$x=42>, it returns C<"52">.
+
+Example:
+
+    as_oct(42) = "52"
 
 =cut
 
@@ -6686,7 +6792,10 @@ sub as_oct {
     $x->as_hex                     # => Scalar
 
 Returns a string representing the value of C<$x> in hexadecimal.
-For C<$x=42>, it returns C<"2a">.
+
+Example:
+
+    as_hex(42) = "2a"
 
 =cut
 
@@ -6705,6 +6814,11 @@ Returns a string with the value of C<$x> in a given base,
 where the base can range from 2 to 36 inclusive. If C<$x>
 is not an integer, the result is returned in rationalized
 form.
+
+Example:
+
+    in_base(42,     3) = "1120"
+    in_base(12.34, 36) = "h5/1e"
 
 =cut
 
@@ -6732,7 +6846,10 @@ Class::Multimethods::multimethod in_base => qw(Math::BigNum Math::BigNum) => sub
     $x->digits                     # => List of scalars
 
 Returns a list with the digits of C<$x> in base 10 before the decimal point.
-For C<$x=-1234.56>, it returns C<(1,2,3,4)>
+
+Example:
+
+    digits(-1234.56) = (1,2,3,4)
 
 =cut
 
@@ -7230,10 +7347,13 @@ L<https://github.com/trizen/Math-BigNum>
 
 =back
 
-
 =head1 ACKNOWLEDGEMENTS
 
 =over 4
+
+=item * Rounding
+
+L<https://en.wikipedia.org/wiki/Rounding>
 
 =item * Special cases and NaN
 
@@ -7246,6 +7366,34 @@ L<http://www.cl.cam.ac.uk/teaching/1011/FPComp/floatingmath.pdf>
 =item * Wolfram|Alpha
 
 L<http://www.wolframalpha.com/>
+
+=back
+
+=head1 SEE ALSO
+
+=over 4
+
+=item * Fast math libraries
+
+L<Math::GMP> - High speed arbitrary size integer math.
+
+L<Math::GMPz> - perl interface to the GMP library's integer (mpz) functions.
+
+L<Math::GMPq> - perl interface to the GMP library's rational (mpq) functions.
+
+L<Math::MPFR> - perl interface to the MPFR (floating point) library.
+
+=item * Portable math libraries
+
+L<Math::BigInt> - Arbitrary size integer/float math package.
+
+L<Math::BigFloat> - Arbitrary size floating point math package.
+
+L<Math::BigRat> - Arbitrary big rational numbers.
+
+=item * Math utilities
+
+L<Math::Prime::Util> - Utilities related to prime numbers, including fast sieves and factoring.
 
 =back
 
