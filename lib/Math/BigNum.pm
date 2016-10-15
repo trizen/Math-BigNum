@@ -892,9 +892,7 @@ sub new {
 
     # Other reference (which may support stringification)
     else {
-        $num = "$num";
-        Math::GMPq::Rmpq_set($r, _str2mpq($num) // return nan());
-        Math::GMPq::Rmpq_canonicalize($r) if (index($num, '/') != -1);
+        Math::GMPq::Rmpq_set($r, _str2mpq("$num") // return nan());
     }
 
     # Return a blessed BigNum object
