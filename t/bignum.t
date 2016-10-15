@@ -5,9 +5,11 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 369;
+plan tests => 385;
 
 # Initialization
+
+my $mbn = 'Math::BigNum';
 
 {
     use Math::BigNum qw();
@@ -41,6 +43,51 @@ plan tests => 369;
     # fraction in base 36
     is(Math::BigNum->new("h5/1e", 36),         12.34);
     is(Math::BigNum->new("14/1e", 36)->as_rat, "4/5");
+
+    is($mbn->new('1234'),    '1234');
+    is($mbn->new("1234/1"),  '1234');
+    is($mbn->new("1234/2"),  '617');
+    is($mbn->new("100/1.0"), '100');
+
+    #~ is($mbn->new("10.0/1.0"),       '10');
+    #~ is($mbn->new("0.1/10")->as_rat, '1/100');
+    #~ is($mbn->new("1e2/1e1"),        '10');
+
+    #~ is($mbn->new("0.1/0.1"), '1');
+    #~ is($mbn->new("1e2/10"),  '10');
+
+    is($mbn->new("5/1e2"), '0.05');    # passes by luck
+
+    is($mbn->new("1 / 3")->as_rat,  '1/3');
+    is($mbn->new("-1 / 3")->as_rat, '-1/3');
+    is($mbn->new("1 / -3")->as_rat, '-1/3');
+
+    $x = $mbn->new("NaN");
+    is("$x", "NaN");
+
+    $x = $mbn->new("inf");
+    is("$x", "Inf");
+
+    $x = $mbn->new("-inf");
+    is("$x", "-Inf");
+
+    $x = $mbn->new("abc");
+    is("$x", "NaN");
+
+    $x = $mbn->new("1/");
+    is("$x", "NaN");
+
+    $x = $mbn->new("_");
+    is("$x", "NaN");
+
+    $x = $mbn->new("+");
+    is("$x", "NaN");
+
+    is($mbn->new("7e", 16), '126');
+
+    #~ is($mbn->new("1/1.2")->as_rat,   '5/6');
+    #~ is($mbn->new("1.3/1.2")->as_rat, "13/12");
+    #~ is($mbn->new("1.2/1")->as_rat,   "6/5");
 }
 
 # Basic operations

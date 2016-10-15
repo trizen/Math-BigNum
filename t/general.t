@@ -5,75 +5,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 145;
+use Test::More tests => 134;
 use Math::BigNum;
 
-###############################################################################
-# general tests
-
 my $mbn = 'Math::BigNum';
-
-{    ## Some tests doesn't pass, yet.
-    my $x = $mbn->new(1234);
-    is($x, 1234, qq|\$x = $mbn->new(1234)|);
-
-    $x = $mbn->new("1234/1");
-    is($x, 1234, qq|\$x = $mbn->new("1234/1")|);
-
-    $x = $mbn->new("1234/2");
-    is($x, 617, qq|\$x = $mbn->new("1234/2")|);
-
-    $x = $mbn->new("100/1.0");
-    is($x, 100, qq|\$x = $mbn->new("100/1.0")|);    # this passes by luck
-
-    #$x = $mbn->new("10.0/1.0");
-    #is($x, 10, qq|\$x = $mbn->new("10.0/1.0")|);
-
-    #$x = $mbn->new("0.1/10");
-    #is($x, "1/100", qq|\$x = $mbn->new("0.1/10")|);
-
-    #$x = $mbn->new("0.1/0.1");
-    #is($x, "1", qq|\$x = $mbn->new("0.1/0.1")|);
-
-    #$x = $mbn->new("1e2/10");
-    #is($x, 10, qq|\$x = $mbn->new("1e2/10")|);
-
-    $x = $mbn->new("5/1e2");
-    is($x, "0.05", qq|\$x = $mbn->new("5/1e2")|);    # this also passes by luck
-
-    #$x = $mbn->new("1e2/1e1");
-    #is($x, 10, qq|\$x = $mbn->new("1e2/1e1")|);
-
-    $x = $mbn->new("1 / 3");
-    is($x->as_rat, "1/3", qq|\$x = $mbn->new("1 / 3")|);
-
-    $x = $mbn->new("-1 / 3");
-    is($x->as_rat, "-1/3", qq|\$x = $mbn->new("-1 / 3")|);
-
-    $x = $mbn->new("NaN");
-    is("$x", "NaN", qq|\$x = $mbn->new("NaN")|);
-
-    $x = $mbn->new("inf");
-    is("$x", "Inf", qq|\$x = $mbn->new("inf")|);
-
-    $x = $mbn->new("-inf");
-    is("$x", "-Inf", qq|\$x = $mbn->new("-inf")|);
-
-    #$x = $mbn->new("1/");
-    #is($x, "NaN", qq|\$x = $mbn->new("1/")|);
-
-    $x = $mbn->new("7e", 16);
-    is($x, 126, qq|\$x = $mbn->new("0x7e")|);
-
-    #$x = $mbn->new("1/1.2");
-    #is($x, "5/6", qq|\$x = $mbn->new("1/1.2")|);
-
-    #$x = $mbn->new("1.3/1.2");
-    #is($x, "13/12", qq|\$x = $mbn->new("1.3/1.2")|);
-
-    #$x = $mbn->new("1.2/1");
-    #is($x, "6/5", qq|\$x = $mbn->new("1.2/1")|);
-}
 
 ###############################################################################
 # general tests
