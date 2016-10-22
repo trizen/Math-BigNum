@@ -11,7 +11,7 @@ my $builder = Module::Build->new(
     license           => 'artistic_2',
     dist_author       => q{Daniel Șuteu <trizenx@gmail.com>},
     dist_version_from => 'lib/Math/BigNum.pm',
-    release_status    => 'stable',                               # as much as I'm aware of
+    release_status    => 'stable',
     configure_requires => {
                            'Module::Build' => 0,
                           },

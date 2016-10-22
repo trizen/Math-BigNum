@@ -1788,7 +1788,6 @@ Class::Multimethods::multimethod pow => qw(Math::BigNum Math::BigNum) => sub {
             Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
 
             Math::GMPq::Rmpq_set_den($q, $z);
-            Math::GMPq::Rmpq_canonicalize($q);
 
             Math::GMPq::Rmpq_inv($q, $q) if $pow < 0;
         }
@@ -1840,7 +1839,6 @@ Class::Multimethods::multimethod pow => qw(Math::BigNum $) => sub {
             Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
 
             Math::GMPq::Rmpq_set_den($q, $z);
-            Math::GMPq::Rmpq_canonicalize($q);
 
             Math::GMPq::Rmpq_inv($q, $q) if $pow < 0;
         }
@@ -1919,7 +1917,6 @@ Class::Multimethods::multimethod bpow => qw(Math::BigNum Math::BigNum) => sub {
             Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
 
             Math::GMPq::Rmpq_set_den($q, $z);
-            Math::GMPq::Rmpq_canonicalize($q);
 
             Math::GMPq::Rmpq_inv($q, $q) if $pow < 0;
         }
@@ -1967,7 +1964,6 @@ Class::Multimethods::multimethod bpow => qw(Math::BigNum $) => sub {
             Math::GMPz::Rmpz_pow_ui($z, $z, CORE::abs($pow));
 
             Math::GMPq::Rmpq_set_den($q, $z);
-            Math::GMPq::Rmpq_canonicalize($q);
 
             Math::GMPq::Rmpq_inv($q, $q) if $pow < 0;
         }
