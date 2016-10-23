@@ -22,7 +22,7 @@ use constant {
              };
 #>>>
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 =encoding utf8
 
@@ -32,7 +32,7 @@ Math::BigNum - Arbitrary size precision for integers, rationals and floating-poi
 
 =head1 VERSION
 
-Version 0.14
+Version 0.15
 
 =head1 SYNOPSIS
 
@@ -127,6 +127,10 @@ The syntax for importing something, is:
     say factorial(5);       # => 120
 
 B<NOTE:> C<:constant> is lexical to the current scope only.
+
+The syntax for disabling the C<:constant> behavior in the current scope, is:
+
+    no Math::BigNum;        # :constant will be disabled in the current scope
 
 =head1 PRECISION
 
