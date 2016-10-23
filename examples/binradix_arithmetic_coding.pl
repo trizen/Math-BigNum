@@ -97,7 +97,7 @@ sub arithmethic_decoding {
         $line->badd(Math::BigNum->new($bin[$i])->bdiv($two_pow->bmul($big_two)));
     }
 
-    $enc = $line->bmul(Math::BigNum->new(10)->bpow($pow))->int;
+    $enc = $line->bmul(Math::BigNum->new(10)->bpow($pow))->bint;
 
     my $base = Math::BigNum->new(0);
     $base += $_ for values %{$freq};

@@ -6023,8 +6023,10 @@ Example:
 =cut
 
 sub int {
+    my $q = ${$_[0]};
+    Math::GMPq::Rmpq_integer_p($q) && return $_[0]->copy;
     my $z = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_set_q($z, ${$_[0]});
+    Math::GMPz::Rmpz_set_q($z, $q);
     _mpz2big($z);
 }
 
@@ -6037,11 +6039,12 @@ Truncates C<x> to an integer in-place.
 =cut
 
 sub bint {
-    my ($x) = @_;
+    my $q = ${$_[0]};
+    Math::GMPq::Rmpq_integer_p($q) && return $_[0];
     my $z = Math::GMPz::Rmpz_init();
-    Math::GMPz::Rmpz_set_q($z, $$x);
-    Math::GMPq::Rmpq_set_z($$x, $z);
-    $x;
+    Math::GMPz::Rmpz_set_q($z, $q);
+    Math::GMPq::Rmpq_set_z($q, $z);
+    $_[0];
 }
 
 =head2 float

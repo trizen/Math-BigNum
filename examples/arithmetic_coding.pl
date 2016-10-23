@@ -65,7 +65,7 @@ sub arithmethic_coding {
     #~ say $L;
     #~ say $U;
 
-    my $pow = Math::BigNum->new($pf)->blog(10)->int;
+    my $pow = Math::BigNum->new($pf)->blog(10)->bint;
     my $enc = ($U - 1)->bidiv(Math::BigNum->new(10)->bipow($pow));
 
     return ($enc, $pow, \%freq);
