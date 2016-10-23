@@ -8,6 +8,8 @@ Revision history for Math-BigNum
 
             no Math::BigNum;     # disables the `:constant` behavior in the current scope
 
+        - Added the `new_int()` and `new_uint()` methods for setting signed and unsigned native integers.
+
         [PERFORMANCE IMPROVEMENTS]
 
         - Noticeable optimizations in method `is_pow`. (Thanks to Dana Jacobsen)

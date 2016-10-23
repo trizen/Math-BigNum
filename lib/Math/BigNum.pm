@@ -471,7 +471,7 @@ use overload
 
             if ($name eq ':constant') {
                 overload::constant
-                  integer => sub { _new_uint(shift) },
+                  integer => sub { Math::BigNum->new_uint(shift) },
                   float   => sub { Math::BigNum->new(shift, 10) },
                   binary => sub {
                     my ($const) = @_;
@@ -752,18 +752,6 @@ sub _mpz2big {
 
 #*_big2cplx = \&Math::BigNum::Complex::_big2cplx;
 
-sub _new_int {
-    my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set_si($r, $_[0], 1);
-    bless \$r, __PACKAGE__;
-}
-
-sub _new_uint {
-    my $r = Math::GMPq::Rmpq_init();
-    Math::GMPq::Rmpq_set_ui($r, $_[0], 1);
-    bless \$r, __PACKAGE__;
-}
-
 =head1 INITIALIZATION / CONSTANTS
 
 This section includes methods for creating new B<Math::BigNum> objects
@@ -897,6 +885,42 @@ sub new {
 
     # Return a blessed BigNum object
     bless \$r, $class;
+}
+
+=head2 new_int
+
+    BigNum->new_int(Scalar)        # => BigNum
+
+A faster version of the method C<new()> for setting a I<signed> native integer.
+
+Example:
+
+    my $x = Math::BigNum->new_int(-42);
+
+=cut
+
+sub new_int {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_si($r, $_[1], 1);
+    bless \$r, __PACKAGE__;
+}
+
+=head2 new_uint
+
+    BigNum->new_uint(Scalar)       # => BigNum
+
+A faster version of the method C<new()> for setting an I<unsigned> native integer.
+
+Example:
+
+    my $x = Math::BigNum->new_uint(42);
+
+=cut
+
+sub new_uint {
+    my $r = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set_ui($r, $_[1], 1);
+    bless \$r, __PACKAGE__;
 }
 
 #
@@ -6026,7 +6050,7 @@ sub bint {
     $x->float(Scalar)              # => BigNum
 
 Returns a truncated number that fits inside number of bits specified
-as the argument. When no argument is specified or when the argument is
+as an argument. When no argument is specified or when the argument is
 undefined, the value of C<$Math::BigNum::PREC> will be used instead.
 
 =cut
