@@ -22,7 +22,7 @@ Revision history for Math-BigNum
         - When a base is specified, special values, such "Inf" and "NaN", are no longer parsed specially.
 
             + Math::BigNum->new('inf', 36) == 24171
-            + Math::BigNum->new('num', 36) == 30191
+            + Math::BigNum->new('nan', 36) == 30191
 
         [OTHER]
 
