@@ -471,8 +471,8 @@ use overload
 
             if ($name eq ':constant') {
                 overload::constant
-                  integer => sub { Math::BigNum->new_uint(shift) },
-                  float   => sub { Math::BigNum->new(shift, 10) },
+                  integer => sub { Math::BigNum->new_uint($_[0]) },
+                  float   => sub { Math::BigNum->new($_[0], 10) },
                   binary => sub {
                     my ($const) = @_;
                     my $prefix = substr($const, 0, 2);
