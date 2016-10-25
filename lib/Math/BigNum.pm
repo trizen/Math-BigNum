@@ -4725,9 +4725,14 @@ Class::Multimethods::multimethod modinv => qw(Math::BigNum Math::BigNum::Nan) =>
 
 =head2 modpow
 
-    $x->modpow(BigNum, BigNum)     # => BigNum
+    $x->modpow(BigNum, BigNum)     # => BigNum | Nan
+    $x->modpow(Scalar, Scalar)     # => BigNum | Nan
+    $x->modpow(BigNum, Scalar)     # => BigNum | Nan
+    $x->modpow(Scalar, BigNum)     # => BigNum | Nan
 
 Calculates C<(x ^ y) mod z>, where all three values are integers.
+
+Returns Nan when the third argument is 0.
 
 =cut
 
@@ -5530,7 +5535,7 @@ Class::Multimethods::multimethod bxor => qw(Math::BigNum Math::BigNum::Nan) => \
     $x->not                        # => BigNum
     ~BigNum                        # => BigNum
 
-Integer logical-not operation. (The one's complement of $x).
+Integer logical-not operation. (The one's complement of C<x>).
 
 =cut
 
