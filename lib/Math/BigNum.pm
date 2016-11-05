@@ -262,25 +262,25 @@ BEGIN {
 use Math::BigNum::Inf qw();
 use Math::BigNum::Nan qw();
 
-my $MONE = do {
-    my $r = Math::GMPq::Rmpq_init();
+state $MONE = do {
+    my $r = Math::GMPq::Rmpq_init_nobless();
     Math::GMPq::Rmpq_set_si($r, -1, 1);
     $r;
 };
 
-my $ZERO = do {
-    my $r = Math::GMPq::Rmpq_init();
+state $ZERO = do {
+    my $r = Math::GMPq::Rmpq_init_nobless();
     Math::GMPq::Rmpq_set_ui($r, 0, 1);
     $r;
 };
 
-my $ONE = do {
-    my $r = Math::GMPq::Rmpq_init();
+state $ONE = do {
+    my $r = Math::GMPq::Rmpq_init_nobless();
     Math::GMPq::Rmpq_set_ui($r, 1, 1);
     $r;
 };
 
-my $ONE_Z = Math::GMPz::Rmpz_init_set_ui(1);
+state $ONE_Z = Math::GMPz::Rmpz_init_set_ui_nobless(1);
 
 use overload
   '""' => \&stringify,
@@ -5836,7 +5836,7 @@ Example:
     my $srand = srand();
 
     {
-        state $state = Math::MPFR::Rmpfr_randinit_mt();
+        state $state = Math::MPFR::Rmpfr_randinit_mt_nobless();
         state $seed = Math::MPFR::Rmpfr_randseed_ui($state, $srand);
 
         Class::Multimethods::multimethod rand => qw(Math::BigNum) => sub {
@@ -5898,7 +5898,7 @@ Example:
 =cut
 
     {
-        state $state = Math::GMPz::zgmp_randinit_mt();
+        state $state = Math::GMPz::zgmp_randinit_mt_nobless();
         state $seed = Math::GMPz::zgmp_randseed_ui($state, $srand);
 
         Class::Multimethods::multimethod irand => qw(Math::BigNum) => sub {
