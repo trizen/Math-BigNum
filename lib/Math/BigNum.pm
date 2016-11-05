@@ -1165,7 +1165,7 @@ Returns the e mathematical constant, which is C<2.718...>.
 =cut
 
 sub e {
-    state $one_f = (Math::MPFR::Rmpfr_init_set_ui(1, $ROUND))[0];
+    state $one_f = (Math::MPFR::Rmpfr_init_set_ui_nobless(1, $ROUND))[0];
     my $e = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_exp($e, $one_f, $ROUND);
     _mpfr2big($e);
@@ -1180,8 +1180,8 @@ Returns the value of the golden ratio, which is C<1.61803...>.
 =cut
 
 sub phi {
-    state $five4_f = (Math::MPFR::Rmpfr_init_set_str("1.25", 10, $ROUND))[0];
-    state $half_f  = (Math::MPFR::Rmpfr_init_set_str("0.5",  10, $ROUND))[0];
+    state $five4_f = (Math::MPFR::Rmpfr_init_set_str_nobless("1.25", 10, $ROUND))[0];
+    state $half_f  = (Math::MPFR::Rmpfr_init_set_str_nobless("0.5",  10, $ROUND))[0];
 
     my $phi = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_sqrt($phi, $five4_f, $ROUND);
@@ -6140,7 +6140,7 @@ Class::Multimethods::multimethod bround => qw(Math::BigNum $) => sub {
     }
 
     state $half = do {
-        my $q = Math::GMPq::Rmpq_init();
+        my $q = Math::GMPq::Rmpq_init_nobless();
         Math::GMPq::Rmpq_set_ui($q, 1, 2);
         $q;
     };
@@ -6591,7 +6591,7 @@ sub stringify {
         }
 
         state $half = do {
-            my $q = Math::GMPq::Rmpq_init();
+            my $q = Math::GMPq::Rmpq_init_nobless();
             Math::GMPq::Rmpq_set_ui($q, 1, 2);
             $q;
         };

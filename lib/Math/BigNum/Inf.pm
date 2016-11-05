@@ -1648,9 +1648,7 @@ sub zeta {
 }
 
 sub erfc {
-    $_[0]->is_pos ? zero() : do {
-        state $x = one()->add(one());
-    };
+    $_[0]->is_pos ? zero() : one()->blsft(1);
 }
 
 sub fac {
