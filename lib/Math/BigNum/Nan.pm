@@ -454,8 +454,10 @@ sub length { 0 }
 *dfac      = \&nan;
 *lucas     = \&nan;
 *binomial  = \&nan;
-*bernreal  = \&nan;
 *bernfrac  = \&nan;
+*bernreal  = \&nan;
+*harmfrac  = \&nan;
+*harmreal  = \&nan;
 *kronecker = \&nan;
 *valuation = \&nan;
 

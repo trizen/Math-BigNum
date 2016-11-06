@@ -32,6 +32,7 @@ META.json
 META.yml
 README.md
 t/00-load.t
+t/bernoulli.t
 t/big_e_pi.t
 t/bigexp.t
 t/bignum.t
@@ -40,6 +41,7 @@ t/export_all.t
 t/fib.t
 t/functions.t
 t/general.t
+t/harmonic.t
 t/inf.t
 t/inf_nan.t
 t/kronecker.t

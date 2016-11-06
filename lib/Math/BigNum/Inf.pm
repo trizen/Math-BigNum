@@ -1593,6 +1593,8 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan
 
 *bernreal  = \&nan;
 *bernfrac  = \&nan;
+*harmfrac  = \&nan;
+*harmreal  = \&nan;
 *kronecker = \&nan;
 *valuation = \&nan;
 

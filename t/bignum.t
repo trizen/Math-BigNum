@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 385;
+plan tests => 365;
 
 # Initialization
 
@@ -929,44 +929,6 @@ my $mbn = 'Math::BigNum';
 
     $z->binf;
     is($z, Inf);
-}
-
-# Bernoulli numbers
-{
-    my %results = qw(
-      0   1
-      1   1/2
-      2   1/6
-      3   0
-      4   -1/30
-      5   0
-      6   1/42
-      10  5/66
-      12  -691/2730
-      20  -174611/330
-      22  854513/138
-      );
-
-    foreach my $i (keys %results) {
-        is(Math::BigNum->new($i)->bernfrac->as_rat, $results{$i});
-    }
-
-    is(Math::BigNum->new(-2)->bernfrac, NaN);    # make sure we check for even correctly
-
-    is(Math::BigNum->new(52)->bernfrac->as_frac, '-801165718135489957347924991853/1590');
-    is(Math::BigNum->new(106)->bernfrac->as_frac,
-        '36373903172617414408151820151593427169231298640581690038930816378281879873386202346572901/642');
-
-    #
-    ## bernreal()
-    #
-    is(Math::BigNum->new(-2)->bernreal, NaN);    # check for negative values
-
-    is(Math::BigNum->new(1)->bernreal,                0.5);
-    is(Math::BigNum->new(0)->bernreal,                1);
-    is(Math::BigNum->new(3)->bernreal,                0);
-    is(Math::BigNum->new(2)->bernreal->as_float(10),  '0.1666666667');
-    is(Math::BigNum->new(52)->bernreal->as_float(10), '-503877810148106891413789303.0522012579');
 }
 
 # op= operations
