@@ -482,4 +482,7 @@ sub divmod { (nan(), nan()) }
 
 *parts = \&divmod;
 
+sub seed { }
+*iseed = \&seed;
+
 1;

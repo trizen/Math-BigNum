@@ -9,6 +9,11 @@ Revision history for Math-BigNum
             + harmfrac(n)
             + harmreal(n)
 
+        - Added two methods for reseeding the pseudorandom number generator:
+
+            + seed(n)
+            + iseed(n)
+
         [BUG FIXES]
 
         - Using threads in some parts of the program, will no longer cause a segmentation fault.

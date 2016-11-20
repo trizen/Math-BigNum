@@ -1702,4 +1702,7 @@ sub as_bin { $_[0]->is_pos ? 'Inf' : '-Inf' }
 sub digits { () }
 sub length { 0 }
 
+sub seed { }
+*iseed = \&seed;
+
 1;

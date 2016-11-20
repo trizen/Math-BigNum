@@ -5955,7 +5955,7 @@ Example:
 
     {
         state $state = Math::MPFR::Rmpfr_randinit_mt_nobless();
-        state $seed = Math::MPFR::Rmpfr_randseed_ui($state, $srand);
+        Math::MPFR::Rmpfr_randseed_ui($state, $srand);
 
         Class::Multimethods::multimethod rand => qw(Math::BigNum) => sub {
             my ($x) = @_;
@@ -5993,6 +5993,21 @@ Example:
 
         Class::Multimethods::multimethod rand => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->copy };
         Class::Multimethods::multimethod rand => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 seed
+
+    $n->seed                       # => BigNum
+
+Reseeds the C<rand()> method with the value of C<n>, where C<n> can be any arbitrary large integer.
+
+Returns back the original value of C<n>.
+
+=cut
+
+        sub seed {
+            Math::MPFR::Rmpfr_randseed($state, _big2mpz($_[0]));
+            $_[0];
+        }
     }
 
 =head2 irand
@@ -6017,7 +6032,7 @@ Example:
 
     {
         state $state = Math::GMPz::zgmp_randinit_mt_nobless();
-        state $seed = Math::GMPz::zgmp_randseed_ui($state, $srand);
+        Math::GMPz::zgmp_randseed_ui($state, $srand);
 
         Class::Multimethods::multimethod irand => qw(Math::BigNum) => sub {
             my ($x) = @_;
@@ -6058,6 +6073,21 @@ Example:
 
         Class::Multimethods::multimethod irand => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[1]->copy };
         Class::Multimethods::multimethod irand => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 iseed
+
+    $n->iseed                      # => BigNum
+
+Reseeds the C<irand()> method with the value of C<n>, where C<n> can be any arbitrary large integer.
+
+Returns back the original value of C<n>.
+
+=cut
+
+        sub iseed {
+            Math::GMPz::zgmp_randseed($state, _big2mpz($_[0]));
+            $_[0];
+        }
     }
 }
 
