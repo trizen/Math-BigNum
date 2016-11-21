@@ -6612,7 +6612,7 @@ It is also defined for rational numbers, returning a true value when the quotien
 
     is_div(17, 3.4) = true       # because: 17/3.4 = 5
 
-This method is very fast when the first argument is an integer and the second argument is a I<Perl> integer.
+This method is very efficient when the first argument is an integer and the second argument is a I<Perl> integer.
 
 =cut
 
@@ -7074,7 +7074,11 @@ sub denominator {
 
     $x->parts                      # => (BigNum, BigNum)
 
-Returns a copy of the numerator and a copy of the denominator (in this order) as BigNum objects.
+Returns a copy of the numerator (signed) and a copy of the denominator (unsigned) as BigNum objects.
+
+Example:
+
+    parts(-0.75) = (-3, 4)
 
 =cut
 
