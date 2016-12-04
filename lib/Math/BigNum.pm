@@ -6987,7 +6987,6 @@ sub as_hex {
 
 =head2 in_base
 
-    $x->in_base(BigNum)            # => Scalar
     $x->in_base(Scalar)            # => Scalar
 
 Returns a string with the value of C<x> in a given base,
@@ -7010,7 +7009,7 @@ Class::Multimethods::multimethod in_base => qw(Math::BigNum $) => sub {
         Carp::croak("base must be between 2 and 36, got $y");
     }
 
-    Math::GMPq::Rmpq_get_str(${$_[0]}, $y);
+    Math::GMPq::Rmpq_get_str($$x, $y);
 };
 
 Class::Multimethods::multimethod in_base => qw(Math::BigNum Math::BigNum) => sub {
@@ -7023,22 +7022,44 @@ Class::Multimethods::multimethod in_base => qw(Math::BigNum Math::BigNum) => sub
 
 =head2 digits
 
-    $x->digits                     # => List of scalars
+    $x->digits                     # => (Scalar, Scalar, ...)
+    $x->digits(Scalar)             # => (Scalar, Scalar, ...)
 
-Returns a list with the digits of C<x> in base 10 before the decimal point.
+Returns a list with the digits of C<x> in a given base. When no base is specified, it defaults to base 10.
+
+Only the absolute integer part of C<x> is considered.
 
 Example:
 
     digits(-1234.56) = (1,2,3,4)
+    digits(4095, 16) = ('f','f','f')
 
 =cut
 
-sub digits {
+Class::Multimethods::multimethod digits => qw(Math::BigNum) => sub {
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
     Math::GMPz::Rmpz_abs($z, $z);
     split(//, Math::GMPz::Rmpz_get_str($z, 10));
-}
+};
+
+Class::Multimethods::multimethod digits => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    if ($y < 2 or $y > 36) {
+        require Carp;
+        Carp::croak("base must be between 2 and 36, got $y");
+    }
+
+    my $z = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_set_q($z, $$x);
+    Math::GMPz::Rmpz_abs($z, $z);
+    split(//, Math::GMPz::Rmpz_get_str($z, $y));
+};
+
+Class::Multimethods::multimethod digits => qw(Math::BigNum Math::BigNum) => sub {
+    $_[0]->digits(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
+};
 
 =head2 numerator
 

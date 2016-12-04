@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 134;
+use Test::More tests => 141;
 use Math::BigNum;
 
 my $mbn = 'Math::BigNum';
@@ -368,6 +368,27 @@ like($x->numify(), qr/-.*?inf/i);
 
 $x = $mbn->new('4/3');
 like($x->numify(), qr/^1\.33333/);
+
+##############################################################################
+# digits()
+
+{
+    my $n = $mbn->new(-4095.56);
+
+    my @array = $n->digits;
+    is(scalar(@array), 4);
+    is(join('', @array), '4095');
+
+    @array = $n->digits(16);
+    is(scalar(@array), 3);
+    is(join('', @array), 'f' x 3);
+
+    @array = $n->digits($mbn->new(2));
+    is(scalar(@array), 12);
+    is(join('', @array), '1' x 12);
+
+    is(join('', $mbn->new('helloworld', 36)->digits(36)), 'helloworld');
+}
 
 ##############################################################################
 # done

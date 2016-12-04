@@ -14,6 +14,12 @@ Revision history for Math-BigNum
             + seed(n)
             + iseed(n)
 
+        [IMPROVEMENTS]
+
+        - Extended the digits() method to accept an optional base.
+
+            + digits(4095, 16)  #=> ('f', 'f', 'f')
+
         [BUG FIXES]
 
         - Using threads in some parts of the program, will no longer cause a segmentation fault.
