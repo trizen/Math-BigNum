@@ -1908,6 +1908,10 @@ Class::Multimethods::multimethod pow => qw(Math::BigNum Math::BigNum::Nan) => \&
     $x->bpow(BigNum)               # => BigNum | Nan
     $x->bpow(Scalar)               # => BigNum | Nan
 
+    BigNum **= BigNum              # => BigNum | Nan
+    BigNum **= Scalar              # => BigNum | Nan
+    Scalar **= BigNum              # => BigNum | Nan
+
 Raises C<x> to power C<y>, changing C<x> in-place.
 
 =cut

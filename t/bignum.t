@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 365;
+plan tests => 367;
 
 # Initialization
 
@@ -1006,4 +1006,16 @@ my $mbn = 'Math::BigNum';
 
     $x %= 6;
     is("$x", "4");
+}
+
+# More **= tests
+{
+    my $x = "2";
+    my $y = $mbn->new(100);
+    $x**= $y;
+    is("$x", "1267650600228229401496703205376");
+
+    $x = $mbn->new(2);
+    $x**= $y;
+    is("$x", "1267650600228229401496703205376");
 }
