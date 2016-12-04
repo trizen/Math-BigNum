@@ -16,7 +16,7 @@ Revision history for Math-BigNum
 
         [IMPROVEMENTS]
 
-        - Extended the digits() method to accept an optional base.
+        - Extended the method digits() to accept an optional base.
 
             + digits(4095, 16)  #=> ('f', 'f', 'f')
 
