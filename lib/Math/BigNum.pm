@@ -2710,36 +2710,36 @@ The remainder of C<x> when is divided by C<y>. Nan is returned when C<y> is zero
 Class::Multimethods::multimethod fmod => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    my $r  = _big2mpfr($x);
-    my $yf = _big2mpfr($y);
+    $x = _big2mpfr($x);
+    $y = _big2mpfr($y);
 
-    Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
+    Math::MPFR::Rmpfr_fmod($x, $x, $y, $ROUND);
 
-    my $sign_r = Math::MPFR::Rmpfr_sgn($r);
+    my $sign_r = Math::MPFR::Rmpfr_sgn($x);
     if (!$sign_r) {
         return (zero);    # return faster
     }
-    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
-        Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
+    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($y) > 0) {
+        Math::MPFR::Rmpfr_add($x, $x, $y, $ROUND);
     }
 
-    _mpfr2big($r);
+    _mpfr2big($x);
 };
 
 Class::Multimethods::multimethod fmod => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    my $yf = _str2mpfr($y) // return $x->fmod(Math::BigNum->new($y));
+    my $m = _str2mpfr($y) // return $x->fmod(Math::BigNum->new($y));
     my $r = _big2mpfr($x);
 
-    Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
+    Math::MPFR::Rmpfr_fmod($r, $r, $m, $ROUND);
 
     my $sign_r = Math::MPFR::Rmpfr_sgn($r);
     if (!$sign_r) {
         return (zero);    # return faster
     }
-    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
-        Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
+    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($m) > 0) {
+        Math::MPFR::Rmpfr_add($r, $r, $m, $ROUND);
     }
 
     _mpfr2big($r);
@@ -2768,17 +2768,17 @@ Promotes C<x> to Nan when C<y> is zero.
 Class::Multimethods::multimethod bfmod => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    my $r  = _big2mpfr($x);
-    my $yf = _big2mpfr($y);
+    my $r = _big2mpfr($x);
+    my $m = _big2mpfr($y);
 
-    Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
+    Math::MPFR::Rmpfr_fmod($r, $r, $m, $ROUND);
 
     my $sign_r = Math::MPFR::Rmpfr_sgn($r);
     if (!$sign_r) {
         return $x->bzero;    # return faster
     }
-    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
-        Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
+    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($m) > 0) {
+        Math::MPFR::Rmpfr_add($r, $r, $m, $ROUND);
     }
 
     _mpfr2x($x, $r);
@@ -2787,17 +2787,17 @@ Class::Multimethods::multimethod bfmod => qw(Math::BigNum Math::BigNum) => sub {
 Class::Multimethods::multimethod bfmod => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    my $yf = _str2mpfr($y) // return $x->bfmod(Math::BigNum->new($y));
+    my $m = _str2mpfr($y) // return $x->bfmod(Math::BigNum->new($y));
     my $r = _big2mpfr($x);
 
-    Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
+    Math::MPFR::Rmpfr_fmod($r, $r, $m, $ROUND);
 
     my $sign_r = Math::MPFR::Rmpfr_sgn($r);
     if (!$sign_r) {
         return $x->bzero;    # return faster
     }
-    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
-        Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
+    elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($m) > 0) {
+        Math::MPFR::Rmpfr_add($r, $r, $m, $ROUND);
     }
 
     _mpfr2x($x, $r);
