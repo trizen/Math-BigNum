@@ -1166,6 +1166,18 @@ Square root of C<$x>.
 *sqrt  = \&inf;
 *isqrt = \&sqrt;
 
+sub isqrtrem {
+    my ($x) = @_;
+    my $sqrt = $x->isqrt;
+    ($sqrt, $x->isub($sqrt->imul($sqrt)));
+}
+
+sub irootrem {
+    my ($x, $y) = @_;
+    my $root = $x->iroot($y);
+    ($root, $x->isub($root->ipow($y)));
+}
+
 =head2 bsqrt / bisqrt
 
 Square root of C<$x>, changing C<$x> in-place.

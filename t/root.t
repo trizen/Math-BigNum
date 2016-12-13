@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 148;
+plan tests => 494;
 
 use Math::BigNum;
 
@@ -230,3 +230,91 @@ is($two->copy->broot(-1), $one->copy->bdiv($two));
 
 is($two->copy->biroot(-1), $zero);
 is($two->copy->biroot(-2), $zero);
+
+#########################################
+# isqrtrem() / irootrem()
+
+{
+    my $n = Math::BigNum->new('562891172629241178357647834151');
+
+    my ($x, $y, $r, $c);
+
+    ## isqrtrem(n)
+    ($x, $y) = $n->isqrtrem;
+    $r = $n->isqrt;
+
+    is($x, $r);
+    is($y, $n->isub($r->ipow(2)));
+
+    ## irootrem(n, 3)
+    ($x, $y) = $n->irootrem(3);
+    $r = $n->iroot(3);
+
+    is($x, $r);
+    is($y, $n->isub($r->ipow(3)));
+
+    ## irootrem(n, 10)
+    ($x, $y) = $n->irootrem(10);
+    $r = $n->iroot(10);
+
+    is($x, $r);
+    is($y, $n->isub($r->ipow(10)));
+
+    ## irootrem(n, Math::BigNum->new(4))
+    $c = Math::BigNum->new(4);
+    ($x, $y) = $n->irootrem($c);
+    $r = $n->iroot($c);
+
+    is($x, $r);
+    is($y, $n->isub($r->ipow($c)));
+
+    ## irootrem(n, -3)
+    $c = Math::BigNum->new(-3);
+    ($x, $y) = $n->irootrem($c);
+    $r = $n->iroot($c);
+
+    is($x, $r);
+    is($y, $n->isub($r->ipow($c)));
+
+    ## isqrtrem(n) == irootrem(n, 2)
+    is(join(' ', $n->isqrtrem),    join(' ', $n->irootrem(2)));
+    is(join(' ', $mone->isqrtrem), join(' ', $mone->irootrem(2)));
+    is(join(' ', $zero->isqrtrem), join(' ', $zero->irootrem(2)));
+    is(join(' ', $one->isqrtrem),  join(' ', $one->irootrem(2)));
+    is(join(' ', $inf->isqrtrem),  join(' ', $inf->irootrem(2)));
+    is(join(' ', $ninf->isqrtrem), join(' ', $ninf->irootrem(2)));
+
+    ## isqrtrem(n) == irootrem(n, Math::BigNum->new(2))
+    my $two = Math::BigNum->new(2);
+    is(join(' ', $n->isqrtrem),    join(' ', $n->irootrem($two)));
+    is(join(' ', $mone->isqrtrem), join(' ', $mone->irootrem($two)));
+    is(join(' ', $zero->isqrtrem), join(' ', $zero->irootrem($two)));
+    is(join(' ', $one->isqrtrem),  join(' ', $one->irootrem($two)));
+    is(join(' ', $inf->isqrtrem),  join(' ', $inf->irootrem($two)));
+    is(join(' ', $ninf->isqrtrem), join(' ', $ninf->irootrem($two)));
+
+    # Cover special cases
+    foreach my $k (-4 .. 4) {
+        foreach my $j (-4 .. 4) {
+
+            my $n = Math::BigNum->new_int($k);
+
+            # irootrem(BigNum, Scalar)
+            {
+                my ($x, $y) = $n->irootrem($j);
+                my $r = $n->iroot($j);
+                is($x, $r);
+                is($y, $n->isub($r->bipow($j)));
+            }
+
+            # irootrem(BigNum, BigNum)
+            {
+                my $c = Math::BigNum->new_int($j);
+                my ($x, $y) = $n->irootrem($c);
+                my $r = $n->iroot($c);
+                is($x, $r);
+                is($y, $n->isub($r->bipow($c)));
+            }
+        }
+    }
+}

@@ -480,7 +480,9 @@ sub length { 0 }
 
 sub divmod { (nan(), nan()) }
 
-*parts = \&divmod;
+*parts    = \&divmod;
+*isqrtrem = \&divmod;
+*irootrem = \&divmod;
 
 sub seed { }
 *iseed = \&seed;

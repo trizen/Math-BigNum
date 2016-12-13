@@ -4490,6 +4490,25 @@ sub bisqrt {
     $x;
 }
 
+=head2 isqrtrem
+
+    $x->isqrtrem                   # => (BigNum, BigNum) | (Nan, Nan)
+
+The integer part of the square root of C<x> and the remainder C<x - isqrt(x)**2>, which will be zero when <x> is a perfect square.
+
+Returns (Nan,Nan) when C<x> is negative.
+
+=cut
+
+sub isqrtrem {
+    my ($x) = @_;
+    $x = _big2mpz($x);
+    Math::GMPz::Rmpz_sgn($x) < 0 && return (nan(), nan());
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_sqrtrem($x, $r, $x);
+    (_mpz2big($x), _mpz2big($r));
+}
+
 =head2 iroot
 
     $x->iroot(BigNum)              # => BigNum | Nan
@@ -4636,6 +4655,86 @@ Class::Multimethods::multimethod biroot => qw(Math::BigNum *) => sub {
 
 Class::Multimethods::multimethod biroot => qw(Math::BigNum Math::BigNum::Inf) => \&bone;
 Class::Multimethods::multimethod biroot => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
+
+=head2 irootrem
+
+    $x->irootrem(BigNum)           # => (BigNum, BigNum) | (Nan, Nan)
+    $x->irootrem(Scalar)           # => (BigNum, BigNum) | (Nan, Nan)
+
+The nth integer part of the root of C<x> and the remainder C<x - iroot(x,y)**y>.
+
+Returns (Nan,Nan) when C<x> is negative.
+
+=cut
+
+Class::Multimethods::multimethod irootrem => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+    $x = _big2mpz($x);
+    my $root = CORE::int(Math::GMPq::Rmpq_get_d($$y));
+
+    if ($root == 0) {
+        Math::GMPz::Rmpz_sgn($x) || return (zero(), mone());    # 0^Inf = 0
+        Math::GMPz::Rmpz_cmpabs_ui($x, 1) == 0 and return (one(), _mpz2big($x)->bdec);    # 1^Inf = 1 ; (-1)^Inf = 1
+        return (inf(), _mpz2big($x)->bdec);
+    }
+    elsif ($root < 0) {
+        my $sign = Math::GMPz::Rmpz_sgn($x) || return (inf(), zero());                    # 1 / 0^k = Inf
+        Math::GMPz::Rmpz_cmp_ui($x, 1) == 0 and return (one(), zero());                   # 1 / 1^k = 1
+        return ($sign < 0 ? (nan(), nan()) : (zero(), ninf()));
+    }
+    elsif ($root % 2 == 0 and Math::GMPz::Rmpz_sgn($x) < 0) {
+        return (nan(), nan());
+    }
+
+    my $r = Math::GMPz::Rmpz_init();
+    Math::GMPz::Rmpz_rootrem($x, $r, $x, $root);
+    (_mpz2big($x), _mpz2big($r));
+};
+
+Class::Multimethods::multimethod irootrem => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
+        $x = _big2mpz($x);
+
+        if ($y == 0) {
+            Math::GMPz::Rmpz_sgn($x) || return (zero(), mone());    # 0^Inf = 0
+            Math::GMPz::Rmpz_cmpabs_ui($x, 1) == 0 and return (one(), _mpz2big($x)->bdec);    # 1^Inf = 1 ; (-1)^Inf = 1
+            return (inf(), _mpz2big($x)->bdec);
+        }
+        elsif ($y < 0) {
+            my $sign = Math::GMPz::Rmpz_sgn($x) || return (inf(), zero());                    # 1 / 0^k = Inf
+            Math::GMPz::Rmpz_cmp_ui($x, 1) == 0 and return (one(), zero());                   # 1 / 1^k = 1
+            return ($sign < 0 ? (nan(), nan()) : (zero(), ninf()));
+        }
+        elsif ($y % 2 == 0 and Math::GMPz::Rmpz_sgn($x) < 0) {
+            return (nan(), nan());
+        }
+
+        my $r = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_rootrem($x, $r, $x, $y);
+        (_mpz2big($x), _mpz2big($r));
+    }
+    else {
+        $x->irootrem(Math::BigNum->new($y));
+    }
+};
+
+# Equivalent with the following definition:
+#   irootrem(x, +/-Inf) = (1, x-1)
+Class::Multimethods::multimethod irootrem => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    my ($x, $y) = @_;
+    my $root = $x->iroot($y);
+    ($root, $x->isub($root->bipow($y)));
+};
+
+Class::Multimethods::multimethod irootrem => qw(Math::BigNum Math::BigNum::Nan) => sub {
+    (nan(), nan());
+};
+
+Class::Multimethods::multimethod irootrem => qw(Math::BigNum *) => sub {
+    $_[0]->irootrem(Math::BigNum->new($_[1]));
+};
 
 =head2 imod
 

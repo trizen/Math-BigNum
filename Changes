@@ -1,5 +1,12 @@
 Revision history for Math-BigNum
 
+0.17    2017-xx-xx
+
+        [ADDED]
+
+        - Added the method isqrtrem(n), which returns the integer square root and the remainder.
+        - Added the method irootrem(n), which returns the integer nth root and the remainder.
+
 0.16    2016-12-11
 
         [ADDED]
