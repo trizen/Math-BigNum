@@ -1169,13 +1169,13 @@ Square root of C<$x>.
 sub isqrtrem {
     my ($x) = @_;
     my $sqrt = $x->isqrt;
-    ($sqrt, $x->isub($sqrt->imul($sqrt)));
+    ($sqrt, $x->isub($sqrt->bimul($sqrt)));
 }
 
 sub irootrem {
     my ($x, $y) = @_;
     my $root = $x->iroot($y);
-    ($root, $x->isub($root->ipow($y)));
+    ($root, $x->isub($root->bipow($y)));
 }
 
 =head2 bsqrt / bisqrt
