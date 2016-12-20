@@ -469,6 +469,7 @@ sub length { 0 }
 *lgamma     = \&nan;
 *digamma    = \&nan;
 *zeta       = \&nan;
+*eta        = \&nan;
 *erf        = \&nan;
 *erfc       = \&nan;
 *eint       = \&nan;

@@ -1661,6 +1661,8 @@ sub zeta {
     $_[0]->is_neg ? nan() : one();
 }
 
+*eta = \&zeta;
+
 sub erfc {
     $_[0]->is_pos ? zero() : one()->blsft(1);
 }

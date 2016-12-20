@@ -3825,13 +3825,48 @@ sub digamma {
 
     $x->zeta                       # => BigNum | Inf
 
-The zeta function on C<x>. Returns Inf when C<x> is 1.
+The Riemann zeta function at C<x>. Returns Inf when C<x> is 1.
 
 =cut
 
 sub zeta {
     my $r = _big2mpfr($_[0]);
     Math::MPFR::Rmpfr_zeta($r, $r, $ROUND);
+    _mpfr2big($r);
+}
+
+=head2 eta
+
+    $x->eta                        # => BigNum
+
+The Dirichlet eta function at C<x>.
+
+Defined as:
+
+    eta(1) = ln(2)
+    eta(x) = (1 - 2**(1-x)) * zeta(x)
+
+=cut
+
+sub eta {
+    my $r = _big2mpfr($_[0]);
+
+    # Special case for eta(1) = log(2)
+    if (!Math::MPFR::Rmpfr_cmp_ui($r, 1)) {
+        Math::MPFR::Rmpfr_add_ui($r, $r, 1, $ROUND);
+        Math::MPFR::Rmpfr_log($r, $r, $ROUND);
+        return _mpfr2big($r);
+    }
+
+    my $p = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_set($p, $r, $ROUND);
+    Math::MPFR::Rmpfr_ui_sub($p, 1, $p, $ROUND);
+    Math::MPFR::Rmpfr_ui_pow($p, 2, $p, $ROUND);
+    Math::MPFR::Rmpfr_ui_sub($p, 1, $p, $ROUND);
+
+    Math::MPFR::Rmpfr_zeta($r, $r, $ROUND);
+    Math::MPFR::Rmpfr_mul($r, $r, $p, $ROUND);
+
     _mpfr2big($r);
 }
 

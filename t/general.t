@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 141;
+use Test::More tests => 144;
 use Math::BigNum;
 
 my $mbn = 'Math::BigNum';
@@ -60,6 +60,10 @@ my $mbn = 'Math::BigNum';
 
     is(Math::BigNum->new("+2"), 2);
     is(Math::BigNum->new("-2"), -2);
+
+    like(3->zeta, qr/^1\.2020569031/);
+    like(3->eta,  qr/^0\.9015426773/);
+    like(1->eta,  qr/^0\.6931471805599/);    # special case
 }
 
 ##############################################################################
