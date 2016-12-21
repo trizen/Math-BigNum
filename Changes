@@ -11,6 +11,9 @@ Revision history for Math-BigNum
         [FIXES]
 
         - Fixed the accuracy in the method bernreal() for small n.
+        - Fixed a special case in the method irand() when the self value is 0.
+
+            + irand(0) = 0
 
 0.16    2016-12-11
 

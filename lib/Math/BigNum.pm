@@ -6177,7 +6177,7 @@ Example:
 
             $x = _big2mpz($x);
 
-            my $sgn = Math::GMPz::Rmpz_sgn($x);
+            my $sgn = Math::GMPz::Rmpz_sgn($x) || return zero();
             Math::GMPz::Rmpz_urandomm($x, $state, $x, 1);
             Math::GMPz::Rmpz_neg($x, $x) if $sgn < 0;
             _mpz2big($x);
