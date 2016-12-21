@@ -8,6 +8,10 @@ Revision history for Math-BigNum
         - Added the method irootrem(n), which returns the integer nth root and the remainder.
         - Added the method eta(n), which returns the result of the Dirichlet eta function at n.
 
+        [FIXES]
+
+        - Fixed the accuracy in the method bernreal() for small n.
+
 0.16    2016-12-11
 
         [ADDED]
