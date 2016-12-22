@@ -476,6 +476,9 @@ sub length { 0 }
 *li         = \&nan;
 *li2        = \&nan;
 
+*rad2deg = \&nan;
+*deg2rad = \&nan;
+
 *numerator   = \&nan;
 *denominator = \&nan;
 

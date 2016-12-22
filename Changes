@@ -4,9 +4,10 @@ Revision history for Math-BigNum
 
         [ADDED]
 
-        - Added the method isqrtrem(n), which returns the integer square root and the remainder.
-        - Added the method irootrem(n), which returns the integer nth root and the remainder.
-        - Added the method eta(n), which returns the result of the Dirichlet eta function at n.
+        - isqrtrem(n) : the integer square root and the remainder.
+        - irootrem(n) : the integer nth root and the remainder.
+        - eta(n)      : the Dirichlet eta function at n.
+        - rad2deg(n) and deg2rad(n) : converts radians to degrees and viceversa.
 
         [FIXES]
 

@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-use Test::More tests => 17;
+use Test::More tests => 20;
 
 use Math::BigNum qw(:constant pi);
 
@@ -47,4 +47,8 @@ my $acot = $r->cot->acot;
 is($acot,          pi / 4);
 is(rad2deg($acot), $d);
 
-like(4 * atan2(1, 1), qr/^3.14159/);
+like(4 * atan2(1, 1), qr/^3\.14159/);
+like(1.5->rad2deg, qr/^85\.9436692696/);
+like(42->deg2rad,  qr/^0\.7330382858/);
+
+is(2->rad2deg->deg2rad->bround(0), 2);

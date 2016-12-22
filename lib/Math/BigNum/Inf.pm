@@ -1603,6 +1603,9 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan
 *ln   = \&inf;
 *bln  = \&binf;
 
+*rad2deg = \&copy;
+*deg2rad = \&copy;
+
 *bernreal  = \&nan;
 *bernfrac  = \&nan;
 *harmfrac  = \&nan;

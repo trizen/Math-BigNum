@@ -7154,6 +7154,60 @@ Class::Multimethods::multimethod in_base => qw(Math::BigNum Math::BigNum) => sub
     $_[0]->in_base(CORE::int(Math::GMPq::Rmpq_get_d(${$_[1]})));
 };
 
+=head2 deg2rad
+
+    $x->deg2rad                    # => BigNum
+
+Returns the value of C<x> converted from degrees to radians.
+
+Example:
+
+    deg2rad(180) = pi
+
+=cut
+
+sub deg2rad {
+    Math::MPFR::Rmpfr_const_pi((my $pi = Math::MPFR::Rmpfr_init2($PREC)), $ROUND);
+    Math::MPFR::Rmpfr_div_ui((my $fr = Math::MPFR::Rmpfr_init2($PREC)), $pi, 180, $ROUND);
+
+    ## Version 1
+    #~ my $q = Math::GMPq::Rmpq_init();
+    #~ Math::MPFR::Rmpfr_get_q($q, $fr);
+    #~ Math::GMPq::Rmpq_mul($q, $q, ${$_[0]});
+    #~ bless \$q, __PACKAGE__;
+
+    ## Version 2
+    Math::MPFR::Rmpfr_mul_q($fr, $fr, ${$_[0]}, $ROUND);
+    _mpfr2big($fr);
+}
+
+=head2 rad2deg
+
+    $x->rad2deg                    # => BigNum
+
+Returns the value of C<x> converted from radians to degrees.
+
+Example:
+
+    rad2deg(pi) = 180
+
+=cut
+
+sub rad2deg {
+    Math::MPFR::Rmpfr_const_pi((my $pi = Math::MPFR::Rmpfr_init2($PREC)), $ROUND);
+    Math::MPFR::Rmpfr_ui_div((my $fr = Math::MPFR::Rmpfr_init2($PREC)), 180, $pi, $ROUND);
+
+    ## Version 1
+    #~ my $q = Math::GMPq::Rmpq_init();
+    #~ Math::MPFR::Rmpfr_get_q($q, $fr);
+    #~ Math::GMPq::Rmpq_mul($q, $q, ${$_[0]});
+    #~ bless \$q, __PACKAGE__;
+
+    ## Version 2
+    Math::MPFR::Rmpfr_mul_q($fr, $fr, ${$_[0]}, $ROUND);
+    _mpfr2big($fr);
+}
+
 =head1 * Dissections
 
 =cut
