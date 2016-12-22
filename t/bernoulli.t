@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 20;
+plan tests => 21;
 
 use Math::BigNum qw(:constant);
 
@@ -47,5 +47,6 @@ use Math::BigNum qw(:constant);
     is((0)->bernreal,                1);
     is((3)->bernreal,                0);
     is((2)->bernreal->as_float(10),  '0.1666666667');
+    is((14)->bernreal->as_float(25), '1.1666666666666666666666667');
     is((52)->bernreal->as_float(10), '-503877810148106891413789303.0522012579');
 }
