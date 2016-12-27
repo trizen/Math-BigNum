@@ -3821,6 +3821,44 @@ sub digamma {
     _mpfr2big($r);
 }
 
+=head2 beta
+
+    $x->beta(BigNum)               # => BigNum | Inf | Nan
+
+The beta function (also called the Euler integral of the first kind).
+
+Defined as:
+
+    beta(x,y) = gamma(x)*gamma(y) / gamma(x+y)
+
+for x > 0 and y > 0.
+
+=cut
+
+Class::Multimethods::multimethod beta => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    $x = _big2mpfr($x);
+    $y = _big2mpfr($y);
+
+    my $t = Math::MPFR::Rmpfr_init2($PREC);
+    Math::MPFR::Rmpfr_add($t, $x, $y, $ROUND);
+    Math::MPFR::Rmpfr_gamma($t, $t, $ROUND);
+    Math::MPFR::Rmpfr_gamma($x, $x, $ROUND);
+    Math::MPFR::Rmpfr_gamma($y, $y, $ROUND);
+    Math::MPFR::Rmpfr_mul($x, $x, $y, $ROUND);
+    Math::MPFR::Rmpfr_div($x, $x, $t, $ROUND);
+
+    _mpfr2big($x);
+};
+
+Class::Multimethods::multimethod beta => qw(Math::BigNum *) => sub {
+    Math::BigNum->new($_[1])->beta($_[0]);
+};
+
+Class::Multimethods::multimethod beta => qw(Math::BigNum Math::BigNum::Inf) => \&nan;
+Class::Multimethods::multimethod beta => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
 =head2 zeta
 
     $x->zeta                       # => BigNum | Inf

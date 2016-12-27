@@ -468,6 +468,7 @@ sub length { 0 }
 *lngamma    = \&nan;
 *lgamma     = \&nan;
 *digamma    = \&nan;
+*beta       = \&nan;
 *zeta       = \&nan;
 *eta        = \&nan;
 *erf        = \&nan;

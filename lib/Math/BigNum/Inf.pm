@@ -1436,6 +1436,8 @@ is always Nan.
 *not  = \&nan;
 *bnot = \&bnan;
 
+*beta = \&nan;
+
 =head2 lsft
 
     $x->lsft(BigNum)               # => Inf

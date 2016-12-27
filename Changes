@@ -7,6 +7,7 @@ Revision history for Math-BigNum
         - isqrtrem(n) : the integer square root and the remainder.
         - irootrem(n) : the integer nth root and the remainder.
         - eta(n)      : the Dirichlet eta function at n.
+        - beta(x,y)   : the beta function (x > 0 and y > 0).
         - rad2deg(n) and deg2rad(n) : converts radians to degrees and viceversa.
 
         [FIXES]
