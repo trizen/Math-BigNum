@@ -58,7 +58,7 @@ t/rand.t
 t/root.t
 t/round.t
 t/scalar.t
-t/trignometric.t
+t/trigonometry.t
 utils/align_types.pl
 utils/auto_perltidy.sh
 utils/bak_cleaner.sh
