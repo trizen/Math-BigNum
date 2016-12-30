@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 146;
+use Test::More tests => 171;
 use Math::BigNum;
 
 my $mbn = 'Math::BigNum';
@@ -61,11 +61,54 @@ my $mbn = 'Math::BigNum';
     is(Math::BigNum->new("+2"), 2);
     is(Math::BigNum->new("-2"), -2);
 
-    like(3->zeta,    qr/^1\.2020569031/);
-    like(3->eta,     qr/^0\.9015426773/);
-    like(1->eta,     qr/^0\.6931471805599/);    # special case
-    like(3->beta(5), qr/^0\.009523809523/);
+    like(3->zeta,      qr/^1\.2020569031/);
+    like(3->eta,       qr/^0\.9015426773/);
+    like(1->eta,       qr/^0\.6931471805599/);    # special case
+    like(3->beta(5),   qr/^0\.009523809523/);
     like(5->beta("3"), qr/^0\.009523809523/);
+
+    #
+    ## bessel_j()
+    #
+    like(12->bessel_j(0), qr/^0\.047689310796833/);
+    like(42->bessel_j(5), qr/^-0\.0766076270275045651/);
+
+    like((-5.12)->bessel_j(-3),   qr/^0\.3427458453114948/);
+    like((-5.12)->bessel_j("-3"), qr/^0\.3427458453114948/);
+
+    like(13->bessel_j(5.6),   qr/^0\.1316195599274807877/);    # 5.6 is truncated to 5
+    like(13->bessel_j("5.6"), qr/^0\.1316195599274807877/);    # =//=
+
+    like(12->bessel_j("1"), qr/^-0\.2234471044906276/);
+    like(42->bessel_j("5"), qr/^-0\.0766076270275045651/);
+
+    # Special cases of bessel_j()
+    is(12->bessel_j(Inf),     0);
+    is((-13)->bessel_j(-Inf), 0);
+    is((-1.3)->bessel_j(Inf), 0);
+    is(2->bessel_j(NaN),      NaN);
+
+    #
+    ## bessel_y()
+    #
+    like(12->bessel_y(0), qr/^-0\.22523731263436/);
+    like(42->bessel_y(5), qr/^0\.096934297943598976/);
+
+    like((5.12)->bessel_y(-3),   qr/^-0\.17873301338971176848/);
+    like((5.12)->bessel_y("-3"), qr/^-0\.17873301338971176848/);
+
+    like(13->bessel_y(5.6),   qr/^-0\.188760936228609544/);    # 5.6 is truncated to 5
+    like(13->bessel_y("5.6"), qr/^-0\.188760936228609544/);    # =//=
+
+    like(12->bessel_y("1"), qr/^-0\.057099218260896/);
+    like(42->bessel_y("5"), qr/^0\.096934297943598976/);
+
+    # Special cases of bessel_y()
+    is(12->bessel_y(Inf),     -Inf);
+    is(13.5->bessel_y(-Inf),  Inf);
+    is((-1.4)->bessel_y(Inf), NaN);
+    is((-23)->bessel_y(-Inf), NaN);
+    is(2->bessel_y(NaN),      NaN);
 }
 
 ##############################################################################

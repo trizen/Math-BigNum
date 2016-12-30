@@ -3960,6 +3960,163 @@ sub eta {
     _mpfr2big($r);
 }
 
+=head2 bessel_j
+
+    $x->bessel_j(BigNum)           # => BigNum
+    $x->bessel_j(Scalar)           # => BigNum
+
+The first order Bessel function, C<J_n(x)>, where C<n> is a signed integer.
+
+Example:
+
+    $x->bessel_j($n)        # represents J_n(x)
+
+=cut
+
+Class::Multimethods::multimethod bessel_j => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $n) = @_;
+
+    $n = Math::GMPq::Rmpq_get_d($$n);
+
+    if ($n < MIN_SI or $n > MAX_UI) {
+        return zero();
+    }
+
+    $n = CORE::int($n);
+    $x = _big2mpfr($x);
+
+    if ($n == 0) {
+        Math::MPFR::Rmpfr_j0($x, $x, $ROUND);
+    }
+    elsif ($n == 1) {
+        Math::MPFR::Rmpfr_j1($x, $x, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_jn($x, $n, $x, $ROUND);
+    }
+
+    _mpfr2big($x);
+};
+
+Class::Multimethods::multimethod bessel_j => qw(Math::BigNum $) => sub {
+    my ($x, $n) = @_;
+
+    if (CORE::int($n) eq $n) {
+
+        if ($n < MIN_SI or $n > MAX_UI) {
+            return zero();
+        }
+
+        $x = _big2mpfr($x);
+
+        if ($n == 0) {
+            Math::MPFR::Rmpfr_j0($x, $x, $ROUND);
+        }
+        elsif ($n == 1) {
+            Math::MPFR::Rmpfr_j1($x, $x, $ROUND);
+        }
+        else {
+            Math::MPFR::Rmpfr_jn($x, $n, $x, $ROUND);
+        }
+        _mpfr2big($x);
+    }
+    else {
+        $x->bessel_j(Math::BigNum->new($n));
+    }
+};
+
+Class::Multimethods::multimethod bessel_j => qw(Math::BigNum *) => sub {
+    $_[0]->bessel_j(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod bessel_j => qw(Math::BigNum Math::BigNum::Inf) => \&zero;
+Class::Multimethods::multimethod bessel_j => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 bessel_y
+
+    $x->bessel_y(BigNum)           # => BigNum
+    $x->bessel_y(Scalar)           # => BigNum
+
+The second order Bessel function, C<Y_n(x)>, where C<n> is a signed integer.
+
+Example:
+
+    $x->bessel_y($n)        # represents Y_n(x)
+
+=cut
+
+Class::Multimethods::multimethod bessel_y => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $n) = @_;
+
+    $n = Math::GMPq::Rmpq_get_d($$n);
+
+    if ($n < MIN_SI or $n > MAX_UI) {
+
+        if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+            return nan();
+        }
+
+        return ($n < 0 ? inf() : ninf());
+    }
+
+    $x = _big2mpfr($x);
+    $n = CORE::int($n);
+
+    if ($n == 0) {
+        Math::MPFR::Rmpfr_y0($x, $x, $ROUND);
+    }
+    elsif ($n == 1) {
+        Math::MPFR::Rmpfr_y1($x, $x, $ROUND);
+    }
+    else {
+        Math::MPFR::Rmpfr_yn($x, $n, $x, $ROUND);
+    }
+
+    _mpfr2big($x);
+};
+
+Class::Multimethods::multimethod bessel_y => qw(Math::BigNum $) => sub {
+    my ($x, $n) = @_;
+
+    if (CORE::int($n) eq $n) {
+
+        if ($n < MIN_SI or $n > MAX_UI) {
+
+            if (Math::GMPq::Rmpq_sgn($$x) < 0) {
+                return nan();
+            }
+
+            return ($n < MIN_SI ? inf() : ninf());
+        }
+
+        $x = _big2mpfr($x);
+
+        if ($n == 0) {
+            Math::MPFR::Rmpfr_y0($x, $x, $ROUND);
+        }
+        elsif ($n == 1) {
+            Math::MPFR::Rmpfr_y1($x, $x, $ROUND);
+        }
+        else {
+            Math::MPFR::Rmpfr_yn($x, $n, $x, $ROUND);
+        }
+        _mpfr2big($x);
+    }
+    else {
+        $x->bessel_y(Math::BigNum->new($n));
+    }
+};
+
+Class::Multimethods::multimethod bessel_y => qw(Math::BigNum *) => sub {
+    $_[0]->bessel_y(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod bessel_y => qw(Math::BigNum Math::BigNum::Inf) => sub {
+    Math::GMPq::Rmpq_sgn(${$_[0]}) < 0 ? nan() : $_[1]->neg;
+};
+
+Class::Multimethods::multimethod bessel_y => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
 =head2 bernreal
 
     $n->bernreal                   # => BigNum | Nan

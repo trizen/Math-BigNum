@@ -1436,7 +1436,9 @@ is always Nan.
 *not  = \&nan;
 *bnot = \&bnan;
 
-*beta = \&nan;
+*beta     = \&nan;
+*bessel_j = \&nan;
+*bessel_y = \&nan;
 
 =head2 lsft
 

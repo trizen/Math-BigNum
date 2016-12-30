@@ -479,6 +479,9 @@ sub length { 0 }
 *li         = \&nan;
 *li2        = \&nan;
 
+*bessel_j = \&nan;
+*bessel_y = \&nan;
+
 *rad2deg = \&nan;
 *deg2rad = \&nan;
 
