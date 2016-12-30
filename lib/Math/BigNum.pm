@@ -3170,7 +3170,8 @@ sub lgrt {
     my $y = Math::MPFR::Rmpfr_init2($PREC);
     Math::MPFR::Rmpfr_set_ui($y, 0, $ROUND);
 
-    my $tmp = Math::MPFR::Rmpfr_init2($PREC);
+    my $count = 0;
+    my $tmp   = Math::MPFR::Rmpfr_init2($PREC);
 
     while (1) {
         Math::MPFR::Rmpfr_sub($tmp, $x, $y, $ROUND);
@@ -3183,8 +3184,59 @@ sub lgrt {
 
         Math::MPFR::Rmpfr_add($x, $x, $d, $ROUND);
         Math::MPFR::Rmpfr_div($x, $x, $tmp, $ROUND);
+        last if ++$count > $PREC;
     }
 
+    _mpfr2big($x);
+}
+
+=head2 lambert_w
+
+    $x->lambert_w                  # => BigNum | Nan
+
+The Lambert-W function, defined in real numbers. The value of C<x> should not be less than C<-1/e>.
+
+Example:
+
+     100->log->lambert_w->exp   # solves for x in `x^x = 100` and returns: `3.59728...`
+
+=cut
+
+sub lambert_w {
+    my ($x) = @_;
+
+    my $sgn = Math::GMPq::Rmpq_sgn($$x);
+
+    $sgn == 0 and return zero();
+    Math::GMPq::Rmpq_equal($$x, $MONE) && return nan();
+
+    my $d = _big2mpfr($x);
+
+    $PREC = CORE::int($PREC);
+    Math::MPFR::Rmpfr_ui_pow_ui((my $p = Math::MPFR::Rmpfr_init2($PREC)), 10, CORE::int($PREC / 4), $ROUND);
+    Math::MPFR::Rmpfr_ui_div($p, 1, $p, $ROUND);
+
+    Math::MPFR::Rmpfr_set_ui(($x = Math::MPFR::Rmpfr_init2($PREC)), 1, $ROUND);
+    Math::MPFR::Rmpfr_set_ui((my $y = Math::MPFR::Rmpfr_init2($PREC)), 0, $ROUND);
+
+    my $count = 0;
+    my $tmp   = Math::MPFR::Rmpfr_init2($PREC);
+
+    while (1) {
+        Math::MPFR::Rmpfr_sub($tmp, $x, $y, $ROUND);
+        Math::MPFR::Rmpfr_cmpabs($tmp, $p) <= 0 and last;
+
+        Math::MPFR::Rmpfr_set($y, $x, $ROUND);
+
+        Math::MPFR::Rmpfr_log($tmp, $x, $ROUND);
+        Math::MPFR::Rmpfr_add_ui($tmp, $tmp, 1, $ROUND);
+
+        Math::MPFR::Rmpfr_add($x, $x, $d, $ROUND);
+        Math::MPFR::Rmpfr_div($x, $x, $tmp, $ROUND);
+        last if ++$count > $PREC;
+    }
+
+    Math::MPFR::Rmpfr_log($x, $x, $ROUND);
     _mpfr2big($x);
 }
 

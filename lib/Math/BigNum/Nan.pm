@@ -371,7 +371,9 @@ sub cmp { }
 *coth  = \&nan;
 *acoth = \&nan;
 *atan2 = \&nan;
-*lgrt  = \&nan;
+
+*lgrt      = \&nan;
+*lambert_w = \&nan;
 
 *rand   = \&nan;
 *irand  = \&nan;

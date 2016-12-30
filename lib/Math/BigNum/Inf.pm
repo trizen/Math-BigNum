@@ -1599,11 +1599,12 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan
 *dec  = \&copy;
 *bdec = \&_self;
 
-*li   = \&inf;
-*li2  = \&ninf;
-*lgrt = \&inf;
-*ln   = \&inf;
-*bln  = \&binf;
+*li        = \&inf;
+*li2       = \&ninf;
+*lgrt      = \&inf;
+*lambert_w = \&inf;
+*ln        = \&inf;
+*bln       = \&binf;
 
 *rad2deg = \&copy;
 *deg2rad = \&copy;
