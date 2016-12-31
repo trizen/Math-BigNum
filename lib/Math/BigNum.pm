@@ -4086,7 +4086,7 @@ Class::Multimethods::multimethod bessel_y => qw(Math::BigNum $) => sub {
                 return nan();
             }
 
-            return ($n < MIN_SI ? inf() : ninf());
+            return ($n < 0 ? inf() : ninf());
         }
 
         $x = _big2mpfr($x);
