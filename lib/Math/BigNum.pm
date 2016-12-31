@@ -22,7 +22,7 @@ use constant {
              };
 #>>>
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 =encoding utf8
 
@@ -32,7 +32,7 @@ Math::BigNum - Arbitrary size precision for integers, rationals and floating-poi
 
 =head1 VERSION
 
-Version 0.16
+Version 0.17
 
 =head1 SYNOPSIS
 
@@ -1456,26 +1456,6 @@ Class::Multimethods::multimethod div => qw(Math::BigNum Math::BigNum) => sub {
         my $sign = Math::GMPq::Rmpq_sgn($$x);
         return (!$sign ? nan : $sign > 0 ? inf : ninf);
     };
-
-    # Unsure optimization: set the numerator and denominator manually for integers.
-    # Doing this, we get about the same performance as we would do integer division,
-    # and this is because we prevent the expensive mpq_canonicalize() to get called,
-    # but this may have some other, nasty consequences. So far, I haven't found any.
-    # See also `Rational Arithmetic` on: https://gmplib.org/manual/Efficiency.html
-
-    #~ if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
-    #~      my $num_z = Math::GMPz::Rmpz_init();
-    #~      my $den_z = Math::GMPz::Rmpz_init();
-
-    #~      Math::GMPq::Rmpq_numref($num_z, $$x);
-    #~      Math::GMPq::Rmpq_numref($den_z, $$y);
-
-    #~      my $r = Math::GMPq::Rmpq_init();
-    #~      Math::GMPq::Rmpq_set_num($r, $num_z);
-    #~      Math::GMPq::Rmpq_set_den($r, $den_z);
-
-    #~      return bless \$r, __PACKAGE__;
-    #~ }
 
     my $r = Math::GMPq::Rmpq_init();
     Math::GMPq::Rmpq_div($r, $$x, $$y);
@@ -3969,7 +3949,7 @@ The first order Bessel function, C<J_n(x)>, where C<n> is a signed integer.
 
 Example:
 
-    $x->bessel_j($n)        # represents J_n(x)
+    $x->bessel_j($n)               # represents J_n(x)
 
 =cut
 
@@ -4034,14 +4014,14 @@ Class::Multimethods::multimethod bessel_j => qw(Math::BigNum Math::BigNum::Nan) 
 
 =head2 bessel_y
 
-    $x->bessel_y(BigNum)           # => BigNum
-    $x->bessel_y(Scalar)           # => BigNum
+    $x->bessel_y(BigNum)           # => BigNum | Inf | Nan
+    $x->bessel_y(Scalar)           # => BigNum | Inf | Nan
 
-The second order Bessel function, C<Y_n(x)>, where C<n> is a signed integer.
+The second order Bessel function, C<Y_n(x)>, where C<n> is a signed integer. Returns Nan for negative values of C<x>.
 
 Example:
 
-    $x->bessel_y($n)        # represents Y_n(x)
+    $x->bessel_y($n)               # represents Y_n(x)
 
 =cut
 
@@ -7008,7 +6988,7 @@ Class::Multimethods::multimethod is_div => qw(Math::BigNum Math::BigNum) => sub 
 
 #<<<
     #---------------------------------------------------------------------------------
-    ## Optimization for integers, but it turns out to be slower for small integers...
+    ## Optimization for integers, but it turned out to be slower for small integers...
     #---------------------------------------------------------------------------------
     #~ if (Math::GMPq::Rmpq_integer_p($$y) and Math::GMPq::Rmpq_integer_p($$x)) {
         #~ my $d = CORE::int(CORE::abs(Math::GMPq::Rmpq_get_d($$y)));
@@ -8039,7 +8019,7 @@ L<Math::Prime::Util> - Utilities related to prime numbers, including fast sieves
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016 Daniel Șuteu.
+Copyright 2016-2017 Daniel Șuteu.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
