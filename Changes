@@ -1,5 +1,11 @@
 Revision history for Math-BigNum
 
+0.18    2017-01-01
+
+        [FIXES]
+
+        - Removed some tests for irootrem() that fail under old versions of GMP (< 5.1.0).
+
 0.17    2017-01-01
 
         [ADDED]
