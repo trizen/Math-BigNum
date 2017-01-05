@@ -3123,7 +3123,6 @@ sub log10 {
     $x->lgrt                       # => BigNum | Nan
 
 Logarithmic-root of C<x>, which is the largest solution to C<a^a = b>, where C<b> is known.
-It is defined in real numbers for values of x greater than or equal to C<0.7>.
 
 Example:
 
