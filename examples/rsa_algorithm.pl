@@ -7,7 +7,6 @@
 #  - `e` is now randomly chosen, such that gcd(e, phi(n)) = 1
 #  - simplifications in the encryption/decryption of a message
 
-use utf8;
 use 5.010;
 use strict;
 
@@ -16,10 +15,13 @@ use lib qw(../lib);
 use Math::BigNum qw(:constant);
 use Math::Prime::Util qw(random_strong_prime);
 
-my $message = "Hello, World!";
-my $bits    = 128->max(8 * length($message));
+my $message = "Hello, world!";
 
 # == key generation
+
+# We chose the number of bits such that p*q > m
+my $bits = 128->max(4 * length($message) + 2);
+
 my $p = random_strong_prime($bits);
 my $q = random_strong_prime($bits);
 
