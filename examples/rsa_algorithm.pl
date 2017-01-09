@@ -29,6 +29,7 @@ say "q = $q";
 my $n = $p * $q;
 my $phi = ($p - 1) * ($q - 1);
 
+# == choosing `e`
 my $e;
 do {
     $e = 1->irand($phi);
@@ -36,6 +37,7 @@ do {
 
 say "e = $e";
 
+# == computing `d`
 my $d = $e->modinv($phi);    # note that BigNum understands BigInt
 
 say "d = $d";
