@@ -3,7 +3,7 @@
 # RSA Encryption example by Phil Massyn (www.massyn.net)
 # July 10th 2013
 
-# Daniel Șuteu (09 January 2017):
+# Modified by Daniel Șuteu (09 January 2017):
 #  - `e` is now randomly chosen, such that gcd(e, phi(n)) = 1
 #  - simplifications in the encryption/decryption of a message
 
