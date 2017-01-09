@@ -3,32 +3,61 @@
 # RSA Encryption example by Phil Massyn (www.massyn.net)
 # July 10th 2013
 
+# Daniel Șuteu (09 January 2017):
+#  - `e` is now randomly chosen, such that gcd(e, phi(n)) = 1
+#  - simplifications in the encryption/decryption of a message
+
+use utf8;
 use 5.010;
 use strict;
+
 use lib qw(../lib);
+
 use Math::BigNum qw(:constant);
-use Math::Prime::Util ':all';
+use Math::Prime::Util qw(random_strong_prime);
+
+my $message = "Hello, World!";
+my $bits = 128->max(2 * 8 * length($message));
 
 # == key generation
-my $p = random_strong_prime(256);
-my $q = random_strong_prime(256);
+my $p = random_strong_prime($bits);
+my $q = random_strong_prime($bits);
+
+say "p = $p";
+say "q = $q";
 
 my $n = $p * $q;
-
 my $phi = ($p - 1) * ($q - 1);
 
-my $e = 257;    # need to figure out how to calculate it
+my $e;
+do {
+    $e = 1->irand($phi);
+} until ($e->gcd($phi) == 1);
 
-my $x = $e**1;
-my $d = $x->modinv($phi);    # note that BigNum understands BigInt
+say "e = $e";
+
+my $d = $e->modinv($phi);    # note that BigNum understands BigInt
+
+say "d = $d";
 
 # == encryption
-my $message = "hello world";
-my $m = (join('', map (sprintf("%03d", ord), split(//, $message)))) + 1 - 1;
+my $m = 1->irand(10) . join('', unpack('b*', $message));
 
-my $c = $m->modpow($e, $n);
+say "m = $m";
+
+my $c = ($m + 0)->modpow($e, $n);
+
+say "c = $c";
 
 # == decryption
 my $M = $c->modpow($d, $n);
 
-print join('', map(sprintf("%s", chr), ($M =~ /\d{3}/g))) . "\n";
+say "M = $M";
+
+my $orig = pack('b*', substr($M, 1));
+
+if ($orig ne $message) {
+    die "Decryption failed: <<$orig>> != <<$message>>\n";
+}
+
+say $orig;
