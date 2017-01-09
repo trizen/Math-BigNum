@@ -17,7 +17,7 @@ use Math::BigNum qw(:constant);
 use Math::Prime::Util qw(random_strong_prime);
 
 my $message = "Hello, World!";
-my $bits = 128->max(2 * 8 * length($message));
+my $bits    = 128->max(8 * length($message));
 
 # == key generation
 my $p = random_strong_prime($bits);
@@ -41,11 +41,11 @@ my $d = $e->modinv($phi);    # note that BigNum understands BigInt
 say "d = $d";
 
 # == encryption
-my $m = 1->irand(10) . join('', unpack('b*', $message));
+my $m = Math::BigNum->new('1' . join('', unpack('b*', $message)), 2);
 
 say "m = $m";
 
-my $c = ($m + 0)->modpow($e, $n);
+my $c = $m->modpow($e, $n);
 
 say "c = $c";
 
@@ -54,7 +54,7 @@ my $M = $c->modpow($d, $n);
 
 say "M = $M";
 
-my $orig = pack('b*', substr($M, 1));
+my $orig = pack('b*', substr($M->as_bin, 1));
 
 if ($orig ne $message) {
     die "Decryption failed: <<$orig>> != <<$message>>\n";
