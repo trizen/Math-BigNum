@@ -7054,7 +7054,7 @@ sub length {
     my $z = Math::GMPz::Rmpz_init();
     Math::GMPz::Rmpz_set_q($z, ${$_[0]});
     Math::GMPz::Rmpz_abs($z, $z);
-    Math::GMPz::Rmpz_snprintf(my $buf, 0, "%Zd", $z, 0);
+    CORE::length(Math::GMPz::Rmpz_get_str($z, 10));
 }
 
 =head1 * Conversions

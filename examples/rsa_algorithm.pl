@@ -32,10 +32,17 @@ my $n = $p * $q;
 my $phi = ($p - 1) * ($q - 1);
 
 # == choosing `e`
-my $e;
-do {
-    $e = 1->irand($n);
-} until ($e < $phi and $e->gcd($phi) == 1);
+#<<<
+    my $e;
+    do {
+        $e = 65537->irand($n);
+    } until (
+             $e < $phi
+        and  $e->gcd($phi) == 1
+        and ($e - 1)->gcd($p - 1) == 2
+        and ($e - 1)->gcd($q - 1) == 2
+    );
+#>>>
 
 say "e = $e";
 
@@ -45,7 +52,7 @@ my $d = $e->modinv($phi);    # note that BigNum understands BigInt
 say "d = $d";
 
 # == encryption
-my $m = Math::BigNum->new('1' . join('', unpack('b*', $message)), 2);
+my $m = Math::BigNum->new('1' . unpack('b*', $message), 2);
 
 say "m = $m";
 
@@ -58,10 +65,10 @@ my $M = $c->modpow($d, $n);
 
 say "M = $M";
 
-my $orig = pack('b*', substr($M->as_bin, 1));
+my $decoded = pack('b*', substr($M->as_bin, 1));
 
-if ($orig ne $message) {
-    die "Decryption failed: <<$orig>> != <<$message>>\n";
+if ($decoded ne $message) {
+    die "Decryption failed: <<$decoded>> != <<$message>>\n";
 }
 
-say $orig;
+say $decoded;
