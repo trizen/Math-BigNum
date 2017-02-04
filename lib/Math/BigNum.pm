@@ -2292,7 +2292,7 @@ Floating-point addition of C<x> and C<y>.
 Class::Multimethods::multimethod fadd => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     $x = _big2mpfr($x);
-    Math::MPFR::Rmpfr_add($x, $x, _big2mpfr($y), $ROUND);
+    Math::MPFR::Rmpfr_add_q($x, $x, $$y, $ROUND);
     _mpfr2big($x);
 };
 
@@ -2330,7 +2330,7 @@ Floating-point addition of C<x> and C<y>, changing C<x> in-place.
 Class::Multimethods::multimethod bfadd => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpfr($x);
-    Math::MPFR::Rmpfr_add($r, $r, _big2mpfr($y), $ROUND);
+    Math::MPFR::Rmpfr_add_q($r, $r, $$y, $ROUND);
     _mpfr2x($x, $r);
 };
 
@@ -2368,7 +2368,7 @@ Floating-point subtraction of C<x> and C<y>.
 Class::Multimethods::multimethod fsub => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     $x = _big2mpfr($x);
-    Math::MPFR::Rmpfr_sub($x, $x, _big2mpfr($y), $ROUND);
+    Math::MPFR::Rmpfr_sub_q($x, $x, $$y, $ROUND);
     _mpfr2big($x);
 };
 
@@ -2406,7 +2406,7 @@ Floating-point subtraction of C<x> and C<y>, changing C<x> in-place.
 Class::Multimethods::multimethod bfsub => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpfr($x);
-    Math::MPFR::Rmpfr_sub($r, $r, _big2mpfr($y), $ROUND);
+    Math::MPFR::Rmpfr_sub_q($r, $r, $$y, $ROUND);
     _mpfr2x($x, $r);
 };
 
@@ -2444,7 +2444,7 @@ Floating-point multiplication of C<x> by C<y>.
 Class::Multimethods::multimethod fmul => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     $x = _big2mpfr($x);
-    Math::MPFR::Rmpfr_mul($x, $x, _big2mpfr($y), $ROUND);
+    Math::MPFR::Rmpfr_mul_q($x, $x, $$y, $ROUND);
     _mpfr2big($x);
 };
 
@@ -2486,7 +2486,7 @@ Floating-point multiplication of C<x> by C<y>, changing C<x> in-place.
 Class::Multimethods::multimethod bfmul => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpfr($x);
-    Math::MPFR::Rmpfr_mul($r, $r, _big2mpfr($y), $ROUND);
+    Math::MPFR::Rmpfr_mul_q($r, $r, $$y, $ROUND);
     _mpfr2x($x, $r);
 };
 
@@ -2529,7 +2529,7 @@ Floating-point division of C<x> by C<y>.
 Class::Multimethods::multimethod fdiv => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     $x = _big2mpfr($x);
-    Math::MPFR::Rmpfr_div($x, $x, _big2mpfr($y), $ROUND);
+    Math::MPFR::Rmpfr_div_q($x, $x, $$y, $ROUND);
     _mpfr2big($x);
 };
 
@@ -2567,7 +2567,7 @@ Floating-point division of C<x> by C<y>, changing C<x> in-place.
 Class::Multimethods::multimethod bfdiv => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
     my $r = _big2mpfr($x);
-    Math::MPFR::Rmpfr_div($r, $r, _big2mpfr($y), $ROUND);
+    Math::MPFR::Rmpfr_div_q($r, $r, $$y, $ROUND);
     _mpfr2x($x, $r);
 };
 

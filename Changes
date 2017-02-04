@@ -1,5 +1,13 @@
 Revision history for Math-BigNum
 
+0.19    2017-xx-xx
+
+        [OTHER]
+
+        - `fsub()`, `fadd()`, `fmul()` and `fdiv()` are all slightly faster (including their `b*` versions).
+
+        Instead of converting the second argument to a new MPFR object (which always has a type of mpq), we now pass it directly, using a corresponding `Rmpfr_*_q()` function.
+
 0.18    2017-01-01
 
         [FIXES]
