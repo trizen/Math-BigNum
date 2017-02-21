@@ -50,6 +50,8 @@ t/manifest.t
 t/miller_rabin_test.t
 t/mod.t
 t/nan_cmp.t
+t/native_32_ints.t
+t/native_64_ints.t
 t/new.t
 t/pod-coverage.t
 t/pod.t

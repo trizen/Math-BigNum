@@ -306,6 +306,7 @@ is($two->copy->biroot(-2), $zero);
                 my ($x, $y) = $n->irootrem($j);
                 my $r = $n->iroot($j);
                 is($x, $r, "tested ($k, $j)");
+
                 #is($y, $n->isub($r->bipow($j)), "tested ($k, $j)");       # fails in some cases
             }
 
@@ -315,6 +316,7 @@ is($two->copy->biroot(-2), $zero);
                 my ($x, $y) = $n->irootrem($c);
                 my $r = $n->iroot($c);
                 is($x, $r, "tested ($k, $j)");
+
                 #is($y, $n->isub($r->bipow($c)), "tested ($k, $j)");       # fails in some cases
             }
         }
