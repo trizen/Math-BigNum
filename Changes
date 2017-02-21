@@ -8,6 +8,10 @@ Revision history for Math-BigNum
 
         Instead of converting the second argument to a new MPFR object (which always has a type of mpq), we now pass it directly, using a corresponding `Rmpfr_*_q()` function.
 
+        [FIXES]
+
+        - The integer limits from Math::GMPq are used only when they are defined, otherwise they are computed with pack() and unpack().
+
 0.18    2017-01-01
 
         [FIXES]
