@@ -9,7 +9,7 @@ use Math::BigNum qw();
 
 use Class::Multimethods qw();
 
-our $VERSION = '0.18';
+our $VERSION = '0.19';
 
 =encoding utf8
 
@@ -19,7 +19,7 @@ Math::BigNum::Inf - Represents the +/-Infinity value.
 
 =head1 VERSION
 
-Version 0.18
+Version 0.19
 
 =head1 SYNOPSIS
 

@@ -1,8 +1,8 @@
 Revision history for Math-BigNum
 
-0.19    2017-xx-xx
+0.19    2017-01-21
 
-        [OTHER]
+        [PERFORMANCE IMPROVEMENTS]
 
         - `fsub()`, `fadd()`, `fmul()` and `fdiv()` are all slightly faster (including their `b*` versions).
 

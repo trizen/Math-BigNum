@@ -20,8 +20,10 @@ my $builder = Module::Build->new(
                       },
     meta_merge => {
                    resources => {
-                                 repository => 'https://github.com/trizen/Math-BigNum'
-                                }
+                                 bugtracker => "https://github.com/trizen/Math-BigNum/issues",
+                                 homepage   => "https://github.com/trizen/Math-BigNum",
+                                 repository => "https://github.com/trizen/Math-BigNum",
+                                },
                   },
     requires => {
                  'perl'                => '5.14.0',
