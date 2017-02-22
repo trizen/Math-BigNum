@@ -5803,9 +5803,8 @@ Class::Multimethods::multimethod and => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 Class::Multimethods::multimethod and => qw(Math::BigNum $) => sub {
-    my $z = _str2mpz($_[1]) // return Math::BigNum->new($_[1])->band($_[0]);
-    my $r = _big2mpz($_[0]);
-    Math::GMPz::Rmpz_and($r, $r, $z);
+    my $r = _str2mpz($_[1]) // return Math::BigNum->new($_[1])->band($_[0]);
+    Math::GMPz::Rmpz_and($r, $r, _big2mpz($_[0]));
     _mpz2big($r);
 };
 
@@ -5846,11 +5845,11 @@ Class::Multimethods::multimethod band => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 Class::Multimethods::multimethod band => qw(Math::BigNum $) => sub {
-    my $z = _str2mpz($_[1]) // return $_[0]->band(Math::BigNum->new($_[1]));
-    my $r = _big2mpz($_[0]);
-    Math::GMPz::Rmpz_and($r, $r, $z);
-    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
-    $_[0];
+    my ($x, $y) = @_;
+    my $r = _str2mpz($y) // return $x->band(Math::BigNum->new($y));
+    Math::GMPz::Rmpz_and($r, $r, _big2mpz($x));
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
 };
 
 Class::Multimethods::multimethod band => qw(Math::BigNum *) => sub {
@@ -5880,9 +5879,8 @@ Class::Multimethods::multimethod ior => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 Class::Multimethods::multimethod ior => qw(Math::BigNum $) => sub {
-    my $z = _str2mpz($_[1]) // return Math::BigNum->new($_[1])->bior($_[0]);
-    my $r = _big2mpz($_[0]);
-    Math::GMPz::Rmpz_ior($r, $r, $z);
+    my $r = _str2mpz($_[1]) // return Math::BigNum->new($_[1])->bior($_[0]);
+    Math::GMPz::Rmpz_ior($r, $r, _big2mpz($_[0]));
     _mpz2big($r);
 };
 
@@ -5916,18 +5914,19 @@ Integer logical inclusive-or operation, changing C<x> in-place.
 =cut
 
 Class::Multimethods::multimethod bior => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _big2mpz($_[0]);
-    Math::GMPz::Rmpz_ior($r, $r, _big2mpz($_[1]));
-    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
-    $_[0];
+    my ($x, $y) = @_;
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_ior($r, $r, _big2mpz($y));
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
 };
 
 Class::Multimethods::multimethod bior => qw(Math::BigNum $) => sub {
-    my $z = _str2mpz($_[1]) // return $_[0]->bior(Math::BigNum->new($_[1]));
-    my $r = _big2mpz($_[0]);
-    Math::GMPz::Rmpz_ior($r, $r, $z);
-    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
-    $_[0];
+    my ($x, $y) = @_;
+    my $r = _str2mpz($y) // return $x->bior(Math::BigNum->new($y));
+    Math::GMPz::Rmpz_ior($r, $r, _big2mpz($x));
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
 };
 
 Class::Multimethods::multimethod bior => qw(Math::BigNum *) => sub {
@@ -5957,9 +5956,8 @@ Class::Multimethods::multimethod xor => qw(Math::BigNum Math::BigNum) => sub {
 };
 
 Class::Multimethods::multimethod xor => qw(Math::BigNum $) => sub {
-    my $z = _str2mpz($_[1]) // return $_[0]->xor(Math::BigNum->new($_[1]));
-    my $r = _big2mpz($_[0]);
-    Math::GMPz::Rmpz_xor($r, $r, $z);
+    my $r = _str2mpz($_[1]) // return $_[0]->xor(Math::BigNum->new($_[1]));
+    Math::GMPz::Rmpz_xor($r, $r, _big2mpz($_[0]));
     _mpz2big($r);
 };
 
@@ -5993,18 +5991,19 @@ Integer logical exclusive-or operation, changing C<x> in-place.
 =cut
 
 Class::Multimethods::multimethod bxor => qw(Math::BigNum Math::BigNum) => sub {
-    my $r = _big2mpz($_[0]);
-    Math::GMPz::Rmpz_xor($r, $r, _big2mpz($_[1]));
-    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
-    $_[0];
+    my ($x, $y) = @_;
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_xor($r, $r, _big2mpz($y));
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
 };
 
 Class::Multimethods::multimethod bxor => qw(Math::BigNum $) => sub {
-    my $z = _str2mpz($_[1]) // return $_[0]->bxor(Math::BigNum->new($_[1]));
-    my $r = _big2mpz($_[0]);
-    Math::GMPz::Rmpz_xor($r, $r, $z);
-    Math::GMPq::Rmpq_set_z(${$_[0]}, $r);
-    $_[0];
+    my ($x, $y) = @_;
+    my $r = _str2mpz($y) // return $x->bxor(Math::BigNum->new($y));
+    Math::GMPz::Rmpz_xor($r, $r, _big2mpz($x));
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
 };
 
 Class::Multimethods::multimethod bxor => qw(Math::BigNum *) => sub {

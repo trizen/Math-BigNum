@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 367;
+plan tests => 399;
 
 # Initialization
 
@@ -929,6 +929,93 @@ my $mbn = 'Math::BigNum';
 
     $z->binf;
     is($z, Inf);
+}
+
+{
+    use Math::BigNum;
+
+    my $x = Math::BigNum->new(1234);
+    my $y = Math::BigNum->new(99);
+    my $k = Math::BigNum->new(3);
+
+    my $z = $x->copy;
+    $z->bior($y);
+    is($z, "1267");
+
+    $z = $x->copy;
+    $z->bior("99");
+    is($z, "1267");
+
+    is($x | $y,     "1267");
+    is($y | $x,     "1267");
+    is($x | "99",   "1267");
+    is("1234" | $y, "1267");
+
+    $z = $x->copy;
+    $z->band($y);
+    is($z, "66");
+
+    $z = $x->copy;
+    $z->band("99");
+    is($z, "66");
+
+    is($x & $y,     "66");
+    is($y & $x,     "66");
+    is($x & "99",   "66");
+    is("1234" & $y, "66");
+
+    $z = $x->copy;
+    $z->bxor($y);
+    is($z, "1201");
+
+    $z = $x->copy;
+    $z->bxor("99");
+    is($z, "1201");
+
+    is($x ^ $y,     "1201");
+    is($y ^ $x,     "1201");
+    is($x ^ "99",   "1201");
+    is("1234" ^ $y, "1201");
+
+    $z = $x->copy;
+    $z->blsft("3");
+    is($z, "9872");
+
+    $z = $x->copy;
+    $z->blsft($k);
+    is($z, "9872");
+
+    $z = $x->copy;
+    $z <<= "3";
+    is($z, "9872");
+
+    $z = $x->copy;
+    $z <<= $k;
+    is($z, "9872");
+
+    is($x << ("3"), "9872");
+    is($x << $k,     "9872");
+    is("1234" << $k, "9872");
+
+    $z = $x->copy;
+    $z->brsft("3");
+    is($z, "154");
+
+    $z = $x->copy;
+    $z->brsft($k);
+    is($z, "154");
+
+    $z = $x->copy;
+    $z >>= "3";
+    is($z, "154");
+
+    $z = $x->copy;
+    $z >>= $k;
+    is($z, "154");
+
+    is($x >> "3",    "154");
+    is($x >> $k,     "154");
+    is("1234" >> $k, "154");
 }
 
 # op= operations
