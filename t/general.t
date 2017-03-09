@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 171;
+use Test::More tests => 185;
 use Math::BigNum;
 
 my $mbn = 'Math::BigNum';
@@ -252,6 +252,35 @@ like($x, qr/^0\.1975308641975308641/);    # 16/81
 $x = $mbn->new('2/3');
 $z = $x->bpow($mbn->new('5/3'));
 like("$z", qr/^0\.50876188557925/);
+
+##############################################################################
+# modpow
+
+{
+    my $x = Math::BigNum->new(3);
+    my $y = Math::BigNum->new(23);
+    my $z = Math::BigNum->new(17);
+
+    my $nan  = Math::BigNum->nan;
+    my $mone = Math::BigNum->mone;
+
+    is($x->modpow($y,   $z),   11);
+    is($x->modpow('23', $z),   11);
+    is($x->modpow('23', '17'), 11);
+    is($x->modpow($y,   '17'), 11);
+
+    is($x->modpow('-1',  $z),   6);
+    is($x->modpow('-2',  $z),   2);
+    is($x->modpow('-2',  '17'), 2);
+    is($x->modpow('-1',  '17'), 6);
+    is($x->modpow($mone, $z),   6);
+    is($x->modpow($mone, '17'), 6);
+
+    is($x->modpow('-1',  '15'),                       $nan);
+    is($x->modpow($mone, '15'),                       $nan);
+    is($x->modpow($mone, Math::BigNum->new_int(15)),  $nan);
+    is($x->modpow('-1',  Math::BigNum->new_uint(15)), $nan);
+}
 
 ##############################################################################
 # fac

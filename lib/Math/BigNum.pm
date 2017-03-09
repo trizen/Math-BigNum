@@ -5222,36 +5222,65 @@ Returns Nan when the third argument is 0.
 
 Class::Multimethods::multimethod modpow => qw(Math::BigNum Math::BigNum Math::BigNum) => sub {
     my ($x, $y, $z) = @_;
-    my $mod = _big2mpz($z);
-    Math::GMPz::Rmpz_sgn($mod) || return nan();
-    my $r = _big2mpz($x);
-    Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), $mod);
-    _mpz2big($r);
+
+    $z = _big2mpz($z);
+    Math::GMPz::Rmpz_sgn($z) || return nan();
+
+    $x = _big2mpz($x);
+    $y = _big2mpz($y);
+
+    if (Math::GMPz::Rmpz_sgn($y) < 0) {
+        my $t = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_gcd($t, $x, $z);
+        Math::GMPz::Rmpz_cmp_ui($t, 1) == 0 or return nan();
+    }
+
+    Math::GMPz::Rmpz_powm($x, $x, $y, $z);
+    _mpz2big($x);
 };
 
 Class::Multimethods::multimethod modpow => qw(Math::BigNum Math::BigNum $) => sub {
     my ($x, $y, $z) = @_;
-    my $mod = _str2mpz($z) // return $x->modpow($y, Math::BigNum->new($z));
-    Math::GMPz::Rmpz_sgn($mod) || return nan();
-    my $r = _big2mpz($x);
-    Math::GMPz::Rmpz_powm($r, $r, _big2mpz($y), $mod);
-    _mpz2big($r);
+
+    $z = _str2mpz($z) // return $x->modpow($y, Math::BigNum->new($z));
+    Math::GMPz::Rmpz_sgn($z) || return nan();
+
+    $x = _big2mpz($x);
+    $y = _big2mpz($y);
+
+    if (Math::GMPz::Rmpz_sgn($y) < 0) {
+        my $t = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_gcd($t, $x, $z);
+        Math::GMPz::Rmpz_cmp_ui($t, 1) == 0 or return nan();
+    }
+
+    Math::GMPz::Rmpz_powm($x, $x, $y, $z);
+    _mpz2big($x);
 };
 
 Class::Multimethods::multimethod modpow => qw(Math::BigNum $ $) => sub {
     my ($x, $y, $z) = @_;
 
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
-        my $mod = _str2mpz($z) // return $x->modpow($y, Math::BigNum->new($z));
-        Math::GMPz::Rmpz_sgn($mod) || return nan();
-        my $r = _big2mpz($x);
+
+        $z = _str2mpz($z) // return $x->modpow($y, Math::BigNum->new($z));
+        Math::GMPz::Rmpz_sgn($z) || return nan();
+        $x = _big2mpz($x);
+
         if ($y >= 0) {
-            Math::GMPz::Rmpz_powm_ui($r, $r, $y, $mod);
+            Math::GMPz::Rmpz_powm_ui($x, $x, $y, $z);
         }
         else {
-            Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y) // (return $x->modpow(Math::BigNum->new($y), $z)), $mod);
+            $y = _str2mpz($y) // return $x->modpow(Math::BigNum->new($y), $z);
+
+            my $t = Math::GMPz::Rmpz_init();
+            Math::GMPz::Rmpz_gcd($t, $x, $z);
+            Math::GMPz::Rmpz_cmp_ui($t, 1) == 0 or return nan();
+
+            Math::GMPz::Rmpz_powm($x, $x, $y, $z);
         }
-        _mpz2big($r);
+
+        _mpz2big($x);
     }
     else {
         $x->modpow(Math::BigNum->new($y), Math::BigNum->new($z));
@@ -5261,18 +5290,26 @@ Class::Multimethods::multimethod modpow => qw(Math::BigNum $ $) => sub {
 Class::Multimethods::multimethod modpow => qw(Math::BigNum $ Math::BigNum) => sub {
     my ($x, $y, $z) = @_;
 
-    my $mod = _big2mpz($z);
-    Math::GMPz::Rmpz_sgn($mod) || return nan();
-
     if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI) {
-        my $r = _big2mpz($x);
+
+        $z = _big2mpz($z);
+        Math::GMPz::Rmpz_sgn($z) || return nan();
+        $x = _big2mpz($x);
+
         if ($y >= 0) {
-            Math::GMPz::Rmpz_powm_ui($r, $r, $y, $mod);
+            Math::GMPz::Rmpz_powm_ui($x, $x, $y, $z);
         }
         else {
-            Math::GMPz::Rmpz_powm($r, $r, _str2mpz($y) // (return $x->modpow(Math::BigNum->new($y), $z)), $mod);
+            $y = _str2mpz($y) // return $x->modpow(Math::BigNum->new($y), $z);
+
+            my $t = Math::GMPz::Rmpz_init();
+            Math::GMPz::Rmpz_gcd($t, $x, $z);
+            Math::GMPz::Rmpz_cmp_ui($t, 1) == 0 or return nan();
+
+            Math::GMPz::Rmpz_powm($x, $x, $y, $z);
         }
-        _mpz2big($r);
+
+        _mpz2big($x);
     }
     else {
         $x->modpow(Math::BigNum->new($y), $z);

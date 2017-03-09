@@ -1,5 +1,11 @@
 Revision history for Math-BigNum
 
+0.20    2017-xx-xx
+
+        [FIXES]
+
+        - Fixed a special case in modpow(x, y, z) when y < 0 and gcd(x, z) != 1.
+
 0.19    2017-01-21
 
         [PERFORMANCE IMPROVEMENTS]
