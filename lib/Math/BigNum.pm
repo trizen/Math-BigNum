@@ -2908,7 +2908,7 @@ Class::Multimethods::multimethod broot => qw(Math::BigNum Math::BigNum) => sub {
         _mpfr2x($x, $f);
     }
     else {
-        $x->pow($y->inv);
+        $x->bpow($y->inv);
     }
 };
 
