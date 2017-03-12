@@ -5446,6 +5446,88 @@ Class::Multimethods::multimethod valuation => qw(Math::BigNum *) => sub {
 Class::Multimethods::multimethod valuation => qw(Math::BigNum Math::BigNum::Inf) => sub { 0 };
 Class::Multimethods::multimethod valuation => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
 
+=head2 remove
+
+    $n->remove(BigNum)             # => BigNum
+    $n->remove(Scalar)             # => BigNum
+
+Removes all occurrences of the factor k from integer n, without changing n in-place.
+
+In general, the following statement holds true:
+
+    $n->remove($k) == $n / $k**$n->valuation($k)
+
+=cut
+
+Class::Multimethods::multimethod remove => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $z = _big2mpz($y);
+    Math::GMPz::Rmpz_sgn($z) || return $x->copy;
+
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_remove($r, $r, $z);
+    _mpz2big($r);
+};
+
+Class::Multimethods::multimethod remove => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $z = _str2mpz($y) // return $x->remove(Math::BigNum->new($y));
+    Math::GMPz::Rmpz_sgn($z) || return $x->copy;
+
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_remove($r, $r, $z);
+    _mpz2big($r);
+};
+
+Class::Multimethods::multimethod remove => qw(Math::BigNum *) => sub {
+    $_[0]->remove(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod remove => qw(Math::BigNum Math::BigNum::Inf) => \&copy;
+Class::Multimethods::multimethod remove => qw(Math::BigNum Math::BigNum::Nan) => \&nan;
+
+=head2 bremove
+
+    $n->bremove(BigNum)            # => BigNum
+    $n->bremove(Scalar)            # => BigNum
+
+Removes all occurrences of the factor k from integer n, changing n in-place.
+
+=cut
+
+Class::Multimethods::multimethod bremove => qw(Math::BigNum Math::BigNum) => sub {
+    my ($x, $y) = @_;
+
+    my $z = _big2mpz($y);
+    Math::GMPz::Rmpz_sgn($z) || return $x;
+
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_remove($r, $r, $z);
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
+};
+
+Class::Multimethods::multimethod bremove => qw(Math::BigNum $) => sub {
+    my ($x, $y) = @_;
+
+    my $z = _str2mpz($y) // return $x->bremove(Math::BigNum->new($y));
+    Math::GMPz::Rmpz_sgn($z) || return $x;
+
+    my $r = _big2mpz($x);
+    Math::GMPz::Rmpz_remove($r, $r, $z);
+    Math::GMPq::Rmpq_set_z($$x, $r);
+    $x;
+};
+
+Class::Multimethods::multimethod bremove => qw(Math::BigNum *) => sub {
+    $_[0]->bremove(Math::BigNum->new($_[1]));
+};
+
+Class::Multimethods::multimethod bremove => qw(Math::BigNum Math::BigNum::Inf) => sub { $_[0] };
+Class::Multimethods::multimethod bremove => qw(Math::BigNum Math::BigNum::Nan) => \&bnan;
+
 =head2 kronecker
 
     $n->kronecker(BigNum)          # => Scalar

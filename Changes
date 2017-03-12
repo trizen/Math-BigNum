@@ -2,6 +2,10 @@ Revision history for Math-BigNum
 
 0.20    2017-xx-xx
 
+        [ADDED]
+
+        - Added the `remove(n,k)` and `bremove(n,k)` methods, for removing all occurrences of the factor k from integer n.
+
         [FIXES]
 
         - Fixed a special case in modpow(x, y, z) when y < 0 and gcd(x, z) != 1.

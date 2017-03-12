@@ -463,6 +463,9 @@ sub length { 0 }
 *kronecker = \&nan;
 *valuation = \&nan;
 
+*remove  = \&nan;
+*bremove = \&_self;
+
 *next_prime = \&nan;    # next prime after NaN? Hmm...
 *agm        = \&nan;
 *hypot      = \&nan;

@@ -1617,6 +1617,8 @@ Class::Multimethods::multimethod brsft => qw(Math::BigNum::Inf Math::BigNum::Nan
 *harmreal  = \&nan;
 *kronecker = \&nan;
 *valuation = \&nan;
+*remove    = \&nan;
+*bremove   = \&bnan;
 
 # log(+/-Inf) = +Inf
 Class::Multimethods::multimethod log => qw(Math::BigNum::Inf) => \&inf;
