@@ -2665,7 +2665,7 @@ Class::Multimethods::multimethod bfpow => qw(Math::BigNum $) => sub {
           : Math::MPFR::Rmpfr_pow_si($r, $r, $y, $ROUND);
     }
     else {
-        Math::MPFR::Rmpfr_pow($r, $r, _str2mpfr($y) // (return $x->fpow(Math::BigNum->new($y))), $ROUND);
+        Math::MPFR::Rmpfr_pow($r, $r, _str2mpfr($y) // (return $x->bfpow(Math::BigNum->new($y))), $ROUND);
     }
     _mpfr2x($x, $r);
 };
