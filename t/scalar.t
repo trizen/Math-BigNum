@@ -63,8 +63,8 @@ is('inf'**$x,        $inf);
 is('-inf'**$x,       $inf);     # even power
 is('-inf'**($x + 1), $ninf);    # odd power
 
-my $max_ui = Math::BigNum->new(Math::BigNum::MAX_UI);
-my $min_si = Math::BigNum->new(Math::BigNum::MIN_SI);
+my $max_ui = Math::BigNum->new(Math::BigNum::ULONG_MAX);
+my $min_si = Math::BigNum->new(Math::BigNum::LONG_MIN);
 
 my $max_ui_p1 = ($max_ui + 1)->stringify;
 my $min_si_m1 = ($min_si - 1)->stringify;
@@ -73,21 +73,21 @@ is($min_si_m1 + Math::BigNum->one, $min_si);
 is($max_ui_p1 - Math::BigNum->one, $max_ui);
 is($max_ui_p1 / ($max_ui + 1), 1);
 is($min_si_m1 / ($min_si - 1), 1);
-is($min_si - $min_si_m1,           1);
-is($max_ui - $max_ui_p1,           -1);
-is($max_ui - Math::BigNum::MAX_UI, 0);
-is($min_si - Math::BigNum::MIN_SI, 0);
+is($min_si - $min_si_m1,              1);
+is($max_ui - $max_ui_p1,              -1);
+is($max_ui - Math::BigNum::ULONG_MAX, 0);
+is($min_si - Math::BigNum::LONG_MIN,  0);
 is($max_ui_p1 * Math::BigNum->new(2), ($max_ui + 1) * 2);
 is($min_si_m1 * Math::BigNum->new(2), ($min_si - 1) * 2);
 
-is($min_si,                                     Math::BigNum::MIN_SI);
-is(Math::BigNum->new(Math::BigNum::MIN_SI + 1), Math::BigNum::MIN_SI + 1);
-is($max_ui,                                     Math::BigNum::MAX_UI);
+is($min_si,                                       Math::BigNum::LONG_MIN);
+is(Math::BigNum->new(Math::BigNum::LONG_MIN + 1), Math::BigNum::LONG_MIN + 1);
+is($max_ui,                                       Math::BigNum::ULONG_MAX);
 
-is($x->iadd(Math::BigNum::MIN_SI),              $x + $min_si);
-is($x->isub(Math::BigNum::MIN_SI),              $x - $min_si);
-is($x->imul(Math::BigNum::MIN_SI),              $x * $min_si);
-is($min_si->mul(3)->idiv(Math::BigNum::MIN_SI), 3);
+is($x->iadd(Math::BigNum::LONG_MIN),              $x + $min_si);
+is($x->isub(Math::BigNum::LONG_MIN),              $x - $min_si);
+is($x->imul(Math::BigNum::LONG_MIN),              $x * $min_si);
+is($min_si->mul(3)->idiv(Math::BigNum::LONG_MIN), 3);
 
 is($x->iadd($max_ui_p1), $x + $max_ui + 1);
 is($x->iadd($min_si_m1), $x + $min_si - 1);
@@ -96,35 +96,35 @@ is($x->isub($min_si_m1), $x - $min_si + 1);
 is($x->imul($max_ui_p1), $x * ($max_ui + 1));
 is($x->imul($min_si_m1), $x * ($min_si - 1));
 
-is($x->iadd(Math::BigNum::MAX_UI),              $x + $max_ui);
-is($x->isub(Math::BigNum::MAX_UI),              $x - $max_ui);
-is($x->imul(Math::BigNum::MAX_UI),              $x * $max_ui);
-is($max_ui->mul(3)->idiv(Math::BigNum::MAX_UI), 3);
+is($x->iadd(Math::BigNum::ULONG_MAX),              $x + $max_ui);
+is($x->isub(Math::BigNum::ULONG_MAX),              $x - $max_ui);
+is($x->imul(Math::BigNum::ULONG_MAX),              $x * $max_ui);
+is($max_ui->mul(3)->idiv(Math::BigNum::ULONG_MAX), 3);
 
-is($x->mod(Math::BigNum::MAX_UI), $x);
-is($x->mod(Math::BigNum::MIN_SI), $min_si + $x);
+is($x->mod(Math::BigNum::ULONG_MAX), $x);
+is($x->mod(Math::BigNum::LONG_MIN),  $min_si + $x);
 
-is($x->pow(2)->mod(Math::BigNum::MAX_UI), 1764);
-is($x->pow(2)->mod(Math::BigNum::MIN_SI), $min_si + $x**2);
+is($x->pow(2)->mod(Math::BigNum::ULONG_MAX), 1764);
+is($x->pow(2)->mod(Math::BigNum::LONG_MIN),  $min_si + $x**2);
 
-is($max_ui->and(Math::BigNum::MAX_UI), Math::BigNum::MAX_UI);
-is($max_ui->ior(Math::BigNum::MAX_UI), Math::BigNum::MAX_UI);
-is($max_ui->xor(Math::BigNum::MAX_UI), 0);
+is($max_ui->and(Math::BigNum::ULONG_MAX), Math::BigNum::ULONG_MAX);
+is($max_ui->ior(Math::BigNum::ULONG_MAX), Math::BigNum::ULONG_MAX);
+is($max_ui->xor(Math::BigNum::ULONG_MAX), 0);
 
-is($max_ui <=> Math::BigNum::MAX_UI,     0);
-is($max_ui <=> Math::BigNum::MAX_UI- 1,  1);
-is($min_si <=> Math::BigNum::MIN_SI,     0);
-is($min_si <=> Math::BigNum::MIN_SI + 1, -1);
+is($max_ui <=> Math::BigNum::ULONG_MAX,    0);
+is($max_ui <=> Math::BigNum::ULONG_MAX- 1, 1);
+is($min_si <=> Math::BigNum::LONG_MIN,     0);
+is($min_si <=> Math::BigNum::LONG_MIN + 1, -1);
 
-is(($min_si + 1)->binomial(Math::BigNum::MIN_SI), Math::BigNum::MIN_SI + 1);
-is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
+is(($min_si + 1)->binomial(Math::BigNum::LONG_MIN), Math::BigNum::LONG_MIN + 1);
+is($max_ui->binomial(Math::BigNum::ULONG_MAX- 1),   Math::BigNum::ULONG_MAX);
 
 #
 ## iadd()
 #
 {
     my $x = Math::BigNum->new(42);
-    $x = $x->iadd(Math::BigNum::MAX_UI);
+    $x = $x->iadd(Math::BigNum::ULONG_MAX);
     is($x, 42 + $max_ui);
 
     $x = Math::BigNum->new(-42);
@@ -132,7 +132,7 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
     is($x, -42 + $max_ui + 1);
 
     $x = Math::BigNum->new(-42);
-    $x = $x->iadd(Math::BigNum::MIN_SI);
+    $x = $x->iadd(Math::BigNum::LONG_MIN);
     is($x, -42 + $min_si);
 
     $x = Math::BigNum->new(-42);
@@ -149,7 +149,7 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 #
 {
     my $x = Math::BigNum->new(42);
-    $x->biadd(Math::BigNum::MAX_UI);
+    $x->biadd(Math::BigNum::ULONG_MAX);
     is($x, 42 + $max_ui);
 
     $x = Math::BigNum->new(-42);
@@ -157,7 +157,7 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
     is($x, -42 + $max_ui + 1);
 
     $x = Math::BigNum->new(-42);
-    $x->biadd(Math::BigNum::MIN_SI);
+    $x->biadd(Math::BigNum::LONG_MIN);
     is($x, -42 + $min_si);
 
     $x = Math::BigNum->new(42);
@@ -170,11 +170,11 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 #
 {
     my $x = Math::BigNum->new(42);
-    $x = $x->isub(Math::BigNum::MAX_UI);
+    $x = $x->isub(Math::BigNum::ULONG_MAX);
     is($x, 42 - $max_ui);
 
     $x = Math::BigNum->new(-42);
-    $x = $x->isub(Math::BigNum::MIN_SI);
+    $x = $x->isub(Math::BigNum::LONG_MIN);
     is($x, -42 - $min_si);
 
     $x = Math::BigNum->new(-42);
@@ -195,11 +195,11 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 #
 {
     my $x = Math::BigNum->new(42);
-    $x->bisub(Math::BigNum::MAX_UI);
+    $x->bisub(Math::BigNum::ULONG_MAX);
     is($x, 42 - $max_ui);
 
     $x = Math::BigNum->new(-42);
-    $x->bisub(Math::BigNum::MIN_SI);
+    $x->bisub(Math::BigNum::LONG_MIN);
     is($x, -42 - $min_si);
 
     $x = Math::BigNum->new(42);
@@ -220,15 +220,15 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 #
 {
     my $x = Math::BigNum->new(42);
-    $x = $x->imul(Math::BigNum::MAX_UI);
+    $x = $x->imul(Math::BigNum::ULONG_MAX);
     is($x, 42 * $max_ui);
 
     $x = Math::BigNum->new(-42);
-    $x = $x->imul(Math::BigNum::MIN_SI);
+    $x = $x->imul(Math::BigNum::LONG_MIN);
     is($x, -42 * $min_si);
 
     $x = Math::BigNum->new(2);
-    $x = $x->imul(Math::BigNum::MIN_SI);
+    $x = $x->imul(Math::BigNum::LONG_MIN);
     is($x, 2 * $min_si);
 
     $x = Math::BigNum->new(2);
@@ -249,15 +249,15 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 #
 {
     my $x = Math::BigNum->new(42);
-    $x->bimul(Math::BigNum::MAX_UI);
+    $x->bimul(Math::BigNum::ULONG_MAX);
     is($x, 42 * $max_ui);
 
     $x = Math::BigNum->new(-42);
-    $x->bimul(Math::BigNum::MIN_SI);
+    $x->bimul(Math::BigNum::LONG_MIN);
     is($x, -42 * $min_si);
 
     $x = Math::BigNum->new(2);
-    $x->bimul(Math::BigNum::MIN_SI);
+    $x->bimul(Math::BigNum::LONG_MIN);
     is($x, 2 * $min_si);
 
     $x = Math::BigNum->new(2);
@@ -278,7 +278,7 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 #
 {
     my $x = $max_ui->mul(3);
-    $x = $x->idiv(Math::BigNum::MAX_UI);
+    $x = $x->idiv(Math::BigNum::ULONG_MAX);
     is($x, 3);
 
     $x = ($max_ui + 1)->mul(3);
@@ -286,7 +286,7 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
     is($x, 3);
 
     $x = $min_si->mul(3);
-    $x = $x->idiv(Math::BigNum::MIN_SI);
+    $x = $x->idiv(Math::BigNum::LONG_MIN);
     is($x, 3);
 
     $x = ($min_si - 1)->mul(3);
@@ -303,7 +303,7 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
 #
 {
     my $x = $max_ui->mul(3);
-    $x->bidiv(Math::BigNum::MAX_UI);
+    $x->bidiv(Math::BigNum::ULONG_MAX);
     is($x, 3);
 
     $x = ($max_ui + 1)->mul(3);
@@ -311,7 +311,7 @@ is($max_ui->binomial(Math::BigNum::MAX_UI- 1),    Math::BigNum::MAX_UI);
     is($x, 3);
 
     $x = $min_si->mul(3);
-    $x->bidiv(Math::BigNum::MIN_SI);
+    $x->bidiv(Math::BigNum::LONG_MIN);
     is($x, 3);
 
     $x = ($min_si - 1)->mul(3);
@@ -534,9 +534,9 @@ is($x->log('NaN'),  $nan);
 
 # is_div()
 {
-    is($max_ui->is_div(Math::BigNum::MAX_UI),           1);
-    is($max_ui->is_div(Math::BigNum::MAX_UI- 1),        0);
-    is(($max_ui->dec)->is_div(Math::BigNum::MAX_UI- 1), 1);
+    is($max_ui->is_div(Math::BigNum::ULONG_MAX),           1);
+    is($max_ui->is_div(Math::BigNum::ULONG_MAX- 1),        0);
+    is(($max_ui->dec)->is_div(Math::BigNum::ULONG_MAX- 1), 1);
 
     is(($max_ui->inc)->is_div($max_ui_p1), 1);
     is(($min_si->dec)->is_div($min_si_m1), 1);
