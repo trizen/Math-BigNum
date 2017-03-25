@@ -3101,6 +3101,7 @@ sub log10 {
     $x->lgrt                       # => BigNum | Nan
 
 Logarithmic-root of C<x>, which is the largest solution to C<a^a = b>, where C<b> is known.
+The value of C<x> should not be less than C<e^(-1/e)>.
 
 Example:
 
@@ -3159,9 +3160,6 @@ Example:
 sub lambert_w {
     my ($x) = @_;
 
-    my $sgn = Math::GMPq::Rmpq_sgn($$x);
-
-    $sgn == 0 and return zero();
     Math::GMPq::Rmpq_equal($$x, $MONE) && return nan();
 
     my $d = _big2mpfr($x);
