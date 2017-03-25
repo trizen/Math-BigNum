@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 102;
+plan tests => 105;
 
 use Math::BigNum qw(:constant);
 
@@ -112,6 +112,24 @@ is($f1cp, -12.2);
 
 is($f1, "399.8");
 is($f2, "41.2");
+
+{
+    my $n = Math::BigNum->new('12.6');
+    $n->bmod('3.45');
+    is($n->as_frac, "9/4");
+}
+
+{
+    my $n = Math::BigNum->new('12.6');
+    $n->bfmod('3.45');
+    is("$n", "2.25");
+}
+
+{
+    my $n = Math::BigNum->new('17.6');
+    $n->bimod('3.45');
+    is("$n", "2");
+}
 
 ##################################################
 # extreme

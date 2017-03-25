@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 268;
+plan tests => 269;
 
 use Math::BigNum;
 
@@ -71,6 +71,12 @@ is(Math::BigNum->new(-1234)->iroot(Math::BigNum->new(4)), Math::BigNum->nan);
 
     $x = $n->copy->biroot(Math::BigNum->new(4));
     is($x, Math::BigNum->nan);
+}
+
+{
+    my $n = Math::BigNum->new('1234.56');
+    $n->broot('3.45');
+    like("$n", qr/^7\.8720980221609698183315224802963063\d*\z/);
 }
 
 #########################################

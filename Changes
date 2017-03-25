@@ -6,9 +6,15 @@ Revision history for Math-BigNum
 
         - Added the `remove(n,k)` and `bremove(n,k)` methods, for removing all occurrences of the factor k from integer n.
 
+        [IMPROVEMENTS]
+
+        - Re-implemented the `mod` method based on the identity: x % y = x - y*floor(x/y), which always returns the exact result, assuming that x and y are rational numbers.
+
         [FIXES]
 
         - Fixed a special case in modpow(x, y, z) when y < 0 and gcd(x, z) != 1.
+        - Fixed a minor issue in broot(x, y) when y is not an integer.
+        - Fixed a minor issue in bfpow(x, y) when y is a non-numeric scalar.
 
 0.19    2017-01-21
 

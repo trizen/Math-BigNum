@@ -1565,54 +1565,52 @@ Class::Multimethods::multimethod bdiv => qw(Math::BigNum Math::BigNum::Nan) => \
 
 Remainder of C<x> when is divided by C<y>. Returns Nan when C<y> is zero.
 
-When C<x> and C<y> are both integers, the returned result is exact.
-Otherwise, the result is a floating-point approximation.
+Implemented as:
+
+    x % y = x - y*floor(x/y)
 
 =cut
 
 Class::Multimethods::multimethod mod => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
+    $x = $$x;
+    $y = $$y;
 
-        my $yz     = _int2mpz($y);
-        my $sign_y = Math::GMPz::Rmpz_sgn($yz);
-        return nan if !$sign_y;
+    Math::GMPq::Rmpq_sgn($y)
+      || return nan();
 
-        my $r = _int2mpz($x);
-        Math::GMPz::Rmpz_mod($r, $r, $yz);
-        if (!Math::GMPz::Rmpz_sgn($r)) {
-            return (zero);    # return faster
-        }
-        elsif ($sign_y < 0) {
-            Math::GMPz::Rmpz_add($r, $r, $yz);
-        }
-        _mpz2big($r);
+    my $quo = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set($quo, $x);
+    Math::GMPq::Rmpq_div($quo, $quo, $y);
+
+    # Floor
+    if (!Math::GMPq::Rmpq_integer_p($quo)) {
+        my $z = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_set_q($z, $quo);
+        Math::GMPz::Rmpz_sub_ui($z, $z, 1) if Math::GMPq::Rmpq_sgn($quo) < 0;
+        Math::GMPq::Rmpq_set_z($quo, $z);
     }
-    else {
-        my $r  = _big2mpfr($x);
-        my $yf = _big2mpfr($y);
-        Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
-        my $sign_r = Math::MPFR::Rmpfr_sgn($r);
-        if (!$sign_r) {
-            return (zero);    # return faster
-        }
-        elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
-            Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
-        }
-        _mpfr2big($r);
-    }
+
+    Math::GMPq::Rmpq_mul($quo, $quo, $y);
+    Math::GMPq::Rmpq_neg($quo, $quo);
+    Math::GMPq::Rmpq_add($quo, $quo, $x);
+    bless \$quo, __PACKAGE__;
 };
 
 Class::Multimethods::multimethod mod => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    return nan if ($y == 0);
+    CORE::int($y)
+      || return nan();
 
-    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI and Math::GMPq::Rmpq_integer_p($$x)) {
+    if (    CORE::int($y) eq $y
+        and $y >= MIN_SI
+        and $y <= MAX_UI
+        and Math::GMPq::Rmpq_integer_p($$x)) {
         my $r     = _int2mpz($x);
         my $neg_y = $y < 0;
-        $y = CORE::abs($y) if $neg_y;
+        $y = -$y if $neg_y;
         Math::GMPz::Rmpz_mod_ui($r, $r, $y);
         if (!Math::GMPz::Rmpz_sgn($r)) {
             return (zero);    # return faster
@@ -1620,21 +1618,10 @@ Class::Multimethods::multimethod mod => qw(Math::BigNum $) => sub {
         elsif ($neg_y) {
             Math::GMPz::Rmpz_sub_ui($r, $r, $y);
         }
-        _mpz2big($r);
+        return _mpz2big($r);
     }
-    else {
-        my $yf = _str2mpfr($y) // return $x->mod(Math::BigNum->new($y));
-        my $r = _big2mpfr($x);
-        Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
-        my $sign = Math::MPFR::Rmpfr_sgn($r);
-        if (!$sign) {
-            return (zero);    # return faster
-        }
-        elsif ($sign > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
-            Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
-        }
-        _mpfr2big($r);
-    }
+
+    $x->mod(Math::BigNum->new($y));
 };
 
 Class::Multimethods::multimethod mod => qw(* Math::BigNum) => sub {
@@ -1666,66 +1653,52 @@ Sets C<x> to the remainder of C<x> when is divided by C<y>. Sets C<x> to Nan whe
 Class::Multimethods::multimethod bmod => qw(Math::BigNum Math::BigNum) => sub {
     my ($x, $y) = @_;
 
-    if (Math::GMPq::Rmpq_integer_p($$x) and Math::GMPq::Rmpq_integer_p($$y)) {
+    $x = $$x;
+    $y = $$y;
 
-        my $yz     = _int2mpz($y);
-        my $sign_y = Math::GMPz::Rmpz_sgn($yz);
-        return $x->bnan if !$sign_y;
+    Math::GMPq::Rmpq_sgn($y)
+      || return $_[0]->bnan();
 
-        my $r = _int2mpz($x);
-        Math::GMPz::Rmpz_mod($r, $r, $yz);
-        if ($sign_y < 0 and Math::GMPz::Rmpz_sgn($r)) {
-            Math::GMPz::Rmpz_add($r, $r, $yz);
-        }
-        Math::GMPq::Rmpq_set_z($$x, $r);
-    }
-    else {
-        my $r  = _big2mpfr($x);
-        my $yf = _big2mpfr($y);
-        Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
-        my $sign = Math::MPFR::Rmpfr_sgn($r);
-        if (!$sign) {
-            ## ok
-        }
-        elsif ($sign > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
-            Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
-        }
-        _mpfr2x($x, $r);
+    my $quo = Math::GMPq::Rmpq_init();
+    Math::GMPq::Rmpq_set($quo, $x);
+    Math::GMPq::Rmpq_div($quo, $quo, $y);
+
+    # Floor
+    if (!Math::GMPq::Rmpq_integer_p($quo)) {
+        my $z = Math::GMPz::Rmpz_init();
+        Math::GMPz::Rmpz_set_q($z, $quo);
+        Math::GMPz::Rmpz_sub_ui($z, $z, 1) if Math::GMPq::Rmpq_sgn($quo) < 0;
+        Math::GMPq::Rmpq_set_z($quo, $z);
     }
 
-    $x;
+    Math::GMPq::Rmpq_mul($quo, $quo, $y);
+    Math::GMPq::Rmpq_sub($x, $x, $quo);
+
+    $_[0];
 };
 
 Class::Multimethods::multimethod bmod => qw(Math::BigNum $) => sub {
     my ($x, $y) = @_;
 
-    return $x->bnan if ($y == 0);
+    CORE::int($y)
+      || return $x->bnan;
 
-    if (CORE::int($y) eq $y and $y >= MIN_SI and $y <= MAX_UI and Math::GMPq::Rmpq_integer_p($$x)) {
+    if (    CORE::int($y) eq $y
+        and $y >= MIN_SI
+        and $y <= MAX_UI
+        and Math::GMPq::Rmpq_integer_p($$x)) {
         my $r     = _int2mpz($x);
         my $neg_y = $y < 0;
-        $y = CORE::abs($y) if $neg_y;
+        $y = -$y if $neg_y;
         Math::GMPz::Rmpz_mod_ui($r, $r, $y);
         if ($neg_y and Math::GMPz::Rmpz_sgn($r)) {
             Math::GMPz::Rmpz_sub_ui($r, $r, $y);
         }
         Math::GMPq::Rmpq_set_z($$x, $r);
-    }
-    else {
-        my $yf = _str2mpfr($y) // return $x->bmod(Math::BigNum->new($y));
-        my $r = _big2mpfr($x);
-        Math::MPFR::Rmpfr_fmod($r, $r, $yf, $ROUND);
-        my $sign_r = Math::MPFR::Rmpfr_sgn($r);
-        if (!$sign_r) {
-            ## ok
-        }
-        elsif ($sign_r > 0 xor Math::MPFR::Rmpfr_sgn($yf) > 0) {
-            Math::MPFR::Rmpfr_add($r, $r, $yf, $ROUND);
-        }
-        _mpfr2x($x, $r);
+        return $x;
     }
 
-    $x;
+    $x->bmod(Math::BigNum->new($y));
 };
 
 Class::Multimethods::multimethod bmod => qw(Math::BigNum *) => sub {

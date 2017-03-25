@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 357;
+plan tests => 360;
 
 use Math::BigNum;
 
@@ -215,6 +215,24 @@ $r = Math::BigNum->new(0);
 $r->bpow(-2);
 is(ref($r),  'Math::BigNum::Inf');
 is(lc("$r"), "inf");
+
+{
+    my $n = Math::BigNum->new('12.6');
+    $n->bfpow('3.45');
+    like("$n", qr/^6255\.735538995494576076354865979491381\d*\z/);
+}
+
+{
+    my $n = Math::BigNum->new('12.6');
+    $n->bpow('3.45');
+    like("$n", qr/^6255\.735538995494576076354865979491381\d*\z/);
+}
+
+{
+    my $n = Math::BigNum->new('12.6');
+    $n->bipow('3.45');
+    is("$n", "1728");
+}
 
 ##############################################################
 # special values
