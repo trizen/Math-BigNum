@@ -13,7 +13,7 @@ use Math::MPFR qw();
 use Class::Multimethods qw();
 use POSIX qw(ULONG_MAX LONG_MIN);
 
-our $VERSION = '0.19';
+our $VERSION = '0.20';
 
 =encoding utf8
 
@@ -23,7 +23,7 @@ Math::BigNum - Arbitrary size precision for integers, rationals and floating-poi
 
 =head1 VERSION
 
-Version 0.19
+Version 0.20
 
 =head1 SYNOPSIS
 
