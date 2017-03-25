@@ -513,8 +513,11 @@ use overload
             }
             elsif ($name eq 'PREC') {
                 my $prec = CORE::int(shift(@_));
-                if ($prec < 2 or $prec > ULONG_MAX) {
-                    die "invalid value for <<PREC>>: must be between 2 and ", ULONG_MAX;
+                if (   $prec < Math::MPFR::RMPFR_PREC_MIN()
+                    or $prec > Math::MPFR::RMPFR_PREC_MAX()) {
+                    die "invalid value for <<PREC>>: must be between "
+                      . Math::MPFR::RMPFR_PREC_MIN() . " and "
+                      . Math::MPFR::RMPFR_PREC_MAX();
                 }
                 $Math::BigNum::PREC = $prec;
             }

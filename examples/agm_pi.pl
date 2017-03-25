@@ -8,7 +8,7 @@ use strict;
 use warnings;
 
 use lib qw(../lib);
-use Math::BigNum qw(:constant);
+use Math::BigNum;
 
 my $digits = shift || 100;    # Get number of digits from command line
 print agm_pi($digits), "\n";
@@ -19,8 +19,8 @@ sub agm_pi {
     my $acc = $digits + 8;
     local $Math::BigNum::PREC = 4 * $digits;
 
-    my $HALF = Math::BigNum->new("0.5");
-    my ($an, $bn, $tn, $pn) = (1, $HALF->sqrt, $HALF->mul($HALF), 1);
+    my $HALF = Math::BigNum->new('0.5');
+    my ($an, $bn, $tn, $pn) = (Math::BigNum->one, $HALF->sqrt, $HALF->mul($HALF), Math::BigNum->one);
     while ($pn < $acc) {
         my $prev_an = $an->copy;
         $an->badd($bn)->bmul($HALF);
