@@ -125,7 +125,7 @@ The syntax for disabling the C<:constant> behavior in the current scope, is:
 
 =head1 PRECISION
 
-The default precision for floating-point numbers is 200 bits, which is equivalent with about
+The default precision for floating-point numbers is 192 bits, which is equivalent with about
 50 digits of precision in base 10.
 
 The precision can be changed by modifying the C<$Math::BigNum::PREC> variable, such as:
@@ -247,7 +247,7 @@ our ($ROUND, $PREC);
 
 BEGIN {
     $ROUND = Math::MPFR::MPFR_RNDN();
-    $PREC  = 200;                       # too little?
+    $PREC  = 192;                       # too little?
 }
 
 use Math::BigNum::Inf qw();

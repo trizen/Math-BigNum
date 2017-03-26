@@ -130,7 +130,7 @@ my $mbn = 'Math::BigNum';
     is("$fac", $bigstr);
 
     $fac = sqrt(1 / (100->fac + 1));
-    is("$fac", "1.0351378111756264713204945916571793611614825651372e-79");
+    is("$fac", "1.03513781117562647132049459165717936116148256514e-79");
 
     my $bignum = Math::BigNum->new($bigstr);
     is("$bignum", $bigstr);
