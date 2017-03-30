@@ -4471,7 +4471,7 @@ Class::Multimethods::multimethod idiv => qw(Math::BigNum Math::BigNum) => sub {
         return (!$sign ? nan : $sign > 0 ? inf : ninf);
     }
 
-    Math::GMPz::Rmpz_div($r, $r, $y);
+    Math::GMPz::Rmpz_tdiv_q($r, $r, $y);
     _mpz2big($r);
 };
 
@@ -4492,7 +4492,7 @@ Class::Multimethods::multimethod idiv => qw(Math::BigNum $) => sub {
                    );
         };
 
-        Math::GMPz::Rmpz_div_ui($r, $r, CORE::abs($y));
+        Math::GMPz::Rmpz_tdiv_q_ui($r, $r, CORE::abs($y));
         Math::GMPz::Rmpz_neg($r, $r) if $y < 0;
         _mpz2big($r);
     }
@@ -4531,7 +4531,7 @@ Class::Multimethods::multimethod bidiv => qw(Math::BigNum Math::BigNum) => sub {
           :             $x->bnan;
     }
 
-    Math::GMPz::Rmpz_div($r, $r, $y);
+    Math::GMPz::Rmpz_tdiv_q($r, $r, $y);
     Math::GMPq::Rmpq_set_z($$x, $r);
     $x;
 };
@@ -4552,7 +4552,7 @@ Class::Multimethods::multimethod bidiv => qw(Math::BigNum $) => sub {
               :             $x->bnan;
         };
 
-        Math::GMPz::Rmpz_div_ui($r, $r, CORE::abs($y));
+        Math::GMPz::Rmpz_tdiv_q_ui($r, $r, CORE::abs($y));
         Math::GMPq::Rmpq_set_z($$x, $r);
         Math::GMPq::Rmpq_neg($$x, $$x) if $y < 0;
         $x;
@@ -7222,7 +7222,7 @@ sub stringify {
 
         my @r;
         while (1) {
-            Math::GMPz::Rmpz_div($z, $num, $den);
+            Math::GMPz::Rmpz_tdiv_q($z, $num, $den);
             push @r, Math::GMPz::Rmpz_get_str($z, 10);
 
             Math::GMPz::Rmpz_mul($z, $z, $den);
